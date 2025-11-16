@@ -1,8 +1,4 @@
-/*
-  ✅ Visitor Management System — Full Schema + RLS Security (Fixed with entity_id)
-*/
-
--- ✅ ENUM Creation (duplicate safe)
+--  ENUM Creation (duplicate safe)
 DO $$ BEGIN
   CREATE TYPE visit_status AS ENUM ('pending', 'approved', 'denied', 'completed', 'cancelled');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -11,7 +7,7 @@ DO $$ BEGIN
   CREATE TYPE user_role AS ENUM ('admin', 'guard', 'host');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
--- ✅ TABLES
+--  TABLES
 CREATE TABLE IF NOT EXISTS departments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL UNIQUE,
@@ -58,7 +54,7 @@ CREATE TABLE IF NOT EXISTS visits (
   updated_at timestamptz DEFAULT now()
 );
 
--- ✅ Add entity_id column if it doesn't exist (for compatibility)
+--  Add entity_id column if it doesn't exist (for compatibility)
 DO $$ 
 BEGIN
   IF NOT EXISTS (
@@ -69,13 +65,13 @@ BEGIN
   END IF;
 END $$;
 
--- ✅ Enable RLS
+--  Enable RLS
 ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hosts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visitors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visits ENABLE ROW LEVEL SECURITY;
 
--- ✅ Drop ALL existing policies to start fresh
+--  Drop ALL existing policies to start fresh
 DROP POLICY IF EXISTS "Departments readable" ON departments;
 DROP POLICY IF EXISTS "departments_select_all" ON departments;
 DROP POLICY IF EXISTS "departments_admin_all" ON departments;
@@ -112,7 +108,7 @@ DROP POLICY IF EXISTS "visits_select_own_or_privileged" ON visits;
 DROP POLICY IF EXISTS "visits_update_host_or_privileged" ON visits;
 DROP POLICY IF EXISTS "visits_delete_admin_only" ON visits;
 
--- ✅ Drop and recreate helper functions (fix SECURITY DEFINER issue)
+--  Drop and recreate helper functions (fix SECURITY DEFINER issue)
 DROP FUNCTION IF EXISTS is_admin(uuid);
 DROP FUNCTION IF EXISTS is_guard(uuid);
 
@@ -130,7 +126,7 @@ RETURNS boolean AS $$
   );
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
--- ✅ DEPARTMENTS Policies
+-- DEPARTMENTS Policies
 CREATE POLICY "departments_select_all"
   ON departments FOR SELECT
   USING (true);
@@ -140,7 +136,7 @@ CREATE POLICY "departments_admin_all"
   USING (is_admin(auth.uid()))
   WITH CHECK (is_admin(auth.uid()));
 
--- ✅ HOSTS Policies
+-- HOSTS Policies
 CREATE POLICY "hosts_insert_self"
   ON hosts FOR INSERT
   WITH CHECK (auth.uid() = auth_id);
@@ -162,7 +158,7 @@ CREATE POLICY "hosts_delete_admin_only"
   ON hosts FOR DELETE
   USING (is_admin(auth.uid()));
 
--- ✅ VISITORS Policies
+-- VISITORS Policies
 -- Allow public inserts for request-visit functionality (unauthenticated users)
 CREATE POLICY "visitors_insert_public"
   ON visitors FOR INSERT
@@ -183,7 +179,7 @@ CREATE POLICY "visitors_delete_admin_only"
   ON visitors FOR DELETE
   USING (is_admin(auth.uid()));
 
--- ✅ VISITS Policies
+-- VISITS Policies
 -- Allow public inserts for request-visit functionality (unauthenticated users)
 CREATE POLICY "visits_insert_public"
   ON visits FOR INSERT
@@ -226,7 +222,7 @@ CREATE POLICY "visits_delete_admin_only"
   ON visits FOR DELETE
   USING (is_admin(auth.uid()));
 
--- ✅ Indexes
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_visits_status ON visits(status);
 CREATE INDEX IF NOT EXISTS idx_visits_created_at ON visits(created_at);
 CREATE INDEX IF NOT EXISTS idx_visits_host_id ON visits(host_id);
@@ -238,7 +234,7 @@ CREATE INDEX IF NOT EXISTS idx_hosts_auth_id ON hosts(auth_id);
 CREATE INDEX IF NOT EXISTS idx_hosts_role ON hosts(role);
 CREATE INDEX IF NOT EXISTS idx_hosts_active ON hosts(active);
 
--- ✅ Updated_at automation
+-- Updated_at automation
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN 
@@ -268,7 +264,7 @@ CREATE TRIGGER update_visits_updated_at
   BEFORE UPDATE ON visits
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ✅ Default Departments
+-- Default Departments
 INSERT INTO departments (name) VALUES
   ('Administration'), 
   ('Faculty'), 

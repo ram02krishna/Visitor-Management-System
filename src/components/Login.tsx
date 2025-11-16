@@ -6,7 +6,7 @@ import { BackButton } from './BackButton';
 
 export function Login() {
   const navigate = useNavigate();
-  const login = useAuthStore((state) => state.login);
+  const { login, signInWithGoogle } = useAuthStore();
   const isLoading = useAuthStore((state) => state.isLoading);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,6 +25,15 @@ export function Login() {
     } catch (error) {
       console.error('[Login] Login failed:', error);
       setError('Invalid credentials');
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('[Login] Google Sign-In failed:', error);
+      setError('Google Sign-In failed. Please try again.');
     }
   };
 
@@ -103,29 +112,45 @@ export function Login() {
             </div>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-slate-600" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400">
-                  Don't have an account?
-                </span>
-              </div>
+          <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-lg"
+              >
+                <img
+                  className="w-5 h-5 mr-2"
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  alt="Google logo"
+                />
+                Sign in with Google
+              </button>
             </div>
 
-            <div className="mt-6 text-center">
-              <Link
-                to="/signup"
-                className="font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors duration-300 hover:underline"
-              >
-                Create new account
-              </Link>
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-slate-600" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400">
+                    Don't have an account?
+                  </span>
+                </div>
+              </div>
+  
+              <div className="mt-6 text-center">
+                <Link
+                  to="/signup"
+                  className="font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors duration-300 hover:underline"
+                >
+                  Create new account
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

@@ -196,8 +196,8 @@ export function RequestVisit() {
         validUntil: '',
         notes: '',
       });
-    } catch (err: any) {
-      setError(err.message || 'Failed to request visit. Please try again.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Failed to request visit. Please try again.');
     } finally {
       setLoading(false);
     }

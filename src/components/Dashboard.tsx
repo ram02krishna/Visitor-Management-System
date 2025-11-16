@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import {
   Users,
   UserCheck,
   AlertCircle,
   CheckCircle,
   XCircle,
-  TrendingUp,
 } from "lucide-react";
 import { VisitDetailsModal } from "./VisitDetailsModal";
 import { Visit } from "./VisitDetailsModal";
@@ -41,13 +41,13 @@ export function Dashboard() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [connectionTested, setConnectionTested] = useState(false);
   const [selectedVisits, setSelectedVisits] = useState<Visit[]>([]);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [offset, setOffset] = useState(0);
   const [totalVisits, setTotalVisits] = useState(0);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   
   // Use ref to track if subscription is active
-  const subscriptionRef = useRef<any>(null);
+  const subscriptionRef = useRef<RealtimeChannel | null>(null);
   const isSubscribedRef = useRef(false);
 
   const fetchStats = useCallback(async (role: string) => {

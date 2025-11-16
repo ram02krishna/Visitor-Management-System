@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/auth';
 import QRCode from 'qrcode';
 import emailjs from '@emailjs/browser';
 import { v4 as uuidv4 } from 'uuid';
-import { Camera, UserPlus, Mail, Phone, FileText, Calendar, Clock, User } from 'lucide-react';
+import { Camera, UserPlus } from 'lucide-react';
 
 type PreRegisterFormData = {
   name: string;
@@ -110,7 +110,6 @@ export function PreRegisterVisitor() {
       }
 
       // 2. Upload photo if provided
-      let photoUrl: string | undefined;
       if (formData.photo && formData.photo.length > 0) {
         console.log('[PreRegisterVisitor] Uploading visitor photo...');
         const file = formData.photo[0];
@@ -129,7 +128,6 @@ export function PreRegisterVisitor() {
           console.error('[PreRegisterVisitor] Photo upload error:', uploadError);
           // Continue with the process even if photo upload fails
         } else {
-          photoUrl = supabase.storage.from('visitor-photos').getPublicUrl(filePath).data?.publicUrl;
           console.log('[PreRegisterVisitor] Photo uploaded successfully');
         }
       }
@@ -239,10 +237,10 @@ export function PreRegisterVisitor() {
 
       console.log('[PreRegisterVisitor] Registration completed successfully');
       reset();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[PreRegisterVisitor] Pre-registration error:', error);
-      setErrorMessage(error.message || 'Failed to pre-register visitor.');
-      toast.error(error.message || 'Failed to pre-register visitor.');
+      setErrorMessage((error as Error).message || 'Failed to pre-register visitor.');
+      toast.error((error as Error).message || 'Failed to pre-register visitor.');
     } finally {
       setLoading(false);
     }

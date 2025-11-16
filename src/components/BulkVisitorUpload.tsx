@@ -23,12 +23,12 @@ export function BulkVisitorUpload() {
     }
   });
 
-  const processCsv = async (file: File): Promise<any[]> => {
+  const processCsv = async (file: File): Promise<{[key: string]: string}[]> => {
     return new Promise((resolve, reject) => {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: (results) => resolve(results.data),
+        complete: (results) => resolve(results.data as {[key: string]: string}[]),
         error: (error) => reject(error),
       });
     });
@@ -72,7 +72,7 @@ export function BulkVisitorUpload() {
       const newVisitorsData: { name: string; email: string; phone: string; }[] = [];
       const existingVisitorEmails: string[] = [];
 
-      visitors.forEach((visitor: any) => {
+      visitors.forEach((visitor: {[key: string]: string}) => {
         if (visitor.email) {
           existingVisitorEmails.push(visitor.email);
         }
@@ -83,14 +83,15 @@ export function BulkVisitorUpload() {
         .select('id, email')
         .in('email', existingVisitorEmails);
       
+      
       if (existingVisitorsError) throw existingVisitorsError;
 
       const existingVisitorsMap = new Map(existingVisitors?.map(v => [v.email, v.id]));
 
-      const visitsToInsert: any[] = [];
+      const visitsToInsert: ({ visitor_id: string | undefined; host_id: string; purpose: string; status: string; valid_until: string; })[] = [];
 
       for (const visitorData of visitors) {
-        let visitorId: string | undefined = existingVisitorsMap.get(visitorData.email);
+        const visitorId: string | undefined = existingVisitorsMap.get(visitorData.email);
 
         if (!visitorId) {
           newVisitorsData.push({
@@ -124,7 +125,7 @@ export function BulkVisitorUpload() {
       // Update visitor_id for visitsToInsert
       visitsToInsert.forEach(visit => {
         if (!visit.visitor_id) {
-          const originalVisitorData = visitors.find((v: any) => v.email === visit.email);
+          const originalVisitorData = visitors.find((v: {[key: string]: string}) => v.email === visit.email);
           if (originalVisitorData) {
             visit.visitor_id = existingVisitorsMap.get(originalVisitorData.email);
           }
@@ -139,8 +140,8 @@ export function BulkVisitorUpload() {
       }
 
       toast.success(`${visitors.length} visitors uploaded successfully!`);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to upload visitors.');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || 'Failed to upload visitors.');
     } finally {
       setUploading(false);
     }

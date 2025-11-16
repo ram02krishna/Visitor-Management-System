@@ -22,6 +22,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, departmentId: string) => Promise<void>;
   logout: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -30,7 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   error: null,
 
-  // ✅ Initialize authentication
+  //  Initialize authentication
   initialize: async () => {
     console.log('[Auth] Initializing authentication...');
     try {
@@ -53,31 +54,59 @@ export const useAuthStore = create<AuthState>((set) => ({
           .eq("auth_id", session.user.id)
           .single();
 
-        if (hostError) {
+        if (hostError && hostError.code !== 'PGRST116') {
           console.error('[Auth] Host data fetch error:', hostError);
           throw hostError;
         }
 
-        console.log('[Auth] Host data retrieved:', { 
-          id: hostData.id, 
-          name: hostData.name, 
-          role: hostData.role,
-          email: hostData.email 
-        });
+        if (hostData) {
+          console.log('[Auth] Host data retrieved:', { 
+            id: hostData.id, 
+            name: hostData.name, 
+            role: hostData.role,
+            email: hostData.email 
+          });
 
-        // ❌ Block visitor role
-        if (hostData.role === "visitor") {
-          console.warn('[Auth] Visitor role blocked');
-          throw new Error("Visitor role is no longer supported");
+          if (hostData.role === "visitor") {
+            console.warn('[Auth] Visitor role blocked');
+            throw new Error("Visitor role is no longer supported");
+          }
+
+          console.log('[Auth] Authentication successful');
+          set({
+            user: hostData as User,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        } else {
+          // If no host data is found, create a new host record
+          console.log('[Auth] No host data found, creating a new host...');
+          const { data: newHost, error: newHostError } = await supabase
+            .from('hosts')
+            .insert({
+              auth_id: session.user.id,
+              name: session.user.user_metadata.full_name || 'New User',
+              email: session.user.email!,
+              role: 'host', 
+              active: true,
+            })
+            .select()
+            .single();
+
+          if (newHostError) {
+            console.error('[Auth] Error creating new host:', newHostError);
+            throw newHostError;
+          }
+
+          console.log('[Auth] New host created:', newHost);
+          set({
+            user: newHost as User,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
         }
-
-        console.log('[Auth] Authentication successful');
-        set({
-          user: hostData as User,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
       } else {
         console.log('[Auth] No active session found');
         set({ isAuthenticated: false, isLoading: false, user: null });
@@ -93,7 +122,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // ✅ Login function
+  //  Login function
   login: async (email: string, password: string) => {
     console.log('[Auth] Login attempt for email:', email);
     try {
@@ -129,7 +158,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           email: hostData.email
         });
 
-        // ❌ Block visitor role
+        //  Block visitor role
         if (hostData.role === "visitor") {
           console.warn('[Auth] Login blocked: visitor role');
           throw new Error("Visitor role is no longer supported");
@@ -155,7 +184,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // ✅ Signup function
+  // Signup function
   signup: async (email: string, password: string, name: string, departmentId: string) => {
     console.log('[Auth] Signup attempt:', { email, name, departmentId });
     try {
@@ -207,7 +236,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // ✅ Logout function
+  // Logout function
   logout: async () => {
     console.log('[Auth] Logout initiated');
     try {
@@ -220,6 +249,27 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.error('[Auth] Logout failed:', (error as Error).message);
       console.error('[Auth] Error details:', error);
       set({ error: "Failed to logout", isLoading: false });
+    }
+  },
+
+  // Sign in with Google
+  signInWithGoogle: async () => {
+    console.log('[Auth] Initiating Google Sign-In...');
+    try {
+      set({ isLoading: true, error: null });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      if (error) {
+        console.error('[Auth] Google Sign-In error:', error.message);
+        throw error;
+      }
+    } catch (error: unknown) {
+      console.error('[Auth] Google Sign-In failed:', (error as Error).message);
+      set({
+        error: (error as Error).message || 'Google Sign-In failed',
+        isLoading: false,
+      });
     }
   },
 }));

@@ -4,6 +4,8 @@ import {
   Routes,
   Route,
   Navigate,
+  useNavigate,
+  useLocation,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
@@ -43,6 +45,20 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
+function RedirectManager() {
+  const { isAuthenticated, isLoading } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && location.pathname === '/') {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, isLoading, navigate, location.pathname]);
+
+  return null;
+}
+
 
 function App() {
   const initializeAuth = useAuthStore((state) => state.initialize);
@@ -73,6 +89,7 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
+        <RedirectManager />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
