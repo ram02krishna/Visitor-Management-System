@@ -19,7 +19,6 @@ This is a modern, real-time Visitor Management System designed to streamline the
     *   [Registering a New Visitor (Authenticated Hosts)](#registering-a-new-visitor-authenticated-hosts)
 *   [Database Schema & Security](#database-schema--security)
 *   [Documentation](#documentation)
-*   [Troubleshooting](#troubleshooting)
 
 ## About the Project
 
