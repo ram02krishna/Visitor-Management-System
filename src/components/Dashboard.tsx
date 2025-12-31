@@ -253,7 +253,6 @@ export function Dashboard() {
           break;
         }
 
-        case "resident":
         case "host": {
           const userId = user?.id;
           if (!userId) {
@@ -547,7 +546,7 @@ export function Dashboard() {
         countQuery = countQuery.eq("status", status);
       }
 
-      if (user?.role === "host" || user?.role === "resident") {
+      if (user?.role === "host") {
         countQuery = countQuery.not("host_id", "is", null);
       }
 
@@ -572,7 +571,7 @@ export function Dashboard() {
         query = query.eq("status", status);
       }
 
-      if (user?.role === "host" || user?.role === "resident") {
+      if (user?.role === "host") {
         query = query.not("host_id", "is", null);
       }
 

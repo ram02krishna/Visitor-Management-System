@@ -123,9 +123,9 @@ export function BulkVisitorUpload() {
       }
 
       // Update visitor_id for visitsToInsert
-      visitsToInsert.forEach(visit => {
+      visitsToInsert.forEach((visit, index) => {
         if (!visit.visitor_id) {
-          const originalVisitorData = visitors.find((v: {[key: string]: string}) => v.email === visit.email);
+          const originalVisitorData = visitors[index];
           if (originalVisitorData) {
             visit.visitor_id = existingVisitorsMap.get(originalVisitorData.email);
           }

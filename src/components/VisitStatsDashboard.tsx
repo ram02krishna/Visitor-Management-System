@@ -3,10 +3,10 @@ import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 import { Users, UserCheck, AlertCircle, CheckCircle, XCircle, TrendingUp } from "lucide-react";
 // Fix the import path - note the exact filename casing and path
-import { VisitDetailsModal } from "./VisitDetailsModal";  // Importing from the same folder
+import { VisitDetailsModal, Visit } from "./VisitDetailsModal";  // Importing from the same folder
 
 // Define proper types to avoid type errors
-type UserRole = "admin" | "guard" | "resident" | "visitor";
+type UserRole = "admin" | "guard" | "visitor";
 
 type StatItem = {
   name: string;
@@ -22,7 +22,8 @@ const VISIT_STATUS = {
   PENDING: "pending",
   APPROVED: "approved",
   COMPLETED: "completed",
-  CANCELLED: "cancelled"
+  CANCELLED: "cancelled",
+  DENIED: "denied"
 };
 
 export function VisitStatsDashboard() {
@@ -31,6 +32,10 @@ export function VisitStatsDashboard() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedVisits, setSelectedVisits] = useState<Visit[]>([]);
+  const [limit] = useState(10);
+  const [offset, setOffset] = useState(0);
+  const [totalVisits, setTotalVisits] = useState(0);
 
   useEffect(() => {
     // Log user role for debugging
@@ -130,16 +135,16 @@ export function VisitStatsDashboard() {
               .from("visits")
               .select("*", { count: "exact", head: true })
               .eq("status", VISIT_STATUS.COMPLETED)
-              .gte("completed_at", utcTodayStart)
-              .lt("completed_at", utcTomorrowStart),
+              .gte("check_out_time", utcTodayStart)
+              .lt("check_out_time", utcTomorrowStart),
             
             // 4. Cancelled Visits - cancelled today
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
               .eq("status", VISIT_STATUS.CANCELLED)
-              .gte("cancelled_at", utcTodayStart)
-              .lt("cancelled_at", utcTomorrowStart),
+              .gte("created_at", utcTodayStart)
+              .lt("created_at", utcTomorrowStart),
           ]);
           
           // Log all errors for debugging
@@ -199,87 +204,19 @@ export function VisitStatsDashboard() {
               .from("visits")
               .select("*", { count: "exact", head: true })
               .eq("status", VISIT_STATUS.COMPLETED)
-              .gte("completed_at", utcTodayStart)
-              .lt("completed_at", utcTomorrowStart),
+              .gte("check_out_time", utcTodayStart)
+              .lt("check_out_time", utcTomorrowStart),
             
             // 4. Cancelled Visits - cancelled today
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
               .eq("status", VISIT_STATUS.CANCELLED)
-              .gte("cancelled_at", utcTodayStart)
-              .lt("cancelled_at", utcTomorrowStart),
+              .gte("created_at", utcTodayStart)
+              .lt("created_at", utcTomorrowStart),
           ]);
 
           console.log("Guard stats:", { 
-            approvedToday, 
-            newRequestsToday, 
-            completedToday, 
-            cancelledToday 
-          });
-
-          setStats([
-            { name: "Approved Visits", value: approvedToday ?? 0, icon: UserCheck, color: "text-green-500", bgColor: "bg-green-50", status: VISIT_STATUS.APPROVED },
-            { name: "New Visit Requests", value: newRequestsToday ?? 0, icon: AlertCircle, color: "text-yellow-500", bgColor: "bg-yellow-50", status: VISIT_STATUS.PENDING },
-            { name: "Completed Visits", value: completedToday ?? 0, icon: CheckCircle, color: "text-indigo-500", bgColor: "bg-indigo-50", status: VISIT_STATUS.COMPLETED },
-            { name: "Cancelled Visits", value: cancelledToday ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: VISIT_STATUS.CANCELLED },
-          ]);
-          break;
-        }
-
-        case "resident": {
-          const userId = user?.id;
-          console.log("Fetching resident stats for user ID:", userId);
-          
-          if (!userId) {
-            console.error("No user ID available for resident");
-            return;
-          }
-
-          const [
-            { count: approvedToday },
-            { count: newRequestsToday },
-            { count: completedToday },
-            { count: cancelledToday }
-          ] = await Promise.all([
-            // 1. Approved Visits - approved today
-            supabase
-              .from("visits")
-              .select("*", { count: "exact", head: true })
-              .eq("host_id", userId)
-              .eq("status", VISIT_STATUS.APPROVED)
-              .gte("approved_at", utcTodayStart)
-              .lt("approved_at", utcTomorrowStart),
-            
-            // 2. New Visit Requests - pending created today
-            supabase
-              .from("visits")
-              .select("*", { count: "exact", head: true })
-              .eq("host_id", userId)
-              .eq("status", VISIT_STATUS.PENDING)
-              .gte("created_at", utcTodayStart)
-              .lt("created_at", utcTomorrowStart),
-            
-            // 3. Completed Visits - completed today
-            supabase
-              .from("visits")
-              .select("*", { count: "exact", head: true })
-              .eq("host_id", userId)
-              .eq("status", VISIT_STATUS.COMPLETED)
-              .gte("completed_at", utcTodayStart)
-              .lt("completed_at", utcTomorrowStart),
-            
-            // 4. Cancelled Visits - cancelled today
-            supabase
-              .from("visits")
-              .select("*", { count: "exact", head: true })
-              .eq("host_id", userId)
-              .eq("status", VISIT_STATUS.CANCELLED)
-              .gte("cancelled_at", utcTodayStart)
-              .lt("cancelled_at", utcTomorrowStart),
-          ]);
-
-          console.log("Resident stats:", { 
             approvedToday, 
             newRequestsToday, 
             completedToday, 
@@ -334,8 +271,8 @@ export function VisitStatsDashboard() {
               .select("*", { count: "exact", head: true })
               .eq("visitor_id", visitorId)
               .eq("status", VISIT_STATUS.COMPLETED)
-              .gte("completed_at", utcTodayStart)
-              .lt("completed_at", utcTomorrowStart),
+              .gte("check_out_time", utcTodayStart)
+              .lt("check_out_time", utcTomorrowStart),
             
             // 4. Cancelled Visits - cancelled today
             supabase
@@ -343,8 +280,8 @@ export function VisitStatsDashboard() {
               .select("*", { count: "exact", head: true })
               .eq("visitor_id", visitorId)
               .eq("status", VISIT_STATUS.CANCELLED)
-              .gte("cancelled_at", utcTodayStart)
-              .lt("cancelled_at", utcTomorrowStart),
+              .gte("created_at", utcTodayStart)
+              .lt("created_at", utcTomorrowStart),
           ]);
 
           console.log("Visitor stats:", { 
@@ -388,11 +325,54 @@ export function VisitStatsDashboard() {
     }
   };
 
-  const handleStatCardClick = (status: string) => {
-    if (status) {
-      setSelectedStatus(status);
+  const handleStatCardClick = async (status: string) => {
+    if (!status) return;
+
+    setSelectedStatus(status);
+    setOffset(0);
+    try {
+      let countQuery = supabase
+        .from("visits")
+        .select("*", { count: "exact", head: true })
+        .eq("status", status);
+
+      const { count, error: countError } = await countQuery;
+
+      if (countError) throw countError;
+      setTotalVisits(count || 0);
+
+      let query = supabase
+        .from("visits")
+        .select(
+          `
+          *,
+          visitors:visitor_id (name),
+          hosts:host_id (name)
+        `
+        )
+        .eq("status", status)
+        .order("created_at", { ascending: false })
+        .range(0, limit - 1);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const transformedData =
+        data?.map((visit) => ({
+          ...visit,
+          visitor_name: visit.visitors?.name || "Unknown Visitor",
+          host_name: visit.hosts?.name || "Unknown Host",
+        })) || [];
+
+      setSelectedVisits(transformedData as Visit[]);
       setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching visits:", error);
     }
+  };
+
+  const handleStatusChange = () => {
+    if (user?.role) fetchStats(user.role as UserRole);
   };
 
   return (
@@ -443,10 +423,18 @@ export function VisitStatsDashboard() {
       </div>
 
       {isModalOpen && selectedStatus && (
-        <VisitDetailsModal 
+        <VisitDetailsModal
           status={selectedStatus}
-          isOpen={isModalOpen} 
+          isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          userRole={user?.role}
+          userId={user?.id}
+          visits={selectedVisits}
+          onStatusChange={handleStatusChange}
+          limit={limit}
+          offset={offset}
+          setOffset={setOffset}
+          totalVisits={totalVisits}
         />
       )}
     </div>
