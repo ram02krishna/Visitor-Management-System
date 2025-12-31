@@ -144,7 +144,7 @@ export function VisitorRegistration() {
           .from("hosts")
           .select("id")
           .eq("email", formData.entityEmail)
-          .eq("role", "entity") // Make sure we're getting an entity role
+          .eq("role", "host") // Make sure we're getting an entity role
           .maybeSingle();
 
         if (entityError && entityError.code !== "PGRST116") {

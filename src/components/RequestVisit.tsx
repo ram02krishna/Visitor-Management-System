@@ -153,6 +153,7 @@ export function RequestVisit() {
         id: visitId,
         visitor_id: visitorId,
         host_id: entityId,
+        entity_id: entityId,
         purpose: formData.purpose,
         status: 'pending',
         check_in_time: formData.checkInTime ? new Date(formData.checkInTime).toISOString() : null,
@@ -168,20 +169,32 @@ export function RequestVisit() {
       const qrGeneratedUrl = await QRCode.toDataURL(JSON.stringify({ visitId, name: formData.name }));
       setQrImageUrl(qrGeneratedUrl);
 
-      await emailjs.send(
-        'service_tmagvgd',
-        'template_c4a4dpu',
-        {
-          to_name: formData.name,
-          to_email: formData.email,
-          qr_code: qrGeneratedUrl,
-          visit_id: visitId,
-          visit_purpose: formData.purpose,
-          host_name: hostName || 'N/A',
-          valid_until: new Date(formData.validUntil).toLocaleString(),
-        },
-        'ApAlChy6Mq77wiEue'
-      );
+      const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const emailTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      if (emailServiceId && emailTemplateId && emailPublicKey) {
+        try {
+          await emailjs.send(
+            emailServiceId,
+            emailTemplateId,
+            {
+              to_name: formData.name,
+              to_email: formData.email,
+              qr_code: qrGeneratedUrl,
+              visit_id: visitId,
+              visit_purpose: formData.purpose,
+              host_name: hostName || 'N/A',
+              valid_until: new Date(formData.validUntil).toLocaleString(),
+            },
+            emailPublicKey
+          );
+        } catch (emailError) {
+          console.error('Failed to send email:', emailError);
+          // Optionally, inform the user that the email could not be sent
+          // but the visit request was still created.
+        }
+      }
 
       setSuccess(true);
       setFormData({
