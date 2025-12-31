@@ -627,6 +627,3 @@ export function VisitorRegistration() {
     </div>
   );
 }
-
-
-

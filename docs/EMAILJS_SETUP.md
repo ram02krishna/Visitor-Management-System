@@ -56,7 +56,7 @@ This guide will walk you through setting up EmailJS for automated visitor email 
 3. **Template Name**: "Visitor Registration QR Code"
 4. **Template Content**: Copy and paste this HTML:
 
-```html
+\`\`\`html
 <!DOCTYPE html>
 <html>
 <head>
@@ -203,12 +203,12 @@ This guide will walk you through setting up EmailJS for automated visitor email 
     </div>
 </body>
 </html>
-```
+\`\`\`
 
 5. **Subject Line**: Enter this:
-   ```
+   \`\`\`
    Your Visit Confirmation & QR Code - {{visit_purpose}}
-   ```
+   \`\`\`
 
 6. **Template Variables** - Verify these are detected:
    - `{{to_name}}`
@@ -257,7 +257,7 @@ This guide will walk you through setting up EmailJS for automated visitor email 
 1. Open your `.env` file (create one if it doesn't exist)
 2. Add these lines with your actual values:
 
-```env
+\`\`\`env
 # Supabase Configuration (you should already have these)
 VITE_SUPABASE_URL="your-supabase-url"
 VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
@@ -266,15 +266,15 @@ VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
 VITE_EMAILJS_SERVICE_ID="service_abc1234"      # Replace with your Service ID
 VITE_EMAILJS_TEMPLATE_ID="template_xyz5678"    # Replace with your Template ID
 VITE_EMAILJS_PUBLIC_KEY="AbC123XyZ456"         # Replace with your Public Key
-```
+\`\`\`
 
 3. **Save the file**
 4. **Restart your development server**:
-   ```bash
+   \`\`\`bash
    # Stop the current server (Ctrl+C)
    # Start it again
    npm run dev
-   ```
+   \`\`\`
 
 ---
 
