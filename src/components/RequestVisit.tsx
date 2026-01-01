@@ -88,7 +88,7 @@ export function RequestVisit() {
           .from('hosts')
           .select('id, name')
           .eq('email', formData.entityEmail)
-          .eq('role', 'host')
+          .in('role', ['host', 'admin'])
           .maybeSingle();
 
         if (entityError && entityError.code !== 'PGRST116') {
@@ -188,6 +188,7 @@ export function RequestVisit() {
               visit_purpose: formData.purpose,
               purpose: formData.purpose, // Alternative naming
               host_name: hostName || 'N/A',
+              host_email: formData.entityEmail || 'N/A',
               valid_until: new Date(formData.validUntil).toLocaleString(),
             },
             emailPublicKey
