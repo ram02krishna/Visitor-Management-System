@@ -164,6 +164,10 @@ CREATE POLICY "visitors_insert_public"
   ON visitors FOR INSERT
   WITH CHECK (true);
 
+CREATE POLICY "visitors_select_public"
+  ON visitors FOR SELECT
+  USING (true);
+
 CREATE POLICY "visitors_select_authenticated"
   ON visitors FOR SELECT
   USING (auth.role() = 'authenticated');

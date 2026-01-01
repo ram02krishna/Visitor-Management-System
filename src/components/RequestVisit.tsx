@@ -181,9 +181,12 @@ export function RequestVisit() {
             {
               to_name: formData.name,
               to_email: formData.email,
+              email: formData.email, // Alternative naming
+              name: formData.name, // Alternative naming
               qr_code: qrGeneratedUrl,
               visit_id: visitId,
               visit_purpose: formData.purpose,
+              purpose: formData.purpose, // Alternative naming
               host_name: hostName || 'N/A',
               valid_until: new Date(formData.validUntil).toLocaleString(),
             },

@@ -28,7 +28,7 @@ export function PreRegisterVisitor() {
 
   // Pre-fill host email if the current user is a host
   useState(() => {
-    if (user?.role === 'host' && user.email) {
+    if ((user?.role === 'host' || user?.role === 'admin') && user.email) {
       setValue('hostEmail', user.email);
     }
   });
@@ -389,7 +389,7 @@ export function PreRegisterVisitor() {
                         type="email"
                         id="hostEmail"
                         {...register('hostEmail', { required: 'Host email is required' })}
-                        disabled={user?.role === 'host'}
+                        disabled={user?.role === 'host' || user?.role === 'admin'}
                         className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-slate-700"
                       />
                       {errors.hostEmail && <p className="mt-1 text-sm text-red-600">{errors.hostEmail.message}</p>}
