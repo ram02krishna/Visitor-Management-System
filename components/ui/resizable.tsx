@@ -3,6 +3,7 @@ import {
   Panel as ResizablePrimitivePanel,
   Separator as ResizablePrimitiveSeparator,
 } from 'react-resizable-panels'
+import { GripVertical } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
