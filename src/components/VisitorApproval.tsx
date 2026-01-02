@@ -1,59 +1,93 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { CheckCircle, XCircle, Search } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { CheckCircle, XCircle, Search, CircleDollarSign } from 'lucide-react';
+import emailjs from '@emailjs/browser';
+import { toast } from "../../hooks/use-toast";
 import { supabase } from '../lib/supabase';
+
+import { useDebounce } from '../../hooks/use-debounce';
 import type { Database } from '../lib/database.types';
 import QRCode from 'qrcode';
-import emailjs from '@emailjs/browser';
 
-type Visit = Database['public']['Tables']['visits']['Row'] & {
+type VisitorApprovalVisit = Database['public']['Tables']['visits']['Row'] & {
   visitors: Database['public']['Tables']['visitors']['Row'];
 };
 
-const useDebounce = <T,>(value: T, delay: number): T => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
-
 export function VisitorApproval() {
-  const [visits, setVisits] = useState<Visit[]>([]);
+  const [visits, setVisits] = useState<VisitorApprovalVisit[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  const handleComplete = async (visitId: string) => {
+    try {
+      // Fetch the current visit details first to check check_in_time
+      const { data: currentVisit, error: fetchError } = await supabase
+        .from('visits')
+        .select('*')
+        .eq('id', visitId)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (currentVisit.status !== 'approved' && currentVisit.status !== 'checked-in') { // Changed from 'approved' only
+        toast.error('Visit must be approved or checked-in before completion.');
+        return;
+      }
+      if (!currentVisit.check_in_time) {
+        toast.error('Visitor has not checked in yet.');
+        return;
+      }
+      if (currentVisit.check_out_time) {
+        toast.error('Visit already completed.');
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from('visits')
+        .update({
+          status: 'completed',
+          check_out_time: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', visitId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      toast.success('Visit completed successfully!');
+      loadVisits(); // Reload visits to update the UI
+    } catch (error) {
+      console.error('Failed to complete visit:', error);
+      toast.error('Failed to complete visit.');
+    }
+  };
 
   const loadVisits = async () => {
     setLoading(true);
     try {
       let query = supabase
         .from('visits')
-        .select('*, visitors(*)')
-        .eq('status', 'pending')
+        .select('*, visitors(*), check_in_time, check_out_time')
+        .in('status', ['pending', 'approved']) // Fetch pending and approved visits
         .order('created_at', { ascending: false });
 
       if (debouncedSearchTerm) {
         query = query.or(`visitors.name.ilike.%${debouncedSearchTerm}%,visitors.email.ilike.%${debouncedSearchTerm}%,purpose.ilike.%${debouncedSearchTerm}%`);
       }
 
-      const { data, error } = await query;
+      const { data, error: queryError } = await query;
 
-      if (error) {
-        throw error;
+      if (queryError) {
+        throw queryError;
       }
       
-      setVisits(data as Visit[]);
-    } catch (error) {
+      setVisits(data as VisitorApprovalVisit[]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       toast.error('Failed to load pending visits');
     } finally {
       setLoading(false);
@@ -66,7 +100,7 @@ export function VisitorApproval() {
 
   const handleApproval = async (visitId: string, approved: boolean) => {
     try {
-      const { data: updatedData, error } = await supabase
+      const { data: updatedData, error: updateError } = await supabase
         .from('visits')
         .update({
           status: approved ? 'approved' : 'denied',
@@ -76,13 +110,13 @@ export function VisitorApproval() {
         .select('*, visitors(*)')
         .single();
 
-      if (error) {
-        throw error;
+      if (updateError) {
+        throw updateError;
       }
 
       toast.success(`Visit ${approved ? 'approved' : 'denied'} successfully`);
 
-      if (approved && updatedData) {
+      if (approved && updatedData as VisitorApprovalVisit) {
         const qrData = JSON.stringify({
           visitId: updatedData.id,
           name: updatedData.visitors.name,
@@ -110,11 +144,13 @@ export function VisitorApproval() {
           toast.success('Approval email sent successfully!');
         } catch (emailError) {
           console.error('Failed to send approval email:', emailError);
+          toast.error('Failed to send approval email.');
         }
       }
 
       loadVisits();
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       toast.error('Failed to update visit status');
     }
   };
@@ -200,20 +236,42 @@ export function VisitorApproval() {
                           {format(new Date(visit.created_at), 'PPp')}
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <button
-                            onClick={() => handleApproval(visit.id, true)}
-                            className="inline-flex items-center justify-center p-2 text-green-600 dark:text-green-400 hover:text-white hover:bg-green-600 dark:hover:bg-green-500 rounded-lg mr-2 transition-all duration-300"
-                            title="Approve Visit"
-                          >
-                            <CheckCircle className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleApproval(visit.id, false)}
-                            className="inline-flex items-center justify-center p-2 text-red-600 dark:text-red-400 hover:text-white hover:bg-red-600 dark:hover:bg-red-500 rounded-lg transition-all duration-300"
-                            title="Deny Visit"
-                          >
-                            <XCircle className="h-5 w-5" />
-                          </button>
+                          {visit.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleApproval(visit.id, true)}
+                                className="inline-flex items-center justify-center p-2 text-green-600 dark:text-green-400 hover:text-white hover:bg-green-600 dark:hover:bg-green-500 rounded-lg mr-2 transition-all duration-300"
+                                title="Approve Visit"
+                                disabled={loading}
+                              >
+                                <CheckCircle className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => handleApproval(visit.id, false)}
+                                className="inline-flex items-center justify-center p-2 text-red-600 dark:text-red-400 hover:text-white hover:bg-red-600 dark:hover:bg-red-500 rounded-lg transition-all duration-300"
+                                title="Deny Visit"
+                                disabled={loading}
+                              >
+                                <XCircle className="h-5 w-5" />
+                              </button>
+                            </>
+                          )}
+                          {visit.status === 'approved' && visit.check_in_time && !visit.check_out_time && (
+                            <button
+                              onClick={() => handleComplete(visit.id)}
+                              className="inline-flex items-center justify-center p-2 text-blue-600 dark:text-blue-400 hover:text-white hover:bg-blue-600 dark:hover:bg-blue-500 rounded-lg transition-all duration-300"
+                              title="Complete Visit"
+                              disabled={loading}
+                            >
+                              <CircleDollarSign className="h-5 w-5" />
+                            </button>
+                          )}
+                          {visit.status === 'completed' && (
+                            <span className="text-gray-500 dark:text-gray-400">Completed</span>
+                          )}
+                          {visit.status === 'denied' && (
+                            <span className="text-red-500 dark:text-red-400">Denied</span>
+                          )}
                         </td>
                       </tr>
                     )))}

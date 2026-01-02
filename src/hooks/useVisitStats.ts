@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { User } from '../store/auth';
 
+
+
 export type StatItem = {
   name: string;
   value: string | number;
@@ -81,6 +83,7 @@ export const useVisitStats = (user: User | null) => {
             supabase.from("visits").select("*", { count: "exact", head: true }).in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]),
           ];
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const roleFilter = (q: any) => {
             if (role === 'host') return q.eq('host_id', user.id);
             return q;
@@ -101,8 +104,14 @@ export const useVisitStats = (user: User | null) => {
       }
 
       setStats(statsData);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      let errorMessage = "An unknown error occurred while fetching stats.";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -4,7 +4,7 @@
 
 -- ENUM Creation (duplicate safe)
 DO $$ BEGIN
-  CREATE TYPE visit_status AS ENUM ('pending', 'approved', 'denied', 'completed', 'cancelled');
+  CREATE TYPE visit_status AS ENUM ('pending', 'approved', 'denied', 'completed', 'cancelled', 'checked-in');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
@@ -415,11 +415,21 @@ CREATE TRIGGER update_visits_updated_at
 
 CREATE OR REPLACE FUNCTION set_approved_timestamp()
 RETURNS TRIGGER AS $$
+DECLARE
+  approving_host_id uuid;
 BEGIN
   IF NEW.status = 'approved' AND (OLD.status IS NULL OR OLD.status != 'approved') THEN
     NEW.approved_at = now();
     IF auth.uid() IS NOT NULL THEN
-      NEW.approved_by = auth.uid();
+      -- Get the host_id corresponding to the authenticated user's auth.uid()
+      SELECT id INTO approving_host_id FROM hosts WHERE auth_id = auth.uid();
+      IF approving_host_id IS NOT NULL THEN
+        NEW.approved_by = approving_host_id;
+      ELSE
+        -- Optionally handle cases where auth.uid() does not correspond to a host record
+        -- For now, we'll let it be NULL if no host is found, or an error if approved_by is NOT NULL
+        -- Given approved_by is nullable, setting to NULL is fine if host doesn't exist
+      END IF;
     END IF;
   END IF;
   RETURN NEW;
@@ -901,6 +911,34 @@ COMMENT ON FUNCTION get_visitor_stats IS 'Get visitor statistics for a date rang
 COMMENT ON FUNCTION get_my_pending_visits IS 'Get pending visits for the current host';
 COMMENT ON FUNCTION export_visits IS 'Export visit data (admin/guard only)';
 COMMENT ON FUNCTION get_analytics IS 'Get comprehensive analytics dashboard data (admin/guard only)';
+
+-- =====================================================
+-- AUTO-CREATE HOST ON SIGNUP
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION public.create_public_host_on_signup()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.hosts (auth_id, name, email, role, active, department_id)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+    NEW.email,
+    'host',
+    true,
+    (NEW.raw_user_meta_data->>'department_id')::uuid
+  );
+  RETURN NEW; -- Added RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.create_public_host_on_signup(); 
 
 -- =====================================================
 -- END OF SCHEMA

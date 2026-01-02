@@ -5,18 +5,27 @@ import { Download, FileText, Table2, Calendar } from "lucide-react"
 import { supabase } from "../lib/supabase"
 import { toast } from "react-hot-toast"
 import { format } from "date-fns"
+import type { Database } from '../lib/database.types'
 
 type ExportFormat = "csv" | "json"
 type DataType = "visits" | "visitors" | "users"
 
-export function ExportData() {
-  const [exportFormat, setExportFormat] = useState<ExportFormat>("csv")
-  const [dataType, setDataType] = useState<DataType>("visits")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [isExporting, setIsExporting] = useState(false)
+type ExportRow =
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | (Database['public']['Tables']['visits']['Row'] & { [key: string]: any })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | (Database['public']['Tables']['visitors']['Row'] & { [key: string]: any })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | (Database['public']['Tables']['hosts']['Row'] & { [key: string]: any });
 
-  const exportToCSV = (data: any[], filename: string) => {
+export function ExportData() {
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
+  const [dataType, setDataType] = useState<DataType>("visits");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportToCSV = (data: ExportRow[], filename: string) => {
     if (!data || data.length === 0) {
       toast.error("No data to export")
       return
@@ -35,7 +44,7 @@ export function ExportData() {
     link.click()
   }
 
-  const exportToJSON = (data: any[], filename: string) => {
+  const exportToJSON = (data: ExportRow[], filename: string) => {
     if (!data || data.length === 0) {
       toast.error("No data to export")
       return

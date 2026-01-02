@@ -80,32 +80,8 @@ export const useAuthStore = create<AuthState>((set) => ({
             error: null,
           });
         } else {
-          // If no host data is found, create a new host record
-          console.log('[Auth] No host data found, creating a new host...');
-          const { data: newHost, error: newHostError } = await supabase
-            .from('hosts')
-            .insert({
-              auth_id: session.user.id,
-              name: session.user.user_metadata.full_name || 'New User',
-              email: session.user.email!,
-              role: 'host', 
-              active: true,
-            })
-            .select()
-            .single();
-
-          if (newHostError) {
-            console.error('[Auth] Error creating new host:', newHostError);
-            throw newHostError;
-          }
-
-          console.log('[Auth] New host created:', newHost);
-          set({
-            user: newHost as User,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
+          console.log('[Auth] No host data found for session user.');
+          set({ isAuthenticated: false, isLoading: false, user: null });
         }
       } else {
         console.log('[Auth] No active session found');
@@ -194,6 +170,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: name,
+            department_id: departmentId,
+          },
+        },
       });
 
       if (signUpError) {
@@ -207,23 +189,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       console.log('[Auth] Auth user created:', authData.user.id);
-      console.log('[Auth] Creating host record in database...');
-
-      const { error: hostError } = await supabase.from("hosts").insert({
-        auth_id: authData.user.id,
-        name,
-        email,
-        department_id: departmentId,
-        role: "host",
-        active: true,
-      });
-
-      if (hostError) {
-        console.error('[Auth] Failed to create host record:', hostError);
-        throw new Error("Failed to complete registration. Please contact support.");
-      }
       
-      console.log('[Auth] Signup successful');
+      // Host record will be created by a database trigger.
+      // Now, simply set loading to false and clear error.
+      console.log('[Auth] Signup successful; host record handled by trigger.');
       set({ isLoading: false, error: null });
     } catch (error: unknown) {
       console.error('[Auth] Signup failed:', (error as Error).message);

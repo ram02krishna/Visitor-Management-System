@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
-import { RealtimeChannel } from "@supabase/supabase-js";
+
 import { AlertCircle } from "lucide-react";
 import { VisitDetailsModal, Visit } from "./VisitDetailsModal";
 import { useNavigate } from "react-router-dom";
@@ -29,9 +29,6 @@ export function Dashboard() {
   const [offset, setOffset] = useState(0);
   const [totalVisits, setTotalVisits] = useState(0);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  
-  const subscriptionRef = useRef<RealtimeChannel | null>(null);
-  const isSubscribedRef = useRef(false);
 
   const handleStatCardClick = useCallback(async (status: string) => {
     if (status === "total_users") {
@@ -123,8 +120,14 @@ export function Dashboard() {
         const { error } = await supabase.from("visits").select("id").limit(1);
         if (error) setConnectionError(`Connection error: ${error.message}`);
         else setConnectionError(null);
-      } catch (err: any) {
-        setConnectionError(`Connection exception: ${err.message}`);
+      } catch (err: unknown) {
+        let errorMessage = "An unknown error occurred.";
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        } else if (typeof err === "string") {
+          errorMessage = err;
+        }
+        setConnectionError(`Connection exception: ${errorMessage}`);
       } finally {
         setConnectionTested(true);
       }
@@ -134,38 +137,23 @@ export function Dashboard() {
       testConnection();
     }
 
-    if (!isSubscribedRef.current) {
-      const channel = supabase
-        .channel("visits_realtime")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "visits" },
-          () => {
-            fetchStats();
-            setLastRefresh(new Date());
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') isSubscribedRef.current = true;
-          else isSubscribedRef.current = false;
-        });
-      subscriptionRef.current = channel;
-    }
+    const channel = supabase
+      .channel("visits_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "visits" },
+        () => {
+          fetchStats();
+          setLastRefresh(new Date());
+        }
+      )
+      .subscribe();
 
     return () => {
       clearInterval(refreshInterval);
+      supabase.removeChannel(channel);
     };
   }, [user?.role, connectionTested, fetchStats]);
-
-  useEffect(() => {
-    return () => {
-      if (subscriptionRef.current) {
-        supabase.removeChannel(subscriptionRef.current);
-        isSubscribedRef.current = false;
-        subscriptionRef.current = null;
-      }
-    };
-  }, []);
 
   const handleStatusChange = () => {
     fetchStats();

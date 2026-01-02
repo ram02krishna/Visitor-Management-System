@@ -15,6 +15,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actionTypes = {
   ADD_TOAST: 'ADD_TOAST',
   UPDATE_TOAST: 'UPDATE_TOAST',
@@ -139,7 +140,18 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, 'id'>
 
-function toast({ ...props }: Toast) {
+type ToastFn = (props: Toast) => {
+  id: string
+  dismiss: () => void
+  update: (props: ToasterToast) => void
+}
+
+interface ToastWithHelpers extends ToastFn {
+  success: (description: string, title?: string) => void
+  error: (description: string, title?: string) => void
+}
+
+const toastFn: ToastFn = ({ ...props }) => {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -167,6 +179,15 @@ function toast({ ...props }: Toast) {
     update,
   }
 }
+
+const toast = Object.assign(toastFn, {
+  success: (description: string, title?: string) => {
+    toastFn({ description, title, variant: 'default' })
+  },
+  error: (description: string, title?: string) => {
+    toastFn({ description, title, variant: 'destructive' })
+  },
+}) as ToastWithHelpers
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
-import { toast } from 'react-hot-toast';
+import { toast } from "../../hooks/use-toast";
 import { Camera, User, Check, X, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 import emailjs from '@emailjs/browser';
@@ -36,7 +36,8 @@ export function ScanQrCode() {
           },
           () => {}
         );
-      } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_err) {
         setError("Failed to start QR code scanner. Please ensure camera permissions are granted.");
       }
     };
@@ -73,9 +74,15 @@ export function ScanQrCode() {
         }
 
         setVisit(data as Visit);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch visit details.');
-        toast.error(err.message || 'Failed to fetch visit details.');
+      } catch (err: unknown) {
+        let errorMessage = "Failed to fetch visit details.";
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        } else if (typeof err === "string") {
+          errorMessage = err;
+        }
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -88,9 +95,20 @@ export function ScanQrCode() {
     if (!visit) return;
     setLoading(true);
     try {
+      if (visit.status !== 'approved') {
+        toast.error('Visit must be approved before check-in.');
+        setLoading(false);
+        return;
+      }
+      if (visit.check_in_time) {
+        toast.error('Visitor already checked in.');
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('visits')
-        .update({ status: 'approved', check_in_time: new Date().toISOString() })
+        .update({ check_in_time: new Date().toISOString() }) // Only update check_in_time
         .eq('id', visit.id);
 
       if (error) {
@@ -117,6 +135,7 @@ export function ScanQrCode() {
           );
         } catch (emailError) {
           console.error('Failed to send check-in email to host:', emailError);
+          toast.error('Failed to send check-in email to host.');
         }
       } else {
         console.warn('EmailJS credentials for check-in notification not configured.');
@@ -136,8 +155,14 @@ export function ScanQrCode() {
           },
           () => {}
         );
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to check in visitor.');
+    } catch (err: unknown) {
+      let errorMessage = "Failed to check in visitor.";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      }
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -169,8 +194,14 @@ export function ScanQrCode() {
           },
           () => {}
         );
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to deny visitor.');
+    } catch (err: unknown) {
+      let errorMessage = "Failed to deny visitor.";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      }
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
