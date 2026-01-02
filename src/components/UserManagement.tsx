@@ -13,17 +13,33 @@ type AddUserFormData = {
   department_id: string;
   role: 'admin' | 'guard' | 'host';
   password_confirm: string;
-  password
-: string;
+  password: string;
+};
+
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 };
 
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<Host[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-
-
+  const [loading, setLoading] = useState(false);
   const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState(false);
+  
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const handleToggleModal = () => {
     setIsUserManagementModalOpen(!isUserManagementModalOpen);
@@ -37,13 +53,22 @@ export function UserManagement() {
   } = useForm<AddUserFormData>();
 
   async function fetchUsers() {
-    const { data, error } = await supabase.from('hosts').select('*');
+    setLoading(true);
+    let query = supabase.from('hosts').select('*');
+
+    if (debouncedSearchTerm) {
+      query = query.or(`name.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%`);
+    }
+
+    const { data, error } = await query;
+
     if (error) {
       toast.error('Failed to fetch users');
       console.error(error);
     } else {
       setUsers(data);
     }
+    setLoading(false);
   }
 
   async function fetchDepartments() {
@@ -58,13 +83,11 @@ export function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
+  }, [debouncedSearchTerm]);
+
+  useEffect(() => {
     fetchDepartments();
   }, []);
-
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const onSubmit = async (formData: AddUserFormData) => {
     if (formData.password !== formData.password_confirm) {
@@ -170,57 +193,67 @@ export function UserManagement() {
                     </tr>
                     </thead>
                   <tbody className="divide-y divide-gray-200 bg-white dark:bg-slate-900 dark:divide-slate-700">
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id}>
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
-                          {user.name}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-gray-400" />
-                            {user.email}
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
-                          <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow-sm">
-                              <Shield className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-                            </div>
-                            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 dark:from-purple-900/50 dark:to-indigo-900/50 dark:text-purple-200 border border-purple-200 dark:border-purple-800">
-                              {user.role}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${ 
-                            user.active
-                              ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 dark:from-emerald-900/50 dark:to-green-900/50 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
-                              : 'bg-gradient-to-r from-red-100 to-rose-100 text-red-800 dark:from-red-900/50 dark:to-rose-900/50 dark:text-red-200 border border-red-300 dark:border-red-800'
-                          }`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${
-                              user.active ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
-                            }`} />
-                            {user.active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              className="group p-2 rounded-lg bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/30 dark:hover:bg-sky-900/50 transition-all duration-200" 
-                              title="Edit User"
-                            >
-                              <Edit3 className="h-4 w-4 text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300" strokeWidth={2} />
-                            </button>
-                            <button 
-                              className="group p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition-all duration-200" 
-                              title="Delete User"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300" strokeWidth={2} />
-                            </button>
-                          </div>
-                        </td>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-8 text-gray-500">Loading...</td>
                       </tr>
-                    ))}
+                    ) : users.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-8 text-gray-500">No users found.</td>
+                      </tr>
+                    ) : (
+                      users.map((user) => (
+                        <tr key={user.id}>
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                            {user.name}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4 text-gray-400" />
+                              {user.email}
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow-sm">
+                                <Shield className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+                              </div>
+                              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 dark:from-purple-900/50 dark:to-indigo-900/50 dark:text-purple-200 border border-purple-200 dark:border-purple-800">
+                                {user.role}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${ 
+                              user.active
+                                ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 dark:from-emerald-900/50 dark:to-green-900/50 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
+                                : 'bg-gradient-to-r from-red-100 to-rose-100 text-red-800 dark:from-red-900/50 dark:to-rose-900/50 dark:text-red-200 border border-red-300 dark:border-red-800'
+                            }`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${
+                                user.active ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+                              }`} />
+                              {user.active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                className="group p-2 rounded-lg bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/30 dark:hover:bg-sky-900/50 transition-all duration-200" 
+                                title="Edit User"
+                              >
+                                <Edit3 className="h-4 w-4 text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300" strokeWidth={2} />
+                              </button>
+                              <button 
+                                className="group p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition-all duration-200" 
+                                title="Delete User"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300" strokeWidth={2} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

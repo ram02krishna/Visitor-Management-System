@@ -98,7 +98,11 @@ export function RequestVisit() {
         if (entityData) {
           entityId = entityData.id;
           hostName = entityData.name;
+        } else {
+          throw new Error('Host not found.');
         }
+      } else {
+        throw new Error('Host email is required.');
       }
 
       let visitorId;
@@ -170,33 +174,47 @@ export function RequestVisit() {
       setQrImageUrl(qrGeneratedUrl);
 
       const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const emailTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const visitorTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const hostTemplateId = import.meta.env.VITE_EMAILJS_HOST_TEMPLATE_ID;
       const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-      if (emailServiceId && emailTemplateId && emailPublicKey) {
+      if (emailServiceId && visitorTemplateId && emailPublicKey) {
         try {
           await emailjs.send(
             emailServiceId,
-            emailTemplateId,
+            visitorTemplateId,
             {
               to_name: formData.name,
               to_email: formData.email,
-              email: formData.email, // Alternative naming
-              name: formData.name, // Alternative naming
               qr_code: qrGeneratedUrl,
               visit_id: visitId,
               visit_purpose: formData.purpose,
-              purpose: formData.purpose, // Alternative naming
               host_name: hostName || 'N/A',
-              host_email: formData.entityEmail || 'N/A',
               valid_until: new Date(formData.validUntil).toLocaleString(),
             },
             emailPublicKey
           );
         } catch (emailError) {
-          console.error('Failed to send email:', emailError);
-          // Optionally, inform the user that the email could not be sent
-          // but the visit request was still created.
+          console.error('Failed to send email to visitor:', emailError);
+        }
+      }
+      
+      if (emailServiceId && hostTemplateId && emailPublicKey) {
+        try {
+          await emailjs.send(
+            emailServiceId,
+            hostTemplateId,
+            {
+              to_name: hostName,
+              to_email: formData.entityEmail,
+              visitor_name: formData.name,
+              visit_purpose: formData.purpose,
+              dashboard_link: window.location.origin + '/approval',
+            },
+            emailPublicKey
+          );
+        } catch (emailError) {
+          console.error('Failed to send email to host:', emailError);
         }
       }
 

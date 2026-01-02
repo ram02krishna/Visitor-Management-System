@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { Toaster } from "react-hot-toast"
 
 import { ErrorBoundary } from "./components/ErrorBoundary"
@@ -25,6 +25,7 @@ import { RequestVisit } from "./components/RequestVisit"
 import { BulkVisitorUpload } from "./components/BulkVisitorUpload"
 import { ExportData } from "./components/ExportData"
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard"
+import { ScanQrCode } from "./components/ScanQrCode"
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
@@ -43,50 +44,21 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />
 }
 
-function RedirectManager() {
-  const { isAuthenticated, isLoading } = useAuthStore()
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && location.pathname === "/") {
-      navigate("/dashboard")
-    }
-  }, [isAuthenticated, isLoading, navigate, location.pathname])
-
-  return null
-}
-
 function App() {
   const initializeAuth = useAuthStore((state) => state.initialize)
   const [authInitialized, setAuthInitialized] = useState(false)
 
   useEffect(() => {
-    console.log("[App] Starting authentication initialization...")
-    initializeAuth()
-      .then(() => {
-        console.log("[App] Authentication initialized successfully")
-      })
-      .catch((error) => {
-        console.error("[App] Authentication initialization failed:", error)
-      })
-      .finally(() => {
-        setAuthInitialized(true)
-        console.log("[App] Auth initialization complete")
-      })
+    initializeAuth().finally(() => setAuthInitialized(true))
   }, [initializeAuth])
 
   if (!authInitialized) {
-    console.log("[App] Waiting for auth initialization...")
     return <div className="loading">🔄 Initializing authentication...</div>
   }
-
-  console.log("[App] Rendering main application")
 
   return (
     <ErrorBoundary>
       <Router>
-        <RedirectManager />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
@@ -94,26 +66,27 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/display" element={<PublicDisplay />} />
           <Route path="/request-visit" element={<RequestVisit />} />
+          <Route path="/users" element={<Navigate to="/app/users" replace />} />
 
           {/* Private Routes */}
           <Route
-            path="/dashboard"
             element={
               <PrivateRoute>
                 <Layout />
               </PrivateRoute>
             }
           >
-            <Route index element={<Dashboard />} />
-            <Route path="register" element={<RegisterVisitor />} />
-            <Route path="approval" element={<VisitorApproval />} />
-            <Route path="users" element={<UserManagement />} />
-            <Route path="logs" element={<VisitLogs />} />
-            <Route path="register-visitor" element={<VisitorRegistration />} />
-            <Route path="pre-register-visitor" element={<PreRegisterVisitor />} />
-            <Route path="bulk-visitor-upload" element={<BulkVisitorUpload />} />
-            <Route path="export" element={<ExportData />} />
-            <Route path="analytics" element={<AnalyticsDashboard />} />
+            <Route path="/app/dashboard" element={<Dashboard />} />
+            <Route path="/app/register" element={<RegisterVisitor />} />
+            <Route path="/app/approval" element={<VisitorApproval />} />
+            <Route path="/app/users" element={<UserManagement />} />
+            <Route path="/app/logs" element={<VisitLogs />} />
+            <Route path="/app/scan" element={<ScanQrCode />} />
+            <Route path="/app/register-visitor" element={<VisitorRegistration />} />
+            <Route path="/app/pre-register-visitor" element={<PreRegisterVisitor />} />
+            <Route path="/app/bulk-visitor-upload" element={<BulkVisitorUpload />} />
+            <Route path="/app/export" element={<ExportData />} />
+            <Route path="/app/analytics" element={<AnalyticsDashboard />} />
           </Route>
         </Routes>
         <Toaster />

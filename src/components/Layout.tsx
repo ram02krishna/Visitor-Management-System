@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { Outlet, Link, useNavigate } from "react-router-dom"
 import { useAuthStore } from "../store/auth"
-import { LogOut, Menu, User, Users, Home, ClipboardList, X, Download, TrendingUp } from "lucide-react"
+import { LogOut, Menu, Home, X } from "lucide-react"
 import { ThemeSwitcher } from "./ThemeSwitcher"
+import { navLinks } from "../lib/navigation"
 
 export function Layout() {
   const { user, logout } = useAuthStore()
@@ -15,6 +16,8 @@ export function Layout() {
     logout()
     navigate("/")
   }
+  
+  const accessibleNavLinks = user ? navLinks.filter(link => link.roles.includes(user.role)) : [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
@@ -42,7 +45,7 @@ export function Layout() {
                 </svg>
               </button>
               <Link
-                to="/dashboard"
+                to="/app/dashboard"
                 className="flex items-center text-gray-700 dark:text-slate-100 hover:text-sky-600 dark:hover:text-sky-400 transition-all duration-300 group"
               >
                 <div className="p-1.5 sm:p-2 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg shadow-md transition-all duration-300">
@@ -71,114 +74,20 @@ export function Layout() {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex lg:items-center lg:space-x-8">
-              {user?.role === "admin" && (
-                <>
-                  <Link
-                    to="/dashboard/users"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <Users
-                      className="h-5 w-5 mr-1 transition-transform duration-300"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                    Users
-                  </Link>
-                  <Link
-                    to="/dashboard/logs"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <ClipboardList
-                      className="h-5 w-5 mr-1 transition-transform duration-300"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                    Logs
-                  </Link>
-                  <Link
-                    to="/dashboard/pre-register-visitor"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <User
-                      className="h-5 w-5 mr-1 transition-transform duration-300"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                    Pre-register
-                  </Link>
-                  <Link
-                    to="/dashboard/bulk-visitor-upload"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <Users
-                      className="h-5 w-5 mr-1 transition-transform duration-300"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                    Bulk Upload
-                  </Link>
-                  <Link
-                    to="/dashboard/analytics"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <TrendingUp
-                      className="h-5 w-5 mr-1 transition-transform duration-300"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                    Analytics
-                  </Link>
-                  <Link
-                    to="/dashboard/export"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <Download
-                      className="h-5 w-5 mr-1 transition-transform duration-300"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                    Export
-                  </Link>
-                </>
-              )}
-
-              {user?.role === "host" && (
-                <>
-                  <Link
-                    to="/dashboard/pre-register-visitor"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <User className="h-5 w-5 mr-1 transition-transform duration-300" aria-hidden="true" />
-                    Pre-register
-                  </Link>
-                  <Link
-                    to="/dashboard/bulk-visitor-upload"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <Users className="h-5 w-5 mr-1 transition-transform duration-300" aria-hidden="true" />
-                    Bulk Upload
-                  </Link>
-                </>
-              )}
-
-              {user?.role === "guard" && (
-                <>
-                  <Link
-                    to="/dashboard/register-visitor"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <User className="h-5 w-5 mr-1 transition-transform duration-300" aria-hidden="true" />
-                    Register Visitor
-                  </Link>
-                  <Link
-                    to="/dashboard/bulk-visitor-upload"
-                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
-                  >
-                    <Users className="h-5 w-5 mr-1 transition-transform duration-300" aria-hidden="true" />
-                    Bulk Upload
-                  </Link>
-                </>
-              )}
+              {accessibleNavLinks.map(link => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 rounded-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-slate-800 group"
+                >
+                  <link.icon
+                    className="h-5 w-5 mr-1 transition-transform duration-300"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                  {link.label}
+                </Link>
+              ))}
             </div>
 
             {/* User Info & Logout Button - Desktop */}
@@ -221,98 +130,18 @@ export function Layout() {
                 </div>
               )}
 
-              {user?.role === "admin" && (
-                <>
+              {accessibleNavLinks.map(link => (
                   <Link
-                    to="/dashboard/users"
+                    key={link.href}
+                    to={link.href}
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
                   >
-                    <Users className="h-5 w-5" strokeWidth={2} />
-                    Users
+                    <link.icon className="h-5 w-5" strokeWidth={2} />
+                    {link.label}
                   </Link>
-                  <Link
-                    to="/dashboard/logs"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <ClipboardList className="h-5 w-5" strokeWidth={2} />
-                    Logs
-                  </Link>
-                  <Link
-                    to="/dashboard/pre-register-visitor"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <User className="h-5 w-5" strokeWidth={2} />
-                    Pre-register Visitor
-                  </Link>
-                  <Link
-                    to="/dashboard/bulk-visitor-upload"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <Users className="h-5 w-5" strokeWidth={2} />
-                    Bulk Upload
-                  </Link>
-                  <Link
-                    to="/dashboard/analytics"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <TrendingUp className="h-5 w-5" strokeWidth={2} />
-                    Analytics
-                  </Link>
-                  <Link
-                    to="/dashboard/export"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <Download className="h-5 w-5" strokeWidth={2} />
-                    Export Data
-                  </Link>
-                </>
-              )}
-              {user?.role === "host" && (
-                <>
-                  <Link
-                    to="/dashboard/pre-register-visitor"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <User className="h-5 w-5" strokeWidth={2} />
-                    Pre-register Visitor
-                  </Link>
-                  <Link
-                    to="/dashboard/bulk-visitor-upload"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <Users className="h-5 w-5" strokeWidth={2} />
-                    Bulk Upload
-                  </Link>
-                </>
-              )}
-              {user?.role === "guard" && (
-                <>
-                  <Link
-                    to="/dashboard/register-visitor"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <User className="h-5 w-5" strokeWidth={2} />
-                    Register Visitor
-                  </Link>
-                  <Link
-                    to="/dashboard/bulk-visitor-upload"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 mb-1"
-                  >
-                    <Users className="h-5 w-5" strokeWidth={2} />
-                    Bulk Upload
-                  </Link>
-                </>
-              )}
+              ))}
+
               {user && (
                 <button
                   onClick={() => {

@@ -5,10 +5,19 @@ import { useEffect, useState } from "react"
 import { ShieldCheck, ClipboardList, BarChart2, Menu, X } from "lucide-react"
 import { ThemeSwitcher } from "./ThemeSwitcher"
 
+import { useAuthStore } from "../store/auth"
+
 const Home = () => {
   const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { isAuthenticated } = useAuthStore()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/app/dashboard")
+    }
+  }, [isAuthenticated, navigate])
 
   useEffect(() => {
     const handleScroll = () => {

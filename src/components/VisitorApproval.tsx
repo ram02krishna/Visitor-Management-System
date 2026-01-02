@@ -11,31 +11,49 @@ type Visit = Database['public']['Tables']['visits']['Row'] & {
   visitors: Database['public']['Tables']['visitors']['Row'];
 };
 
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 export function VisitorApproval() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const loadVisits = async () => {
-    console.log('[VisitorApproval] Loading pending visits...');
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('visits')
-        .select(
-          '*, visitors(*)'
-        )
+        .select('*, visitors(*)')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
+      if (debouncedSearchTerm) {
+        query = query.or(`visitors.name.ilike.%${debouncedSearchTerm}%,visitors.email.ilike.%${debouncedSearchTerm}%,purpose.ilike.%${debouncedSearchTerm}%`);
+      }
+
+      const { data, error } = await query;
+
       if (error) {
-        console.error('[VisitorApproval] Error loading visits:', error);
         throw error;
       }
       
-      console.log('[VisitorApproval] Loaded', data?.length || 0, 'pending visits');
       setVisits(data as Visit[]);
     } catch (error) {
-      console.error('[VisitorApproval] Failed to load visits:', error);
       toast.error('Failed to load pending visits');
     } finally {
       setLoading(false);
@@ -44,12 +62,10 @@ export function VisitorApproval() {
 
   useEffect(() => {
     loadVisits();
-  }, []);
+  }, [debouncedSearchTerm]);
 
   const handleApproval = async (visitId: string, approved: boolean) => {
-    console.log('[VisitorApproval] Handling approval:', { visitId, approved });
     try {
-      console.log('[VisitorApproval] Updating visit status in database...');
       const { data: updatedData, error } = await supabase
         .from('visits')
         .update({
@@ -61,16 +77,12 @@ export function VisitorApproval() {
         .single();
 
       if (error) {
-        console.error('[VisitorApproval] Database update error:', error);
         throw error;
       }
 
-      console.log('[VisitorApproval] Visit status updated successfully');
       toast.success(`Visit ${approved ? 'approved' : 'denied'} successfully`);
 
       if (approved && updatedData) {
-        console.log('[VisitorApproval] Generating QR code for approved visit...');
-        // Generate QR code data
         const qrData = JSON.stringify({
           visitId: updatedData.id,
           name: updatedData.visitors.name,
@@ -80,13 +92,11 @@ export function VisitorApproval() {
         });
 
         const qrUrl = await QRCode.toDataURL(qrData);
-        console.log('[VisitorApproval] QR code generated successfully');
 
         try {
-          console.log('[VisitorApproval] Sending approval email to:', updatedData.visitors.email);
-          const emailResult = await emailjs.send(
-            "service_tmagvgd", // Your EmailJS Service ID
-            "template_c4a4dpu", // Your EmailJS Template ID
+          await emailjs.send(
+            "service_tmagvgd",
+            "template_c4a4dpu",
             {
               to_name: updatedData.visitors.name,
               to_email: updatedData.visitors.email,
@@ -95,42 +105,19 @@ export function VisitorApproval() {
               visit_purpose: updatedData.purpose,
               valid_until: new Date(updatedData.valid_until).toLocaleString(),
             },
-            "ApAlChy6Mq77wiEue" // Your EmailJS Public Key
+            "ApAlChy6Mq77wiEue"
           );
-
-          console.log('[VisitorApproval] Email send result:', emailResult);
-          if (emailResult.status === 200) {
-            console.log('[VisitorApproval] Email sent successfully');
-            toast.success('Approval email sent successfully!');
-          } else {
-            console.warn('[VisitorApproval] Email sending failed with status:', emailResult.status);
-          }
+          toast.success('Approval email sent successfully!');
         } catch (emailError) {
-          console.error('[VisitorApproval] Failed to send approval email:', emailError);
+          console.error('Failed to send approval email:', emailError);
         }
       }
 
-      console.log('[VisitorApproval] Reloading visits list...');
-      loadVisits(); // Reload the list after action
+      loadVisits();
     } catch (error) {
-      console.error('[VisitorApproval] Error updating visit:', error);
       toast.error('Failed to update visit status');
     }
   };
-
-  const filteredVisits = visits.filter(visit =>
-    visit.visitors.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    visit.visitors.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    visit.purpose.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-pulse text-gray-600 dark:text-gray-300">Loading pending visits...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 animate-fadeIn">
@@ -188,7 +175,16 @@ export function VisitorApproval() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white dark:bg-gray-900 dark:divide-gray-700">
-                    {filteredVisits.map((visit, index) => (
+                    {loading ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-8 text-gray-500">Loading pending visits...</td>
+                      </tr>
+                    ) : visits.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-8 text-gray-500">No pending visits found.</td>
+                      </tr>
+                    ) : (
+                      visits.map((visit, index) => (
                       <tr key={visit.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 animate-fadeInUp" style={{animationDelay: `${index * 0.05}s`}}>
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                           <div className="font-medium text-gray-900 dark:text-white">{visit.visitors.name}</div>
@@ -220,7 +216,7 @@ export function VisitorApproval() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    )))}
                   </tbody>
                 </table>
               </div>

@@ -4,7 +4,7 @@ import type { Database } from "../lib/database.types";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
 
-interface User {
+export interface User {
   id: string;
   auth_id: string;
   name: string;

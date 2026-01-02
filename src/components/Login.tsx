@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { Shield } from "lucide-react"
 import { useAuthStore } from "../store/auth"
@@ -9,11 +9,17 @@ import { BackButton } from "./BackButton"
 
 export function Login() {
   const navigate = useNavigate()
-  const { login, signInWithGoogle } = useAuthStore()
+  const { login, signInWithGoogle, isAuthenticated } = useAuthStore()
   const isLoading = useAuthStore((state) => state.isLoading)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/app/dashboard")
+    }
+  }, [isAuthenticated, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,7 +30,7 @@ export function Login() {
       console.log("[Login] Calling login function...")
       await login(email, password)
       console.log("[Login] Login successful, navigating to dashboard")
-      navigate("/dashboard")
+      navigate("/app/dashboard")
     } catch (error) {
       console.error("[Login] Login failed:", error)
       setError("Invalid credentials")
