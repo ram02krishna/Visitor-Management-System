@@ -1,38 +1,41 @@
-import { useState } from "react";
-import { supabase } from "../lib/supabase";
-import { X, Check, Ban, CheckCircle } from "lucide-react";
-import QRCode from "qrcode";
-import emailjs from "@emailjs/browser";
+"use client"
+
+import { useState } from "react"
+import { supabase } from "../lib/supabase"
+import { X, Check, Ban, CheckCircle } from "lucide-react"
+import QRCode from "qrcode"
+import emailjs from "@emailjs/browser"
+import { toast } from "react-toastify"
 
 export type Visit = {
-  id: string;
-  visitor_name: string;
-  host_name: string;
-  purpose: string;
-  status: string;
-  check_in_time?: string;
-  check_out_time?: string;
-  created_at: string;
-  approved_at?: string;
-  scheduled_time?: string;
-  visitors?: { name: string };
-  hosts?: { name: string };
-  entity_id?: string;
-};
+  id: string
+  visitor_name: string
+  host_name: string
+  purpose: string
+  status: string
+  check_in_time?: string
+  check_out_time?: string
+  created_at: string
+  approved_at?: string
+  scheduled_time?: string
+  visitors?: { name: string; email: string }
+  hosts?: { name: string }
+  entity_id?: string
+}
 
 type VisitDetailsModalProps = {
-  status: string;
-  isOpen: boolean;
-  onClose: () => void;
-  userRole?: string;
-  userId?: string;
-  visits: Visit[];
-  onStatusChange: () => void;
-  limit: number;
-  offset: number;
-  setOffset: (offset: number) => void;
-  totalVisits: number;
-};
+  status: string
+  isOpen: boolean
+  onClose: () => void
+  userRole?: string
+  userId?: string
+  visits: Visit[]
+  onStatusChange: () => void
+  limit: number
+  offset: number
+  setOffset: (offset: number) => void
+  totalVisits: number
+}
 
 export function VisitDetailsModal({
   status,
@@ -47,15 +50,13 @@ export function VisitDetailsModal({
   setOffset,
   totalVisits,
 }: VisitDetailsModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [currentVisit, setCurrentVisit] = useState<Visit | null>(null);
-  const [actionType, setActionType] = useState<
-    "approve" | "deny" | "complete" | null
-  >(null);
+  const [loading, setLoading] = useState(false)
+  const [currentVisit, setCurrentVisit] = useState<Visit | null>(null)
+  const [actionType, setActionType] = useState<"approve" | "deny" | "complete" | null>(null)
 
   const handleStatusUpdate = async (visit: Visit, newStatus: string) => {
-    setLoading(true);
-    setCurrentVisit(visit);
+    setLoading(true)
+    setCurrentVisit(visit)
     setActionType(
       newStatus === "approved"
         ? "approve"
@@ -63,9 +64,9 @@ export function VisitDetailsModal({
           ? "deny"
           : newStatus === "completed"
             ? "complete"
-            : null
-    );
-    
+            : null,
+    )
+
     try {
       const updates = {
         status: newStatus,
@@ -75,255 +76,246 @@ export function VisitDetailsModal({
         ...(newStatus === "completed" && {
           check_out_time: new Date().toISOString(),
         }),
-      };
-      console.log("VisitDetailModal");
+      }
+
       const { data, error } = await supabase
         .from("visits")
         .update(updates)
         .eq("id", visit.id)
-        .select('*, visitors(*)')
-        .single();
+        .select("*, visitors(*)")
+        .single()
 
-      if (error) throw error;
-      else {
-        if (newStatus == 'approved') {
-          console.log("data", data);
-          // Step 3: Generate QR code with visit info
+      if (error) throw error
+
+      if (newStatus === "approved" && data) {
+        try {
           const qrData = JSON.stringify({
-            visitId:visit.id,
+            visitId: visit.id,
             name: data.visitors?.name,
             email: data.visitors?.email,
             purpose: data.purpose,
-            validUntil: data.validUntil,
-          });
+          })
 
-          const qrUrl = await QRCode.toDataURL(qrData);
+          const qrUrl = await QRCode.toDataURL(qrData)
 
-          // Step 4: Send Email using EmailJS
-          try {
-            const emailResult = await emailjs.send(
-              "", // Your EmailJS Service ID
-              "", // Your EmailJS Template ID
+          const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
+          const emailTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+          const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+
+          if (emailServiceId && emailTemplateId && emailPublicKey) {
+            await emailjs.send(
+              emailServiceId,
+              emailTemplateId,
               {
-                to_name:  data.visitors?.name,
-                to_email:  data.visitors?.email,
+                to_name: data.visitors?.name,
+                to_email: data.visitors?.email,
                 qr_code: qrUrl,
-                visit_id:  data.id,
-                visit_purpose:  data.purpose,
-                valid_until: new Date( data.validUntil).toLocaleString(),
+                visit_id: data.id,
+                visit_purpose: data.purpose,
+                approved_at: new Date(data.approved_at).toLocaleString(),
               },
-              "" // Your EmailJS Public Key
-            );
-
-            if (emailResult.status !== 200) {
-              console.warn("Email sending failed with status:", emailResult.status);
-            }
-          } catch (emailError) {
-            console.error("Failed to send email:", emailError);
-            // Continue execution even if email fails
+              emailPublicKey,
+            )
           }
+        } catch (emailError) {
+          console.error("Failed to send QR code email:", emailError)
         }
       }
 
-      onStatusChange();
+      onStatusChange()
+      toast.success(`Visit ${newStatus} successfully!`)
     } catch (error) {
-      console.error("Error updating visit status:", error);
+      console.error("Error updating visit status:", error)
+      toast.error("Failed to update visit status")
     } finally {
-      setLoading(false);
-      setCurrentVisit(null);
-      setActionType(null);
+      setLoading(false)
+      setCurrentVisit(null)
+      setActionType(null)
     }
-  };
+  }
 
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending":
-        return "Pending";
+        return "Pending"
       case "approved":
-        return "Approved";
+        return "Approved"
       case "completed":
-        return "Completed";
+        return "Completed"
       case "cancelled":
-        return "Cancelled";
+        return "Cancelled"
       case "denied":
-        return "Denied";
+        return "Denied"
       case "cancelled_denied":
-        return "Cancelled/Denied";
+        return "Cancelled/Denied"
       default:
-        return status;
+        return status
     }
-  };
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "text-yellow-600 bg-yellow-50";
+        return "text-yellow-600 bg-yellow-50"
       case "approved":
-        return "text-green-600 bg-green-50";
+        return "text-green-600 bg-green-50"
       case "completed":
-        return "text-indigo-600 bg-indigo-50";
+        return "text-indigo-600 bg-indigo-50"
       case "cancelled":
-        return "text-red-600 bg-red-50";
+        return "text-red-600 bg-red-50"
       case "denied":
-        return "text-red-600 bg-red-50";
+        return "text-red-600 bg-red-50"
       default:
-        return "text-gray-600 bg-gray-50";
+        return "text-gray-600 bg-gray-50"
     }
-  };
+  }
 
   const formatDateTime = (dateString?: string) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString();
-  };
+    if (!dateString) return "N/A"
+    return new Date(dateString).toLocaleString()
+  }
 
-  // Updated function to allow guards to perform actions
   const canPerformAction = (visit: Visit) => {
     if (userRole === "admin" || userRole === "guard") {
-      // Admin and guards can perform actions on any visit
-      return true;
-    } else if (userRole === "entity" && userId) {
-      // Entity can only perform actions on visits related to itself
-      return visit.entity_id === userId;
+      return true
     }
-    return false;
-  };
+    return false
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
-          <h2 className="text-xl font-semibold dark:text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col m-4 border border-gray-200 dark:border-slate-800">
+        <div className="flex items-center justify-between p-6 border-b dark:border-slate-800 bg-gradient-to-r from-sky-50 to-blue-50 dark:from-slate-800 dark:to-slate-900">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-sky-600 animate-pulse"></span>
             {getStatusLabel(status)} Visits
             {status !== "cancelled" && status !== "denied" && status !== "cancelled_denied" && " - Today"}
-            {userRole &&
-              ` (${userRole.charAt(0).toUpperCase() + userRole.slice(1)})`}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 dark:text-white transition-all"
             aria-label="Close modal"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto p-6">
           {visits.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              No {getStatusLabel(status).toLowerCase()} visits found.
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-800 mb-4">
+                <CheckCircle className="w-8 h-8 text-gray-400 dark:text-slate-600" />
+              </div>
+              <p className="text-lg font-medium text-gray-500 dark:text-slate-400">
+                No {getStatusLabel(status).toLowerCase()} visits found.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
                       Visitor
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                      Host
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
                       Purpose
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                      Requested At
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Requested
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                      Approved At
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Approved
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                      Check-In Time
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Check-In
                     </th>
                     {status === "completed" && (
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
-                        Check-Out Time
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                        Check-Out
                       </th>
                     )}
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
                   {visits.map((visit) => (
-                    <tr key={visit.id} className="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors duration-150">
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-blue-600 dark:text-blue-400">
-                        {visit.visitor_name ||
-                          (visit.visitors?.name ?? "Unknown Visitor")}
+                    <tr
+                      key={visit.id}
+                      className="hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors duration-150"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-bold">
+                            {(visit.visitor_name || visit.visitors?.name || "?")[0].toUpperCase()}
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {visit.visitor_name || visit.visitors?.name || "Unknown Visitor"}
+                            </div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {visit.host_name ||
-                          (visit.hosts?.name ?? "Unknown Host")}
-                      </td>
-                      <td className="px-4 py-4 text-sm font-medium text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                      <td className="px-6 py-4 text-sm text-gray-700 dark:text-slate-300 max-w-xs truncate">
                         {visit.purpose}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                            visit.status
-                          )}`}
+                          className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(visit.status)}`}
                         >
                           {getStatusLabel(visit.status)}
                         </span>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-slate-300">
                         {formatDateTime(visit.created_at)}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {visit.approved_at ? (
                           <span className="text-green-600 dark:text-green-400 font-semibold">
                             {formatDateTime(visit.approved_at)}
                           </span>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">N/A</span>
+                          <span className="text-gray-400 dark:text-slate-500">Pending</span>
                         )}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {visit.check_in_time ? (
                           <span className="text-green-600 dark:text-green-400 font-semibold">
                             {formatDateTime(visit.check_in_time)}
                           </span>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">Not Checked In</span>
+                          <span className="text-gray-400 dark:text-slate-500">Not Yet</span>
                         )}
                       </td>
                       {status === "completed" && (
-                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {visit.check_out_time ? (
                             <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
                               {formatDateTime(visit.check_out_time)}
                             </span>
                           ) : (
-                            <span className="text-gray-400 dark:text-gray-500">N/A</span>
+                            <span className="text-gray-400 dark:text-slate-500">N/A</span>
                           )}
                         </td>
                       )}
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {canPerformAction(visit) && (
-                          <div className="flex space-x-2">
+                          <div className="flex gap-2">
                             {visit.status === "pending" && (
                               <>
                                 <button
-                                  onClick={() =>
-                                    handleStatusUpdate(visit, "approved")
-                                  }
-                                  disabled={
-                                    loading &&
-                                    currentVisit?.id === visit.id &&
-                                    actionType === "approve"
-                                  }
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all duration-150"
+                                  onClick={() => handleStatusUpdate(visit, "approved")}
+                                  disabled={loading && currentVisit?.id === visit.id && actionType === "approve"}
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all"
                                 >
-                                  {loading &&
-                                    currentVisit?.id === visit.id &&
-                                    actionType === "approve" ? (
+                                  {loading && currentVisit?.id === visit.id && actionType === "approve" ? (
                                     <span className="animate-spin">↻</span>
                                   ) : (
                                     <>
@@ -333,19 +325,11 @@ export function VisitDetailsModal({
                                   )}
                                 </button>
                                 <button
-                                  onClick={() =>
-                                    handleStatusUpdate(visit, "denied")
-                                  }
-                                  disabled={
-                                    loading &&
-                                    currentVisit?.id === visit.id &&
-                                    actionType === "deny"
-                                  }
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-all duration-150"
+                                  onClick={() => handleStatusUpdate(visit, "denied")}
+                                  disabled={loading && currentVisit?.id === visit.id && actionType === "deny"}
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-all"
                                 >
-                                  {loading &&
-                                    currentVisit?.id === visit.id &&
-                                    actionType === "deny" ? (
+                                  {loading && currentVisit?.id === visit.id && actionType === "deny" ? (
                                     <span className="animate-spin">↻</span>
                                   ) : (
                                     <>
@@ -356,21 +340,13 @@ export function VisitDetailsModal({
                                 </button>
                               </>
                             )}
-                            {visit.status === "approved" && (
+                            {visit.status === "approved" && visit.check_in_time && (
                               <button
-                                onClick={() =>
-                                  handleStatusUpdate(visit, "completed")
-                                }
-                                disabled={
-                                  loading &&
-                                  currentVisit?.id === visit.id &&
-                                  actionType === "complete"
-                                }
-                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all duration-150"
+                                onClick={() => handleStatusUpdate(visit, "completed")}
+                                disabled={loading && currentVisit?.id === visit.id && actionType === "complete"}
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all"
                               >
-                                {loading &&
-                                  currentVisit?.id === visit.id &&
-                                  actionType === "complete" ? (
+                                {loading && currentVisit?.id === visit.id && actionType === "complete" ? (
                                   <span className="animate-spin">↻</span>
                                 ) : (
                                   <>
@@ -391,36 +367,30 @@ export function VisitDetailsModal({
           )}
         </div>
 
-        <div className="border-t dark:border-gray-700 p-4 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+        <div className="border-t dark:border-slate-800 p-6 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
           <div>
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <p className="text-sm font-semibold text-gray-700 dark:text-slate-300">
               Showing {offset + 1} to {Math.min(offset + limit, totalVisits)} of {totalVisits} results
             </p>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex gap-3">
             <button
               onClick={() => setOffset(offset - limit)}
               disabled={offset === 0}
-              className="px-4 py-2 font-semibold bg-white hover:bg-gray-100 text-gray-700 rounded-md disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white border border-gray-300 dark:border-gray-600 shadow-sm transition-all duration-150"
+              className="px-5 py-2.5 font-semibold bg-white hover:bg-gray-50 text-gray-700 rounded-lg disabled:opacity-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-gray-300 dark:border-slate-700 shadow-sm transition-all duration-150 hover:shadow-md disabled:hover:shadow-sm"
             >
               Previous
             </button>
             <button
               onClick={() => setOffset(offset + limit)}
               disabled={offset + limit >= totalVisits}
-              className="px-4 py-2 font-semibold bg-white hover:bg-gray-100 text-gray-700 rounded-md disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white border border-gray-300 dark:border-gray-600 shadow-sm transition-all duration-150"
+              className="px-5 py-2.5 font-semibold bg-white hover:bg-gray-50 text-gray-700 rounded-lg disabled:opacity-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-gray-300 dark:border-slate-700 shadow-sm transition-all duration-150 hover:shadow-md disabled:hover:shadow-sm"
             >
               Next
             </button>
           </div>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 font-semibold bg-white hover:bg-gray-100 text-gray-700 rounded-md dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white border border-gray-300 dark:border-gray-600 shadow-sm transition-all duration-150"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
-  );
+  )
 }

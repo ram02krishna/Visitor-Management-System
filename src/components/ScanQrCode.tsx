@@ -1,125 +1,129 @@
-import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
-import { supabase } from '../lib/supabase';
-import { toast } from "../../hooks/use-toast";
-import { Camera, User, Check, X, Calendar, Clock, AlertTriangle } from 'lucide-react';
-import type { Database } from '../lib/database.types';
-import emailjs from '@emailjs/browser';
+"use client"
 
-type Visit = Database['public']['Tables']['visits']['Row'] & {
-  visitors: Database['public']['Tables']['visitors']['Row'];
-  hosts: Database['public']['Tables']['hosts']['Row'];
-};
+import { useEffect, useRef, useState } from "react"
+import { Html5Qrcode } from "html5-qrcode"
+import { supabase } from "../lib/supabase"
+import { toast } from "../../hooks/use-toast"
+import { Camera, User, Check, X, Calendar, Clock, AlertTriangle } from "lucide-react"
+import type { Database } from "../lib/database.types"
+import emailjs from "@emailjs/browser"
+
+type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
+  visitors: Database["public"]["Tables"]["visitors"]["Row"]
+  hosts: Database["public"]["Tables"]["hosts"]["Row"]
+}
 
 export function ScanQrCode() {
-  const [scanResult, setScanResult] = useState<string | null>(null);
-  const [visit, setVisit] = useState<Visit | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [scanResult, setScanResult] = useState<string | null>(null)
+  const [visit, setVisit] = useState<Visit | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const scannerRef = useRef<Html5Qrcode | null>(null)
 
   useEffect(() => {
-    const scanner = new Html5Qrcode('qr-reader');
-    scannerRef.current = scanner;
+    const scanner = new Html5Qrcode("qr-reader")
+    scannerRef.current = scanner
 
     const startScanner = async () => {
       try {
         await scanner.start(
-          { facingMode: 'environment' },
+          { facingMode: "environment" },
           {
             fps: 10,
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
-            setScanResult(decodedText);
-            if(scannerRef.current?.isScanning) scannerRef.current.stop();
+            setScanResult(decodedText)
+            if (scannerRef.current?.isScanning) scannerRef.current.stop()
           },
-          () => {}
-        );
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          () => {},
+        )
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_err) {
-        setError("Failed to start QR code scanner. Please ensure camera permissions are granted.");
+        setError("Failed to start QR code scanner. Please ensure camera permissions are granted.")
       }
-    };
+    }
 
-    startScanner();
+    startScanner()
 
     return () => {
       if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop();
+        scannerRef.current.stop()
       }
-    };
-  }, []);
+    }
+  }, [])
 
   useEffect(() => {
-    if (!scanResult) return;
+    if (!scanResult) return
 
     const fetchVisitDetails = async () => {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
       try {
-        const { visitId } = JSON.parse(scanResult);
+        const { visitId } = JSON.parse(scanResult)
         if (!visitId) {
-          throw new Error('Invalid QR code format.');
+          throw new Error("Invalid QR code format.")
         }
 
         const { data, error } = await supabase
-          .from('visits')
-          .select('*, visitors(*), hosts(*)')
-          .eq('id', visitId)
-          .single();
+          .from("visits")
+          .select("*, visitors(*), hosts(*)")
+          .eq("id", visitId)
+          .single()
 
         if (error) {
-          throw error;
+          throw error
         }
 
-        setVisit(data as Visit);
+        setVisit(data as Visit)
       } catch (err: unknown) {
-        let errorMessage = "Failed to fetch visit details.";
+        let errorMessage = "Failed to fetch visit details."
         if (err instanceof Error) {
-          errorMessage = err.message;
+          errorMessage = err.message
         } else if (typeof err === "string") {
-          errorMessage = err;
+          errorMessage = err
         }
-        setError(errorMessage);
-        toast.error(errorMessage);
+        setError(errorMessage)
+        toast.error(errorMessage)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchVisitDetails();
-  }, [scanResult]);
+    fetchVisitDetails()
+  }, [scanResult])
 
   const handleCheckIn = async () => {
-    if (!visit) return;
-    setLoading(true);
+    if (!visit) return
+    setLoading(true)
     try {
-      if (visit.status !== 'approved') {
-        toast.error('Visit must be approved before check-in.');
-        setLoading(false);
-        return;
+      if (visit.status !== "approved") {
+        toast.error("Visit must be approved before check-in.")
+        setLoading(false)
+        return
       }
       if (visit.check_in_time) {
-        toast.error('Visitor already checked in.');
-        setLoading(false);
-        return;
+        toast.error("Visitor already checked in.")
+        setLoading(false)
+        return
       }
 
       const { error } = await supabase
-        .from('visits')
-        .update({ check_in_time: new Date().toISOString() }) // Only update check_in_time
-        .eq('id', visit.id);
+        .from("visits")
+        .update({
+          check_in_time: new Date().toISOString(),
+          status: "checked-in",
+        })
+        .eq("id", visit.id)
 
       if (error) {
-        throw error;
+        throw error
       }
-      toast.success('Visitor checked in successfully!');
+      toast.success("Visitor checked in successfully!")
 
-      // Send email to host
-      const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const checkinTemplateId = import.meta.env.VITE_EMAILJS_CHECKIN_TEMPLATE_ID;
-      const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
+      const checkinTemplateId = import.meta.env.VITE_EMAILJS_CHECKIN_TEMPLATE_ID
+      const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
       if (emailServiceId && checkinTemplateId && emailPublicKey) {
         try {
@@ -130,82 +134,80 @@ export function ScanQrCode() {
               to_name: visit.hosts.name,
               to_email: visit.hosts.email,
               visitor_name: visit.visitors.name,
+              check_in_time: new Date().toLocaleString(),
             },
-            emailPublicKey
-          );
+            emailPublicKey,
+          )
         } catch (emailError) {
-          console.error('Failed to send check-in email to host:', emailError);
-          toast.error('Failed to send check-in email to host.');
+          console.error("Failed to send check-in email to host:", emailError)
+          toast.error("Failed to send check-in email to host.")
         }
       } else {
-        console.warn('EmailJS credentials for check-in notification not configured.');
+        console.warn("EmailJS credentials for check-in notification not configured.")
       }
-      
-      setVisit(null);
-      setScanResult(null);
+
+      setVisit(null)
+      setScanResult(null)
       scannerRef.current?.start(
-          { facingMode: 'environment' },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-          },
-          (decodedText) => {
-            setScanResult(decodedText);
-            scannerRef.current?.stop();
-          },
-          () => {}
-        );
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        (decodedText) => {
+          setScanResult(decodedText)
+          scannerRef.current?.stop()
+        },
+        () => {},
+      )
     } catch (err: unknown) {
-      let errorMessage = "Failed to check in visitor.";
+      let errorMessage = "Failed to check in visitor."
       if (err instanceof Error) {
-        errorMessage = err.message;
+        errorMessage = err.message
       } else if (typeof err === "string") {
-        errorMessage = err;
+        errorMessage = err
       }
-      toast.error(errorMessage);
+      toast.error(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleDeny = async () => {
-    if (!visit) return;
-    setLoading(true);
+    if (!visit) return
+    setLoading(true)
     try {
-      const { error } = await supabase
-        .from('visits')
-        .update({ status: 'denied' })
-        .eq('id', visit.id);
+      const { error } = await supabase.from("visits").update({ status: "denied" }).eq("id", visit.id)
       if (error) {
-        throw error;
+        throw error
       }
-      toast.success('Visitor denied entry.');
-      setVisit(null);
-      setScanResult(null);
-       scannerRef.current?.start(
-          { facingMode: 'environment' },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-          },
-          (decodedText) => {
-            setScanResult(decodedText);
-            scannerRef.current?.stop();
-          },
-          () => {}
-        );
+      toast.success("Visitor denied entry.")
+      setVisit(null)
+      setScanResult(null)
+      scannerRef.current?.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        (decodedText) => {
+          setScanResult(decodedText)
+          scannerRef.current?.stop()
+        },
+        () => {},
+      )
     } catch (err: unknown) {
-      let errorMessage = "Failed to deny visitor.";
+      let errorMessage = "Failed to deny visitor."
       if (err instanceof Error) {
-        errorMessage = err.message;
+        errorMessage = err.message
       } else if (typeof err === "string") {
-        errorMessage = err;
+        errorMessage = err
       }
-      toast.error(errorMessage);
+      toast.error(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -223,7 +225,7 @@ export function ScanQrCode() {
         </div>
       </div>
       <div className="mt-8 max-w-2xl mx-auto">
-        <div id="qr-reader" style={{ width: '100%' }}></div>
+        <div id="qr-reader" style={{ width: "100%" }}></div>
         {error && (
           <div className="mt-4 text-red-500 text-center flex items-center justify-center gap-2">
             <AlertTriangle />
@@ -255,10 +257,18 @@ export function ScanQrCode() {
                 <p>Host: {visit.hosts.name}</p>
               </div>
               <div className="mt-6 flex justify-end gap-4">
-                <button onClick={handleDeny} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                <button
+                  onClick={handleDeny}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                >
                   <X /> Deny
                 </button>
-                <button onClick={handleCheckIn} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                <button
+                  onClick={handleCheckIn}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
                   <Check /> Check In
                 </button>
               </div>
@@ -267,5 +277,5 @@ export function ScanQrCode() {
         )}
       </div>
     </div>
-  );
+  )
 }

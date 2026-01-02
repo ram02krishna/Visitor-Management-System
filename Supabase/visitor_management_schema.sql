@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS visitors (
 CREATE TABLE IF NOT EXISTS visits (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   visitor_id uuid NOT NULL,
-  host_id uuid NOT NULL,
+  host_id uuid,
   purpose text NOT NULL,
   status visit_status DEFAULT 'pending',
   approved_at timestamptz,
@@ -250,14 +250,24 @@ CREATE POLICY "hosts_delete_admin_only"
 -- =====================================================
 
 -- Allow public insert for visitor pre-registration
-CREATE POLICY "visitors_insert_public"
+-- CREATE POLICY "visitors_insert_public"
+--   ON visitors FOR INSERT
+--   WITH CHECK (
+--     name IS NOT NULL AND
+--     email IS NOT NULL AND
+--     phone IS NOT NULL
+--   );
+
+-- Allow privileged authenticated users (admin/guard) to insert visitor records
+CREATE POLICY "visitors_insert_authenticated_privileged"
   ON visitors FOR INSERT
   WITH CHECK (
-    name IS NOT NULL AND 
-    email IS NOT NULL AND 
+    auth.role() = 'authenticated' AND
+    (is_admin(auth.uid()) OR is_guard(auth.uid())) AND
+    name IS NOT NULL AND
+    email IS NOT NULL AND
     phone IS NOT NULL
   );
-
 -- Authenticated users can view all visitors
 CREATE POLICY "visitors_select_authenticated"
   ON visitors FOR SELECT
@@ -288,16 +298,15 @@ CREATE POLICY "visitors_delete_admin_only"
 CREATE POLICY "visits_insert_public_validated"
   ON visits FOR INSERT
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM hosts 
-      WHERE id = visits.host_id 
+    (visits.host_id IS NULL OR EXISTS (
+      SELECT 1 FROM hosts
+      WHERE id = visits.host_id
       AND active = true
-    )
+    ))
     AND status = 'pending'
     AND valid_until > now()
     AND visitor_id IS NOT NULL
   );
-
 -- Authenticated users can insert visits
 CREATE POLICY "visits_insert_authenticated"
   ON visits FOR INSERT
