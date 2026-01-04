@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from "../lib/supabase";
 import { toast } from "../../hooks/use-toast";
-import { Camera, User, Calendar, Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { Camera, User, Calendar, Clock, AlertTriangle, CheckCircle, LogIn } from "lucide-react";
 import type { Database } from "../lib/database.types";
 
 type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
@@ -13,19 +13,80 @@ type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
 };
 
 export function ScanQrCode() {
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [visit, setVisit] = useState<Visit | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isScanning, setIsScanning] = useState(true);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [scannerReady, setScannerReady] = useState(false);
 
+  // Check authentication on mount
   useEffect(() => {
-    const scanner = new Html5Qrcode("qr-reader");
-    scannerRef.current = scanner;
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth check error:", error);
+          setIsAuthenticated(false);
+          setError("Authentication error. Please try logging in again.");
+        } else if (session?.user) {
+          console.log("User authenticated:", session.user.id);
+          setIsAuthenticated(true);
+          setError(null);
+        } else {
+          console.log("No active session");
+          setIsAuthenticated(false);
+          setError("You must be logged in to scan QR codes");
+        }
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        setIsAuthenticated(false);
+        setError("Failed to verify authentication");
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.user);
+      if (!session?.user) {
+        setError("You must be logged in to scan QR codes");
+        if (scannerRef.current?.isScanning) {
+          scannerRef.current.stop().catch(console.error);
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Start scanner when authenticated
+  useEffect(() => {
+    if (!isAuthenticated || checkingAuth) {
+      console.log("Not starting scanner - auth status:", { isAuthenticated, checkingAuth });
+      return;
+    }
+
+    console.log("Starting scanner for authenticated user");
+    const qrCodeDivId = "qr-reader";
+    let scanner: Html5Qrcode | null = null;
 
     const startScanner = async () => {
       try {
+        // Small delay to ensure DOM is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        scanner = new Html5Qrcode(qrCodeDivId);
+        scannerRef.current = scanner;
+
         await scanner.start(
           { facingMode: "environment" },
           {
@@ -33,14 +94,17 @@ export function ScanQrCode() {
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
+            console.log("QR Code scanned:", decodedText);
             setScanResult(decodedText);
-            setIsScanning(false);
-            if (scannerRef.current?.isScanning) {
-              scannerRef.current.stop().catch(console.error);
+            if (scanner?.isScanning) {
+              scanner.stop().catch(console.error);
             }
           },
           () => {}
         );
+        
+        setScannerReady(true);
+        console.log("Scanner started successfully");
       } catch (err) {
         console.error("Scanner error:", err);
         setError("Failed to start QR code scanner. Please ensure camera permissions are granted.");
@@ -50,14 +114,16 @@ export function ScanQrCode() {
     startScanner();
 
     return () => {
-      if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop().catch(console.error);
+      if (scanner?.isScanning) {
+        console.log("Stopping scanner during cleanup");
+        scanner.stop().catch(console.error);
       }
     };
-  }, []);
+  }, [isAuthenticated, checkingAuth]);
 
+  // Fetch visit details when QR code is scanned
   useEffect(() => {
-    if (!scanResult) return;
+    if (!scanResult || !isAuthenticated) return;
 
     const fetchVisitDetails = async () => {
       setLoading(true);
@@ -65,12 +131,6 @@ export function ScanQrCode() {
       setVisit(null);
 
       try {
-        // Check authentication
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          throw new Error("You must be logged in to scan QR codes");
-        }
-
         console.log("Raw scanResult:", scanResult);
         
         // Parse QR code
@@ -79,8 +139,7 @@ export function ScanQrCode() {
           const parsed = JSON.parse(scanResult);
           visitId = parsed.visitId;
         } catch (parseError) {
-          // If it's not JSON, maybe it's just the visitId
-          visitId = scanResult;
+          visitId = scanResult.trim();
         }
 
         if (!visitId) {
@@ -178,35 +237,103 @@ export function ScanQrCode() {
     };
 
     fetchVisitDetails();
-  }, [scanResult]);
+  }, [scanResult, isAuthenticated]);
 
-  const handleScanAnother = () => {
+  const handleScanAnother = async () => {
     setScanResult(null);
     setVisit(null);
     setError(null);
-    setIsScanning(true);
+    setScannerReady(false);
     
-    const scanner = new Html5Qrcode("qr-reader");
-    scannerRef.current = scanner;
+    if (!isAuthenticated) {
+      setError("You must be logged in to scan QR codes");
+      return;
+    }
 
-    scanner.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-      },
-      (decodedText) => {
-        setScanResult(decodedText);
-        setIsScanning(false);
-        if (scannerRef.current?.isScanning) {
-          scannerRef.current.stop().catch(console.error);
-        }
-      },
-      () => {}
-    ).catch(() => {
+    // Stop current scanner
+    if (scannerRef.current?.isScanning) {
+      await scannerRef.current.stop();
+    }
+
+    // Start new scanner
+    const qrCodeDivId = "qr-reader";
+    try {
+      const scanner = new Html5Qrcode(qrCodeDivId);
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        (decodedText) => {
+          console.log("QR Code scanned:", decodedText);
+          setScanResult(decodedText);
+          if (scanner.isScanning) {
+            scanner.stop().catch(console.error);
+          }
+        },
+        () => {}
+      );
+      
+      setScannerReady(true);
+    } catch (err) {
+      console.error("Failed to restart scanner:", err);
       setError("Failed to restart scanner");
-    });
+    }
   };
+
+  // Show loading state while checking auth
+  if (checkingAuth) {
+    return (
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-blue-600"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Checking authentication...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login required message
+  if (!isAuthenticated) {
+    return (
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="sm:flex sm:items-center">
+          <div className="sm:flex-auto">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl shadow-lg">
+                <Camera className="h-6 w-6 text-white" strokeWidth={2.5} />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scan QR Code</h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 max-w-2xl mx-auto">
+          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
+            <LogIn className="h-16 w-16 text-red-600 dark:text-red-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-red-900 dark:text-red-100 mb-2">
+              Authentication Required
+            </h2>
+            <p className="text-red-700 dark:text-red-300 mb-6">
+              You must be logged in to scan QR codes
+            </p>
+            <button
+              onClick={() => window.location.href = '/login'}
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+            >
+              <LogIn className="h-5 w-5" />
+              Go to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -225,13 +352,16 @@ export function ScanQrCode() {
       </div>
 
       <div className="mt-8 max-w-2xl mx-auto">
-        {isScanning && (
+        {!visit && (
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4">
             <div id="qr-reader" style={{ width: "100%" }}></div>
+            <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+              {scannerReady ? "Position the QR code within the frame" : "Initializing camera..."}
+            </p>
           </div>
         )}
 
-        {error && (
+        {error && !visit && (
           <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
             <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
               <AlertTriangle className="h-5 w-5 flex-shrink-0" />
@@ -247,14 +377,20 @@ export function ScanQrCode() {
           </div>
         )}
 
-        {visit && !error && (
+        {visit && (
           <div className="mt-8 bg-white dark:bg-slate-800 shadow-lg rounded-lg p-6 border-2 border-green-500">
             <div className="flex items-center gap-2 mb-4">
               <CheckCircle className="h-6 w-6 text-green-500" />
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Successfully Checked In!
+                {error ? "Already Checked In" : "Successfully Checked In!"}
               </h2>
             </div>
+
+            {error && (
+              <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">{error}</p>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div className="flex items-start gap-4">
