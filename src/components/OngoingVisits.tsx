@@ -37,21 +37,6 @@ export function OngoingVisits() {
     setLoading(false);
   }
 
-  async function handleCompleteVisit(visitId: string) {
-    const { error } = await supabase
-      .from("visits")
-      .update({ status: "completed", check_out_time: new Date().toISOString() })
-      .eq("id", visitId);
-
-    if (error) {
-      log.error("Error completing visit:", error);
-      toast.error("Failed to complete visit.");
-    } else {
-      toast.success("Visit completed successfully!");
-      fetchOngoingVisits();
-    }
-  }
-
   return (
     <div className="px-4 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
@@ -104,7 +89,7 @@ export function OngoingVisits() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{visit.purpose}</td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {new Date(visit.check_in_time).toLocaleString()}
+                          {new Date(visit.check_in_time!).toLocaleString()}
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                           <button
@@ -114,7 +99,20 @@ export function OngoingVisits() {
                             <Eye className="h-5 w-5" />
                           </button>
                           <button
-                            onClick={() => handleCompleteVisit(visit.id)}
+                            onClick={async () => {
+                              const { error } = await supabase
+                                .from("visits")
+                                .update({ status: "completed", check_out_time: new Date().toISOString() })
+                                .eq("id", visit.id);
+
+                              if (error) {
+                                log.error("Error completing visit:", error);
+                                toast.error("Failed to complete visit.");
+                              } else {
+                                toast.success("Visit completed successfully!");
+                                fetchOngoingVisits();
+                              }
+                            }}
                             className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                           >
                             <CheckCircle className="h-5 w-5" />
@@ -133,6 +131,7 @@ export function OngoingVisits() {
         <VisitDetailsModal
           visit={selectedVisit}
           onClose={() => setSelectedVisit(null)}
+          onStatusChange={fetchOngoingVisits}
         />
       )}
     </div>

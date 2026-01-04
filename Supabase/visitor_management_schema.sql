@@ -510,6 +510,7 @@ DROP FUNCTION IF EXISTS get_visits(TEXT, TEXT, visit_status, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS get_visits() CASCADE;
 DROP FUNCTION IF EXISTS get_visitor_stats(TIMESTAMPTZ, TIMESTAMPTZ) CASCADE;
 DROP FUNCTION IF EXISTS get_visitor_stats() CASCADE;
+DROP FUNCTION IF EXISTS get_host_visitor_stats(UUID, TIMESTAMPTZ, TIMESTAMPTZ) CASCADE;
 DROP FUNCTION IF EXISTS get_my_pending_visits() CASCADE;
 DROP FUNCTION IF EXISTS export_visits(TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS get_analytics(INT, UUID, visit_status) CASCADE;
@@ -667,6 +668,55 @@ BEGIN
         AND (p_end_date IS NULL OR created_at <= p_end_date);
 END;
 $$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- 2a. GET HOST VISITOR STATISTICS
+-- =====================================================
+
+CREATE FUNCTION get_host_visitor_stats(
+    p_host_id UUID,
+    p_start_date TIMESTAMPTZ DEFAULT NULL,
+    p_end_date TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS TABLE (
+    total_visits BIGINT,
+    pending_visits BIGINT,
+    approved_visits BIGINT,
+    completed_visits BIGINT,
+    denied_visits BIGINT,
+    cancelled_visits BIGINT
+)
+SECURITY DEFINER
+AS $$
+DECLARE
+    current_user_id uuid;
+    user_host_id uuid;
+BEGIN
+    current_user_id := auth.uid();
+
+    -- Check if the current user is the host they are requesting stats for, or an admin/guard
+    SELECT id INTO user_host_id FROM hosts WHERE auth_id = current_user_id;
+
+    IF NOT (is_admin(current_user_id) OR is_guard(current_user_id) OR user_host_id = p_host_id) THEN
+        RAISE EXCEPTION 'Insufficient permissions';
+    END IF;
+    
+    RETURN QUERY
+    SELECT
+        COUNT(*)::BIGINT AS total_visits,
+        COUNT(*) FILTER (WHERE status = 'pending')::BIGINT AS pending_visits,
+        COUNT(*) FILTER (WHERE status = 'approved')::BIGINT AS approved_visits,
+        COUNT(*) FILTER (WHERE status = 'completed')::BIGINT AS completed_visits,
+        COUNT(*) FILTER (WHERE status = 'denied')::BIGINT AS denied_visits,
+        COUNT(*) FILTER (WHERE status = 'cancelled')::BIGINT AS cancelled_visits
+    FROM visits
+    WHERE
+        host_id = p_host_id
+        AND (p_start_date IS NULL OR created_at >= p_start_date)
+        AND (p_end_date IS NULL OR created_at <= p_end_date);
+END;
+$$ LANGUAGE plpgsql;
+
 
 -- =====================================================
 -- 3. GET MY PENDING VISITS
@@ -924,6 +974,7 @@ $$ LANGUAGE plpgsql;
 -- Grant to authenticated users
 GRANT EXECUTE ON FUNCTION get_visits TO authenticated;
 GRANT EXECUTE ON FUNCTION get_visitor_stats TO authenticated;
+GRANT EXECUTE ON FUNCTION get_host_visitor_stats TO authenticated;
 GRANT EXECUTE ON FUNCTION get_my_pending_visits TO authenticated;
 GRANT EXECUTE ON FUNCTION export_visits TO authenticated;
 GRANT EXECUTE ON FUNCTION get_analytics TO authenticated;

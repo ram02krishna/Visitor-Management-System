@@ -12,11 +12,21 @@ export type Visit = {
   host_id: string;
   purpose: string;
   status: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled' | 'checked-in';
-  check_in_time: string;
+  check_in_time: string | null;
   check_out_time: string | null;
-  visitor: {
+  valid_until: string | null;
+  approved_at: string | null;
+  created_at: string;
+  visitor_name?: string; // Added from join
+  host_name?: string;     // Added from join
+  visitors?: {            // Full visitor object from join
+    id: string;
     name: string;
-  }
+    email: string;
+    phone: string;
+    company: string | null;
+    photo_url: string | null;
+  };
 };
 
 export type Database = {

@@ -17,6 +17,7 @@ export const StatItem = React.memo(({ name, value, icon: Icon, color, status, on
     if (color.includes('yellow')) return 'bg-gradient-to-br from-amber-500 to-orange-600';
     if (color.includes('indigo')) return 'bg-gradient-to-br from-indigo-500 to-purple-600';
     if (color.includes('red')) return 'bg-gradient-to-br from-red-500 to-rose-600';
+    if (color.includes('blue')) return 'bg-gradient-to-br from-blue-500 to-sky-600';
     return 'bg-gradient-to-br from-sky-500 to-blue-600';
   };
 
@@ -25,6 +26,7 @@ export const StatItem = React.memo(({ name, value, icon: Icon, color, status, on
     if (color.includes('yellow')) return 'shadow-amber-500/20';
     if (color.includes('indigo')) return 'shadow-indigo-500/20';
     if (color.includes('red')) return 'shadow-red-500/20';
+    if (color.includes('blue')) return 'shadow-blue-500/20';
     return 'shadow-sky-500/20';
   };
 

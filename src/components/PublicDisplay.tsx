@@ -75,7 +75,7 @@ export function PublicDisplay() {
                         {visit.hosts.name}
                       </div>
                       <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Valid until: {format(new Date(visit.valid_until), 'p')}
+                        Valid until: {visit.valid_until ? format(new Date(visit.valid_until), 'p') : 'N/A'}
                       </div>
                     </div>
                   </div>

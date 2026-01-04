@@ -11,12 +11,9 @@ type ExportFormat = "csv" | "json"
 type DataType = "visits" | "visitors" | "users"
 
 type ExportRow =
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | (Database['public']['Tables']['visits']['Row'] & { [key: string]: any })
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | (Database['public']['Tables']['visitors']['Row'] & { [key: string]: any })
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | (Database['public']['Tables']['hosts']['Row'] & { [key: string]: any });
+  | Database['public']['Tables']['visits']['Row']
+  | Database['public']['Tables']['visitors']['Row']
+  | Database['public']['Tables']['hosts']['Row'];
 
 export function ExportData() {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
@@ -34,7 +31,7 @@ export function ExportData() {
     const headers = Object.keys(data[0])
     const csvContent = [
       headers.join(","),
-      ...data.map((row) => headers.map((header) => JSON.stringify(row[header] || "")).join(",")),
+      ...data.map((row) => headers.map((header) => JSON.stringify((row as Record<string, unknown>)[header] || "")).join(",")),
     ].join("\n")
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })

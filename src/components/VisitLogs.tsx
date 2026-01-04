@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import {
   Search,
   Download,
@@ -79,6 +80,8 @@ const getDynamicStatus = (visit: VisitLog) => {
 
 export function VisitLogs() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "");
   const [dateFilter, setDateFilter] = useState("")
   const [logs, setLogs] = useState<VisitLog[]>([])
   const [currentPage, setCurrentPage] = useState(1)
@@ -94,6 +97,7 @@ export function VisitLogs() {
     const { data, error } = await supabase.rpc("get_visits", {
       p_search_term: debouncedSearchTerm,
       p_date_filter: dateFilter,
+      p_status_filter: statusFilter || null,
       p_page_number: currentPage,
       p_page_size: itemsPerPage,
     })
@@ -113,7 +117,7 @@ export function VisitLogs() {
 
   useEffect(() => {
     fetchVisits()
-  }, [currentPage, itemsPerPage, debouncedSearchTerm, dateFilter])
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, dateFilter, statusFilter])
 
   useEffect(() => {
     const subscription = supabase
@@ -251,6 +255,29 @@ export function VisitLogs() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+            </div>
+            <div className="w-48">
+              <label htmlFor="statusFilter" className="sr-only">
+                Filter by status
+              </label>
+              <select
+                id="statusFilter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setSearchParams({ status: e.target.value });
+                }}
+                className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 leading-5 placeholder-gray-500 focus:border-primary-500 focus:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                title="Select a status to filter visits"
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="denied">Denied</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="checked-in">Checked In</option>
+              </select>
             </div>
             <div className="w-48">
               <label htmlFor="dateFilter" className="sr-only">
