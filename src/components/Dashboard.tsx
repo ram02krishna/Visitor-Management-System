@@ -3,28 +3,106 @@ import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 
 import { AlertCircle } from "lucide-react";
+import { VisitDetailsModal, Visit } from "./VisitDetailsModal";
 import { useNavigate } from "react-router-dom";
 import { useVisitStats } from "../hooks/useVisitStats";
 import { StatsGrid } from "./StatsGrid";
+
+const VISIT_STATUS = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+  DENIED: "denied",
+};
 
 export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { stats, loading, error: statsError, fetchStats } = useVisitStats(user);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [connectionTested, setConnectionTested] = useState(false);
+  const [selectedVisits, setSelectedVisits] = useState<Visit[]>([]);
+  const [limit] = useState(10);
+  const [offset, setOffset] = useState(0);
+  const [totalVisits, setTotalVisits] = useState(0);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const handleStatCardClick = useCallback((status: string) => {
+  const handleStatCardClick = useCallback(async (status: string) => {
     if (status === "total_users") {
-      navigate("/app/users");
+      navigate("/users");
       return;
     }
 
-    if (status) {
-      navigate(`/app/logs?status=${status}`);
+    setSelectedStatus(status);
+    setOffset(0);
+    try {
+      const isMultiStatus = status === "cancelled_denied";
+      const statusFilter = isMultiStatus 
+        ? [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]
+        : [status];
+
+      let countQuery = supabase
+        .from("visits")
+        .select("*", { count: "exact", head: true });
+
+      if (isMultiStatus) {
+        countQuery = countQuery.in("status", statusFilter);
+      } else {
+        countQuery = countQuery.eq("status", status);
+      }
+
+      if (user?.role === "host") {
+        countQuery = countQuery.not("host_id", "is", null);
+      }
+
+      const { count, error: countError } = await countQuery;
+
+      if (countError) throw countError;
+      setTotalVisits(count || 0);
+
+      let query = supabase
+        .from("visits")
+        .select(
+          `
+          *,
+          visitors:visitor_id (name),
+          hosts:host_id (name)
+        `
+        );
+
+      if (isMultiStatus) {
+        query = query.in("status", statusFilter);
+      } else {
+        query = query.eq("status", status);
+      }
+
+      if (user?.role === "host") {
+        query = query.not("host_id", "is", null);
+      }
+
+      query = query
+        .order("created_at", { ascending: false })
+        .range(0, limit - 1);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const transformedData =
+        data?.map((visit) => ({
+          ...visit,
+          visitor_name: visit.visitors?.name || "Unknown Visitor",
+          host_name: visit.hosts?.name || "Unknown Host",
+        })) || [];
+
+      setSelectedVisits(transformedData as Visit[]);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching visits:", error);
     }
-  }, [navigate]);
+  }, [limit, navigate, user?.role]);
 
   useEffect(() => {
     if (!user?.role) return;
@@ -77,6 +155,10 @@ export function Dashboard() {
     };
   }, [user?.role, connectionTested, fetchStats]);
 
+  const handleStatusChange = () => {
+    fetchStats();
+  };
+
   return (
     <div className="animate-fadeIn">
       <div className="mb-8 animate-fadeInUp">
@@ -102,6 +184,20 @@ export function Dashboard() {
       ) : (
         <StatsGrid stats={stats} handleStatCardClick={handleStatCardClick} />
       )}
+
+      <VisitDetailsModal
+        status={selectedStatus}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        userRole={user?.role}
+        userId={user?.id}
+        visits={selectedVisits}
+        onStatusChange={handleStatusChange}
+        limit={limit}
+        offset={offset}
+        setOffset={setOffset}
+        totalVisits={totalVisits}
+      />
     </div>
   );
 }

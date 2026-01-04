@@ -2,33 +2,70 @@
 
 import { useState } from "react"
 import { supabase } from "../lib/supabase"
-import { X, Check, Ban, CheckCircle, ClipboardList, LogIn, LogOut, Info, User, Clock } from "lucide-react"
+import { X, Check, Ban, CheckCircle } from "lucide-react"
 import QRCode from "qrcode"
 import emailjs from "@emailjs/browser"
 import { toast } from "react-toastify"
-import type { Visit, Database } from "../lib/database.types"
+
+export type Visit = {
+  id: string
+  visitor_name: string
+  host_name: string
+  purpose: string
+  status: string
+  check_in_time?: string
+  check_out_time?: string
+  created_at: string
+  approved_at?: string
+  scheduled_time?: string
+  visitors?: { name: string; email: string }
+  hosts?: { name: string }
+  entity_id?: string
+}
 
 type VisitDetailsModalProps = {
+  status: string
   isOpen: boolean
   onClose: () => void
   userRole?: string
   userId?: string
-  visit: Visit & { visitors?: Database["public"]["Tables"]["visitors"]["Row"] }
+  visits: Visit[]
   onStatusChange: () => void
+  limit: number
+  offset: number
+  setOffset: (offset: number) => void
+  totalVisits: number
 }
 
 export function VisitDetailsModal({
+  status,
   isOpen,
   onClose,
   userRole,
   userId,
-  visit,
+  visits,
   onStatusChange,
+  limit,
+  offset,
+  setOffset,
+  totalVisits,
 }: VisitDetailsModalProps) {
   const [loading, setLoading] = useState(false)
+  const [currentVisit, setCurrentVisit] = useState<Visit | null>(null)
+  const [actionType, setActionType] = useState<"approve" | "deny" | "complete" | null>(null)
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (visit: Visit, newStatus: string) => {
     setLoading(true)
+    setCurrentVisit(visit)
+    setActionType(
+      newStatus === "approved"
+        ? "approve"
+        : newStatus === "denied"
+          ? "deny"
+          : newStatus === "completed"
+            ? "complete"
+            : null,
+    )
 
     try {
       const updates = {
@@ -75,7 +112,7 @@ export function VisitDetailsModal({
                 qr_code: qrUrl,
                 visit_id: data.id,
                 visit_purpose: data.purpose,
-                approved_at: data.approved_at ? new Date(data.approved_at).toLocaleString() : "N/A",
+                approved_at: new Date(data.approved_at).toLocaleString(),
               },
               emailPublicKey,
             )
@@ -92,6 +129,8 @@ export function VisitDetailsModal({
       toast.error("Failed to update visit status")
     } finally {
       setLoading(false)
+      setCurrentVisit(null)
+      setActionType(null)
     }
   }
 
@@ -126,8 +165,6 @@ export function VisitDetailsModal({
         return "text-red-600 bg-red-50"
       case "denied":
         return "text-red-600 bg-red-50"
-      case "checked-in":
-        return "text-blue-600 bg-blue-50"
       default:
         return "text-gray-600 bg-gray-50"
     }
@@ -138,7 +175,7 @@ export function VisitDetailsModal({
     return new Date(dateString).toLocaleString()
   }
 
-  const canPerformAction = () => {
+  const canPerformAction = (visit: Visit) => {
     if (userRole === "admin" || userRole === "guard") {
       return true
     }
@@ -149,11 +186,12 @@ export function VisitDetailsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md flex flex-col m-4 border border-gray-200 dark:border-slate-800">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col m-4 border border-gray-200 dark:border-slate-800">
         <div className="flex items-center justify-between p-6 border-b dark:border-slate-800 bg-gradient-to-r from-sky-50 to-blue-50 dark:from-slate-800 dark:to-slate-900">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-sky-600 animate-pulse"></span>
-            Visit Details
+            {getStatusLabel(status)} Visits
+            {status !== "cancelled" && status !== "denied" && status !== "cancelled_denied" && " - Today"}
           </h2>
           <button
             onClick={onClose}
@@ -165,87 +203,193 @@ export function VisitDetailsModal({
         </div>
 
         <div className="flex-1 overflow-auto p-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <User className="h-5 w-5 text-gray-500" />
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {visit.visitor_name || visit.visitors?.name || "Unknown Visitor"}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-slate-400">
-                  {visit.visitors?.email || "N/A"}
-                </p>
+          {visits.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-800 mb-4">
+                <CheckCircle className="w-8 h-8 text-gray-400 dark:text-slate-600" />
               </div>
+              <p className="text-lg font-medium text-gray-500 dark:text-slate-400">
+                No {getStatusLabel(status).toLowerCase()} visits found.
+              </p>
             </div>
-            <div className="flex items-center gap-4">
-              <ClipboardList className="h-5 w-5 text-gray-500" />
-              <p className="text-gray-700 dark:text-slate-300">Purpose: {visit.purpose}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Visitor
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Purpose
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Requested
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Approved
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Check-In
+                    </th>
+                    {status === "completed" && (
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                        Check-Out
+                      </th>
+                    )}
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
+                  {visits.map((visit) => (
+                    <tr
+                      key={visit.id}
+                      className="hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors duration-150"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white font-bold">
+                            {(visit.visitor_name || visit.visitors?.name || "?")[0].toUpperCase()}
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {visit.visitor_name || visit.visitors?.name || "Unknown Visitor"}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700 dark:text-slate-300 max-w-xs truncate">
+                        {visit.purpose}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(visit.status)}`}
+                        >
+                          {getStatusLabel(visit.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-slate-300">
+                        {formatDateTime(visit.created_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {visit.approved_at ? (
+                          <span className="text-green-600 dark:text-green-400 font-semibold">
+                            {formatDateTime(visit.approved_at)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-slate-500">Pending</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {visit.check_in_time ? (
+                          <span className="text-green-600 dark:text-green-400 font-semibold">
+                            {formatDateTime(visit.check_in_time)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-slate-500">Not Yet</span>
+                        )}
+                      </td>
+                      {status === "completed" && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {visit.check_out_time ? (
+                            <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                              {formatDateTime(visit.check_out_time)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-slate-500">N/A</span>
+                          )}
+                        </td>
+                      )}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {canPerformAction(visit) && (
+                          <div className="flex gap-2">
+                            {visit.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() => handleStatusUpdate(visit, "approved")}
+                                  disabled={loading && currentVisit?.id === visit.id && actionType === "approve"}
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all"
+                                >
+                                  {loading && currentVisit?.id === visit.id && actionType === "approve" ? (
+                                    <span className="animate-spin">↻</span>
+                                  ) : (
+                                    <>
+                                      <Check className="w-3 h-3 mr-1" />
+                                      Approve
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleStatusUpdate(visit, "denied")}
+                                  disabled={loading && currentVisit?.id === visit.id && actionType === "deny"}
+                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-all"
+                                >
+                                  {loading && currentVisit?.id === visit.id && actionType === "deny" ? (
+                                    <span className="animate-spin">↻</span>
+                                  ) : (
+                                    <>
+                                      <Ban className="w-3 h-3 mr-1" />
+                                      Deny
+                                    </>
+                                  )}
+                                </button>
+                              </>
+                            )}
+                            {visit.status === "approved" && visit.check_in_time && (
+                              <button
+                                onClick={() => handleStatusUpdate(visit, "completed")}
+                                disabled={loading && currentVisit?.id === visit.id && actionType === "complete"}
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all"
+                              >
+                                {loading && currentVisit?.id === visit.id && actionType === "complete" ? (
+                                  <span className="animate-spin">↻</span>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Complete
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="flex items-center gap-4">
-              <Clock className="h-5 w-5 text-gray-500" />
-              <p className="text-gray-700 dark:text-slate-300">Requested: {formatDateTime(visit.created_at)}</p>
-            </div>
-            {visit.approved_at && (
-              <div className="flex items-center gap-4">
-                <CheckCircle className="h-5 w-5 text-gray-500" />
-                <p className="text-gray-700 dark:text-slate-300">Approved: {formatDateTime(visit.approved_at)}</p>
-              </div>
-            )}
-            {visit.check_in_time && (
-              <div className="flex items-center gap-4">
-                <LogIn className="h-5 w-5 text-gray-500" />
-                <p className="text-gray-700 dark:text-slate-300">Check-in: {formatDateTime(visit.check_in_time)}</p>
-              </div>
-            )}
-            {visit.check_out_time && (
-              <div className="flex items-center gap-4">
-                <LogOut className="h-5 w-5 text-gray-500" />
-                <p className="text-gray-700 dark:text-slate-300">Check-out: {formatDateTime(visit.check_out_time)}</p>
-              </div>
-            )}
-            <div className="flex items-center gap-4">
-              <Info className="h-5 w-5 text-gray-500" />
-              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(visit.status)}`}>
-                {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
-        {canPerformAction() && (
-          <div className="border-t dark:border-slate-800 p-6 flex justify-end gap-3 bg-gray-50 dark:bg-slate-900">
-            {visit.status === "pending" && (
-              <>
-                <button
-                  onClick={() => handleStatusUpdate("approved")}
-                  disabled={loading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  {loading ? "Approving..." : "Approve"}
-                </button>
-                <button
-                  onClick={() => handleStatusUpdate("denied")}
-                  disabled={loading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-all"
-                >
-                  <Ban className="w-4 h-4 mr-2" />
-                  {loading ? "Denying..." : "Deny"}
-                </button>
-              </>
-            )}
-            {visit.status === "checked-in" && (
-              <button
-                onClick={() => handleStatusUpdate("completed")}
-                disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                {loading ? "Completing..." : "Complete Visit"}
-              </button>
-            )}
+        <div className="border-t dark:border-slate-800 p-6 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
+          <div>
+            <p className="text-sm font-semibold text-gray-700 dark:text-slate-300">
+              Showing {offset + 1} to {Math.min(offset + limit, totalVisits)} of {totalVisits} results
+            </p>
           </div>
-        )}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setOffset(offset - limit)}
+              disabled={offset === 0}
+              className="px-5 py-2.5 font-semibold bg-white hover:bg-gray-50 text-gray-700 rounded-lg disabled:opacity-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-gray-300 dark:border-slate-700 shadow-sm transition-all duration-150 hover:shadow-md disabled:hover:shadow-sm"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setOffset(offset + limit)}
+              disabled={offset + limit >= totalVisits}
+              className="px-5 py-2.5 font-semibold bg-white hover:bg-gray-50 text-gray-700 rounded-lg disabled:opacity-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-gray-300 dark:border-slate-700 shadow-sm transition-all duration-150 hover:shadow-md disabled:hover:shadow-sm"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

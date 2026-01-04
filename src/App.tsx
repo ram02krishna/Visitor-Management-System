@@ -11,7 +11,7 @@ import { Signup } from "./components/Signup"
 import { Dashboard } from "./components/Dashboard"
 import { VisitorApproval } from "./components/VisitorApproval"
 import { PublicDisplay } from "./components/PublicDisplay"
-
+import { RegisterVisitor } from "./components/RegisterVisitor"
 import { UserManagement } from "./components/UserManagement"
 import { VisitLogs } from "./components/VisitLogs"
 import { VisitorRegistration } from "./components/VisitorRegistration"

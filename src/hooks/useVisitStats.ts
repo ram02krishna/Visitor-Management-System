@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { User } from '../store/auth';
 
+
+
 export type StatItem = {
   name: string;
   value: string | number;
@@ -26,18 +28,6 @@ const VISIT_STATUS = {
   DENIED: "denied",
 };
 
-type VisitorStats = {
-  total_visits: number;
-  pending_visits: number;
-  approved_visits: number;
-  completed_visits: number;
-  denied_visits: number;
-  cancelled_visits: number;
-  unique_visitors: number;
-};
-
-type HostVisitorStats = Omit<VisitorStats, 'unique_visitors'>;
-
 export const useVisitStats = (user: User | null) => {
   const [stats, setStats] = useState<StatItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,11 +42,10 @@ export const useVisitStats = (user: User | null) => {
     try {
       const localToday = new Date();
       localToday.setHours(0, 0, 0, 0);
-      const p_start_date = new Date(localToday.getTime() - localToday.getTimezoneOffset() * 60000).toISOString();
-      
+      const utcTodayStart = new Date(localToday.getTime() - localToday.getTimezoneOffset() * 60000).toISOString();
       const localTomorrow = new Date(localToday);
       localTomorrow.setDate(localToday.getDate() + 1);
-      const p_end_date = new Date(localTomorrow.getTime() - localTomorrow.getTimezoneOffset() * 60000).toISOString();
+      const utcTomorrowStart = new Date(localTomorrow.getTime() - localTomorrow.getTimezoneOffset() * 60000).toISOString();
 
       let statsData: StatItem[] = [];
       const role = user.role;
@@ -69,58 +58,45 @@ export const useVisitStats = (user: User | null) => {
 
           if (usersError) throw usersError;
 
-          const { data: adminStats, error: adminStatsError } = await supabase
-            .rpc('get_visitor_stats', { p_start_date, p_end_date })
-            .single<VisitorStats>();
-            
-          if (adminStatsError) throw adminStatsError;
+          const [{ count: approvedToday }, { count: newRequestsToday }, { count: completedToday }, { count: cancelledAndDenied }] = await Promise.all([
+            supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.APPROVED).gte("approved_at", utcTodayStart).lt("approved_at", utcTomorrowStart),
+            supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.PENDING),
+            supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.COMPLETED).gte("check_out_time", utcTodayStart).lt("check_out_time", utcTomorrowStart),
+            supabase.from("visits").select("*", { count: "exact", head: true }).in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]),
+          ]);
 
-          if(adminStats) {
-            statsData = [
-              { name: "Total Users", value: totalUsers ?? 0, icon: Users, color: "text-blue-500", bgColor: "bg-blue-50", status: "total_users" },
-              { name: "Approved Visits Today", value: adminStats.approved_visits ?? 0, icon: UserCheck, color: "text-green-500", bgColor: "bg-green-50", status: VISIT_STATUS.APPROVED },
-              { name: "New Visit Requests", value: adminStats.pending_visits ?? 0, icon: AlertCircle, color: "text-yellow-500", bgColor: "bg-yellow-50", status: VISIT_STATUS.PENDING },
-              { name: "Completed Visits Today", value: adminStats.completed_visits ?? 0, icon: CheckCircle, color: "text-indigo-500", bgColor: "bg-indigo-50", status: VISIT_STATUS.COMPLETED },
-              { name: "Cancelled Visits", value: adminStats.cancelled_visits ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: VISIT_STATUS.CANCELLED },
-              { name: "Denied Visits", value: adminStats.denied_visits ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: VISIT_STATUS.DENIED },
-            ];
-          }
+          statsData = [
+            { name: "Total Users", value: totalUsers ?? 0, icon: Users, color: "text-blue-500", bgColor: "bg-blue-50", status: "total_users" },
+            { name: "Approved Visits", value: approvedToday ?? 0, icon: UserCheck, color: "text-green-500", bgColor: "bg-green-50", status: VISIT_STATUS.APPROVED },
+            { name: "New Visit Requests", value: newRequestsToday ?? 0, icon: AlertCircle, color: "text-yellow-500", bgColor: "bg-yellow-50", status: VISIT_STATUS.PENDING },
+            { name: "Completed Visits", value: completedToday ?? 0, icon: CheckCircle, color: "text-indigo-500", bgColor: "bg-indigo-50", status: VISIT_STATUS.COMPLETED },
+            { name: "Cancelled/Denied Visits", value: cancelledAndDenied ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: "cancelled_denied" },
+          ];
           break;
         }
-        case "guard": {
-          const { data: guardStats, error: guardStatsError } = await supabase
-            .rpc('get_visitor_stats', { p_start_date, p_end_date })
-            .single<VisitorStats>();
-
-          if (guardStatsError) throw guardStatsError;
-
-          if (guardStats) {
-            statsData = [
-              { name: "Approved Visits Today", value: guardStats.approved_visits ?? 0, icon: UserCheck, color: "text-green-500", bgColor: "bg-green-50", status: VISIT_STATUS.APPROVED },
-              { name: "New Visit Requests", value: guardStats.pending_visits ?? 0, icon: AlertCircle, color: "text-yellow-500", bgColor: "bg-yellow-50", status: VISIT_STATUS.PENDING },
-              { name: "Completed Visits Today", value: guardStats.completed_visits ?? 0, icon: CheckCircle, color: "text-indigo-500", bgColor: "bg-indigo-50", status: VISIT_STATUS.COMPLETED },
-              { name: "Cancelled Visits", value: guardStats.cancelled_visits ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: VISIT_STATUS.CANCELLED },
-              { name: "Denied Visits", value: guardStats.denied_visits ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: VISIT_STATUS.DENIED },
-            ];
-          }
-          break;
-        }
+        case "guard":
         case "host": {
-          const { data: hostStats, error: hostStatsError } = await supabase
-            .rpc('get_host_visitor_stats', { p_host_id: user.id, p_start_date, p_end_date })
-            .single<HostVisitorStats>();
+          const commonQueries = [
+            supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.APPROVED).gte("approved_at", utcTodayStart).lt("approved_at", utcTomorrowStart),
+            supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.PENDING),
+            supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.COMPLETED).gte("check_out_time", utcTodayStart).lt("check_out_time", utcTomorrowStart),
+            supabase.from("visits").select("*", { count: "exact", head: true }).in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]),
+          ];
 
-          if (hostStatsError) throw hostStatsError;
-          
-          if(hostStats) {
-            statsData = [
-              { name: "Approved Visits Today", value: hostStats.approved_visits ?? 0, icon: UserCheck, color: "text-green-500", bgColor: "bg-green-50", status: VISIT_STATUS.APPROVED },
-              { name: "New Visit Requests", value: hostStats.pending_visits ?? 0, icon: AlertCircle, color: "text-yellow-500", bgColor: "bg-yellow-50", status: VISIT_STATUS.PENDING },
-              { name: "Completed Visits Today", value: hostStats.completed_visits ?? 0, icon: CheckCircle, color: "text-indigo-500", bgColor: "bg-indigo-50", status: VISIT_STATUS.COMPLETED },
-              { name: "Cancelled Visits", value: hostStats.cancelled_visits ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: VISIT_STATUS.CANCELLED },
-              { name: "Denied Visits", value: hostStats.denied_visits ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: VISIT_STATUS.DENIED },
-            ];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const roleFilter = (q: any) => {
+            if (role === 'host') return q.eq('host_id', user.id);
+            return q;
           }
+          
+          const [{ count: approvedToday }, { count: newRequestsToday }, { count: completedToday }, { count: cancelledAndDenied }] = await Promise.all(commonQueries.map(roleFilter));
+
+          statsData = [
+            { name: "Approved Visits", value: approvedToday ?? 0, icon: UserCheck, color: "text-green-500", bgColor: "bg-green-50", status: VISIT_STATUS.APPROVED },
+            { name: "New Visit Requests", value: newRequestsToday ?? 0, icon: AlertCircle, color: "text-yellow-500", bgColor: "bg-yellow-50", status: VISIT_STATUS.PENDING },
+            { name: "Completed Visits", value: completedToday ?? 0, icon: CheckCircle, color: "text-indigo-500", bgColor: "bg-indigo-50", status: VISIT_STATUS.COMPLETED },
+            { name: "Cancelled/Denied Visits", value: cancelledAndDenied ?? 0, icon: XCircle, color: "text-red-500", bgColor: "bg-red-50", status: "cancelled_denied" },
+          ];
           break;
         }
         default:
@@ -143,4 +119,3 @@ export const useVisitStats = (user: User | null) => {
 
   return { stats, loading, error, fetchStats };
 };
-

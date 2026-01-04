@@ -233,7 +233,7 @@ export function VisitorApproval() {
                             {visit.purpose}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
-                            {visit.valid_until ? format(new Date(visit.valid_until), "PPP") : "N/A"}
+                            {format(new Date(visit.valid_until), "PPP")}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
                             {format(new Date(visit.created_at), "PPp")}

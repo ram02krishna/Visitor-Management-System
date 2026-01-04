@@ -22,7 +22,7 @@ export function OngoingVisits() {
       .select(
         `
         *,
-        visitors:visitors(*)
+        visitor:visitors(*)
       `
       )
       .eq("status", "checked-in")
@@ -35,6 +35,21 @@ export function OngoingVisits() {
       setOngoingVisits(data as Visit[]);
     }
     setLoading(false);
+  }
+
+  async function handleCompleteVisit(visitId: string) {
+    const { error } = await supabase
+      .from("visits")
+      .update({ status: "completed", check_out_time: new Date().toISOString() })
+      .eq("id", visitId);
+
+    if (error) {
+      log.error("Error completing visit:", error);
+      toast.error("Failed to complete visit.");
+    } else {
+      toast.success("Visit completed successfully!");
+      fetchOngoingVisits();
+    }
   }
 
   return (
@@ -85,11 +100,11 @@ export function OngoingVisits() {
                     ongoingVisits.map((visit) => (
                       <tr key={visit.id}>
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
-                          {visit.visitors?.name}
+                          {visit.visitor.name}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{visit.purpose}</td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {new Date(visit.check_in_time!).toLocaleString()}
+                          {new Date(visit.check_in_time).toLocaleString()}
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                           <button
@@ -99,20 +114,7 @@ export function OngoingVisits() {
                             <Eye className="h-5 w-5" />
                           </button>
                           <button
-                            onClick={async () => {
-                              const { error } = await supabase
-                                .from("visits")
-                                .update({ status: "completed", check_out_time: new Date().toISOString() })
-                                .eq("id", visit.id);
-
-                              if (error) {
-                                log.error("Error completing visit:", error);
-                                toast.error("Failed to complete visit.");
-                              } else {
-                                toast.success("Visit completed successfully!");
-                                fetchOngoingVisits();
-                              }
-                            }}
+                            onClick={() => handleCompleteVisit(visit.id)}
                             className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
                           >
                             <CheckCircle className="h-5 w-5" />
@@ -129,10 +131,8 @@ export function OngoingVisits() {
       </div>
       {selectedVisit && (
         <VisitDetailsModal
-          isOpen={!!selectedVisit}
           visit={selectedVisit}
           onClose={() => setSelectedVisit(null)}
-          onStatusChange={fetchOngoingVisits}
         />
       )}
     </div>
