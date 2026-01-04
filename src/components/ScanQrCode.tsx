@@ -59,9 +59,12 @@ export function ScanQrCode() {
       setLoading(true);
       setError(null);
       try {
-        const { visitId } = JSON.parse(scanResult);
+        console.log("Raw scanResult:", scanResult);
+        const parsedScanResult = JSON.parse(scanResult);
+        console.log("Parsed scanResult:", parsedScanResult);
+        const { visitId } = parsedScanResult;
         if (!visitId) {
-          throw new Error("Invalid QR code format.");
+          throw new Error("Invalid QR code format: visitId missing.");
         }
 
         const { data, error } = await supabase
