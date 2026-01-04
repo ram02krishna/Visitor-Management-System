@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from "../lib/supabase";
 import { toast } from "../../hooks/use-toast";
-import { Camera, User, Calendar, Clock, AlertTriangle } from "lucide-react";
+import { Camera, User, Calendar, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 import type { Database } from "../lib/database.types";
 
 type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
@@ -17,6 +17,7 @@ export function ScanQrCode() {
   const [visit, setVisit] = useState<Visit | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(true);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
@@ -33,12 +34,15 @@ export function ScanQrCode() {
           },
           (decodedText) => {
             setScanResult(decodedText);
-            if (scannerRef.current?.isScanning) scannerRef.current.stop();
+            setIsScanning(false);
+            if (scannerRef.current?.isScanning) {
+              scannerRef.current.stop().catch(console.error);
+            }
           },
           () => {}
         );
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_err) {
+      } catch (err) {
+        console.error("Scanner error:", err);
         setError("Failed to start QR code scanner. Please ensure camera permissions are granted.");
       }
     };
@@ -47,7 +51,7 @@ export function ScanQrCode() {
 
     return () => {
       if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop();
+        scannerRef.current.stop().catch(console.error);
       }
     };
   }, []);
@@ -58,53 +62,116 @@ export function ScanQrCode() {
     const fetchVisitDetails = async () => {
       setLoading(true);
       setError(null);
+      setVisit(null);
+
       try {
-        console.log("Raw scanResult:", scanResult);
-        const parsedScanResult = JSON.parse(scanResult);
-        console.log("Parsed scanResult:", parsedScanResult);
-        const { visitId } = parsedScanResult;
-        if (!visitId) {
-          throw new Error("Invalid QR code format: visitId missing.");
+        // Check authentication
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("You must be logged in to scan QR codes");
         }
 
-        const { data, error } = await supabase
+        console.log("Raw scanResult:", scanResult);
+        
+        // Parse QR code
+        let visitId: string;
+        try {
+          const parsed = JSON.parse(scanResult);
+          visitId = parsed.visitId;
+        } catch (parseError) {
+          // If it's not JSON, maybe it's just the visitId
+          visitId = scanResult;
+        }
+
+        if (!visitId) {
+          throw new Error("Invalid QR code format: visitId missing");
+        }
+
+        console.log("Looking up visit ID:", visitId);
+
+        // Fetch visit with proper joins
+        const { data: visitData, error: visitError } = await supabase
           .from("visits")
-          .select("*, visitors(*), hosts(*)")
+          .select(`
+            *,
+            visitors:visitor_id (*),
+            hosts:host_id (*)
+          `)
           .eq("id", visitId)
           .single();
 
-        if (error) {
-          throw error;
+        if (visitError) {
+          console.error("Visit fetch error:", visitError);
+          throw new Error(`Database error: ${visitError.message}`);
         }
 
-        if (data.status !== "approved") {
-          setError("Your visit is not approved by Guard.");
-          setVisit(null);
-        } else {
-          const { error: updateError } = await supabase
-            .from("visits")
-            .update({
-              check_in_time: new Date().toISOString(),
-              status: "checked-in",
-            })
-            .eq("id", visitId);
+        if (!visitData) {
+          throw new Error("Visit not found");
+        }
 
-          if (updateError) {
-            throw updateError;
+        console.log("Visit data:", visitData);
+
+        // Check visit status
+        if (visitData.status === "checked-in") {
+          setError("This visitor is already checked in!");
+          setVisit(visitData as Visit);
+          return;
+        }
+
+        if (visitData.status !== "approved") {
+          throw new Error(`Visit status is '${visitData.status}'. Only approved visits can be checked in.`);
+        }
+
+        // Check if visit has expired
+        if (visitData.valid_until) {
+          const validUntil = new Date(visitData.valid_until);
+          if (validUntil < new Date()) {
+            throw new Error("This visit has expired");
           }
-
-          toast.success("Visitor checked in successfully!");
-          setVisit(data as Visit);
         }
+
+        // Update visit to checked-in
+        const { data: updatedVisit, error: updateError } = await supabase
+          .from("visits")
+          .update({
+            check_in_time: new Date().toISOString(),
+            status: "checked-in",
+          })
+          .eq("id", visitId)
+          .select(`
+            *,
+            visitors:visitor_id (*),
+            hosts:host_id (*)
+          `)
+          .single();
+
+        if (updateError) {
+          console.error("Update error:", updateError);
+          throw new Error(`Failed to check in: ${updateError.message}`);
+        }
+
+        toast({
+          title: "Success!",
+          description: "Visitor checked in successfully",
+        });
+        
+        setVisit(updatedVisit as Visit);
       } catch (err: unknown) {
-        let errorMessage = "Failed to fetch visit details.";
+        console.error("Fetch visit error:", err);
+        let errorMessage = "Failed to fetch visit details";
+        
         if (err instanceof Error) {
           errorMessage = err.message;
         } else if (typeof err === "string") {
           errorMessage = err;
         }
+        
         setError(errorMessage);
-        toast.error(errorMessage);
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -112,6 +179,34 @@ export function ScanQrCode() {
 
     fetchVisitDetails();
   }, [scanResult]);
+
+  const handleScanAnother = () => {
+    setScanResult(null);
+    setVisit(null);
+    setError(null);
+    setIsScanning(true);
+    
+    const scanner = new Html5Qrcode("qr-reader");
+    scannerRef.current = scanner;
+
+    scanner.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+      },
+      (decodedText) => {
+        setScanResult(decodedText);
+        setIsScanning(false);
+        if (scannerRef.current?.isScanning) {
+          scannerRef.current.stop().catch(console.error);
+        }
+      },
+      () => {}
+    ).catch(() => {
+      setError("Failed to restart scanner");
+    });
+  };
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -128,39 +223,116 @@ export function ScanQrCode() {
           </p>
         </div>
       </div>
+
       <div className="mt-8 max-w-2xl mx-auto">
-        <div id="qr-reader" style={{ width: "100%" }}></div>
-        {error && (
-          <div className="mt-4 text-red-500 text-center flex items-center justify-center gap-2">
-            <AlertTriangle />
-            {error}
+        {isScanning && (
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4">
+            <div id="qr-reader" style={{ width: "100%" }}></div>
           </div>
         )}
-        {loading && <div className="mt-4 text-center">Loading...</div>}
-        {visit && (
-          <div className="mt-8 bg-white dark:bg-slate-800 shadow-lg rounded-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Visit Details</h2>
+
+        {error && (
+          <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+              <p className="font-medium">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="mt-4 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Verifying visit...</p>
+          </div>
+        )}
+
+        {visit && !error && (
+          <div className="mt-8 bg-white dark:bg-slate-800 shadow-lg rounded-lg p-6 border-2 border-green-500">
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Successfully Checked In!
+              </h2>
+            </div>
+
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <User className="h-5 w-5 text-gray-500" />
+              <div className="flex items-start gap-4">
+                <User className="h-5 w-5 text-gray-500 mt-0.5" />
                 <div>
-                  <p className="font-semibold">{visit.visitors.name}</p>
-                  <p className="text-sm text-gray-500">{visit.visitors.email}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {visit.visitors.name}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {visit.visitors.email}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {visit.visitors.phone}
+                  </p>
+                  {visit.visitors.company && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {visit.visitors.company}
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Calendar className="h-5 w-5 text-gray-500" />
-                <p>Purpose: {visit.purpose}</p>
+
+              <div className="flex items-start gap-4">
+                <Calendar className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Purpose</p>
+                  <p className="text-gray-900 dark:text-white">{visit.purpose}</p>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Clock className="h-5 w-5 text-gray-500" />
-                <p>Checked-in at: {new Date(visit.check_in_time!).toLocaleString()}</p>
+
+              <div className="flex items-start gap-4">
+                <Clock className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Check-in Time</p>
+                  <p className="text-gray-900 dark:text-white">
+                    {new Date(visit.check_in_time!).toLocaleString('en-IN', {
+                      timeZone: 'Asia/Kolkata',
+                      dateStyle: 'medium',
+                      timeStyle: 'short'
+                    })}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <User className="h-5 w-5 text-gray-500" />
-                <p>Host: {visit.hosts.name}</p>
+
+              <div className="flex items-start gap-4">
+                <User className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Host</p>
+                  <p className="text-gray-900 dark:text-white">{visit.hosts.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {visit.hosts.email}
+                  </p>
+                </div>
               </div>
+
+              {visit.valid_until && (
+                <div className="flex items-start gap-4">
+                  <Clock className="h-5 w-5 text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Valid Until</p>
+                    <p className="text-gray-900 dark:text-white">
+                      {new Date(visit.valid_until).toLocaleString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
+
+            <button
+              onClick={handleScanAnother}
+              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Scan Another QR Code
+            </button>
           </div>
         )}
       </div>
