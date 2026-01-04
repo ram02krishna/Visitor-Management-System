@@ -97,7 +97,7 @@ export function VisitLogs() {
     const { data, error } = await supabase.rpc("get_visits", {
       p_search_term: debouncedSearchTerm,
       p_date_filter: dateFilter,
-      p_status_filter: statusFilter || null,
+      p_status_filter: statusFilter ? statusFilter : null,
       p_page_number: currentPage,
       p_page_size: itemsPerPage,
     })
