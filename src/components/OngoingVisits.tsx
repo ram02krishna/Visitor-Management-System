@@ -129,6 +129,7 @@ export function OngoingVisits() {
       </div>
       {selectedVisit && (
         <VisitDetailsModal
+          isOpen={!!selectedVisit}
           visit={selectedVisit}
           onClose={() => setSelectedVisit(null)}
           onStatusChange={fetchOngoingVisits}
