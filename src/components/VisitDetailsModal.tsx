@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { supabase } from "../lib/supabase"
-import { X, Check, Ban, CheckCircle, ClipboardList, LogIn, LogOut, Info } from "lucide-react"
+import { X, Check, Ban, CheckCircle, ClipboardList, LogIn, LogOut, Info, User, Clock } from "lucide-react"
 import QRCode from "qrcode"
 import emailjs from "@emailjs/browser"
 import { toast } from "react-toastify"

@@ -22,7 +22,7 @@ export function OngoingVisits() {
       .select(
         `
         *,
-        visitor:visitors(*)
+        visitors:visitors(*)
       `
       )
       .eq("status", "checked-in")
@@ -85,7 +85,7 @@ export function OngoingVisits() {
                     ongoingVisits.map((visit) => (
                       <tr key={visit.id}>
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
-                          {visit.visitor.name}
+                          {visit.visitors?.name}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{visit.purpose}</td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">

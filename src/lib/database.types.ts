@@ -26,6 +26,8 @@ export type Visit = {
     phone: string;
     company: string | null;
     photo_url: string | null;
+    created_at: string;
+    updated_at: string;
   };
 };
 
