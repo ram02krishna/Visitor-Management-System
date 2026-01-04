@@ -98,6 +98,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.49.4
         version: 2.89.0
+      '@types/loglevel':
+        specifier: ^1.5.4
+        version: 1.6.3
       '@types/papaparse':
         specifier: ^5.3.16
         version: 5.5.2
@@ -125,6 +128,9 @@ importers:
       input-otp:
         specifier: 1.4.2
         version: 1.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      loglevel:
+        specifier: ^1.9.2
+        version: 1.9.2
       lucide-react:
         specifier: ^0.344.0
         version: 0.344.0(react@18.3.1)
@@ -196,7 +202,7 @@ importers:
         specifier: ^6.9.1
         version: 6.9.1
       '@testing-library/react':
-        specifier: ^16.3.0
+        specifier: ^16.3.1
         version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/node':
         specifier: 25.0.3
@@ -232,7 +238,7 @@ importers:
         specifier: ^0.4.5
         version: 0.4.26(eslint@9.39.2(jiti@1.21.7))
       jsdom:
-        specifier: ^27.1.0
+        specifier: ^27.4.0
         version: 27.4.0
       postcss:
         specifier: ^8.4.35
@@ -2066,6 +2072,10 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
+  '@types/loglevel@1.6.3':
+    resolution: {integrity: sha512-v2YWQQgqtNXAzybOT9qV3CIJqSeoaMUwmBfIMTQdvhsWUybYic/zNGccKH494naWKJ7zUm+VTgFepJfTrbCCJQ==}
+    deprecated: This is a stub types definition. loglevel provides its own type definitions, so you do not need this installed.
+
   '@types/node@25.0.3':
     resolution: {integrity: sha512-W609buLVRVmeW693xKfzHeIV6nJGGz98uCPfeXI1ELMLXVeKYZ9m15fAMSaUPBHYLGFsVRcMmSCksQOrZV9BYA==}
 
@@ -3228,6 +3238,10 @@ packages:
 
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+
+  loglevel@1.9.2:
+    resolution: {integrity: sha512-HgMmCqIJSAKqo68l0rS2AanEWfkxaZ5wNiEFb5ggm08lDs9Xl2KxBlX3PTcaD2chBM1gXAYf491/M2Rv8Jwayg==}
+    engines: {node: '>= 0.6.0'}
 
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
@@ -6298,6 +6312,10 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/loglevel@1.6.3':
+    dependencies:
+      loglevel: 1.9.2
+
   '@types/node@25.0.3':
     dependencies:
       undici-types: 7.16.0
@@ -7583,6 +7601,8 @@ snapshots:
   lodash.sortby@4.7.0: {}
 
   lodash@4.17.21: {}
+
+  loglevel@1.9.2: {}
 
   loose-envify@1.4.0:
     dependencies:
