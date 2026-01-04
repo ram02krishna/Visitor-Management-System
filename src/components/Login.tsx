@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom"
 import { Shield } from "lucide-react"
 import { useAuthStore } from "../store/auth"
 import { BackButton } from "./BackButton"
+import log from "../lib/logger"
 
 export function Login() {
   const navigate = useNavigate()
@@ -23,16 +24,16 @@ export function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[Login] Form submitted with email:", email)
+    log.info("[Login] Form submitted with email:", email)
     setError("")
 
     try {
-      console.log("[Login] Calling login function...")
+      log.info("[Login] Calling login function...")
       await login(email, password)
-      console.log("[Login] Login successful, navigating to dashboard")
+      log.info("[Login] Login successful, navigating to dashboard")
       navigate("/app/dashboard")
     } catch (error) {
-      console.error("[Login] Login failed:", error)
+      log.error("[Login] Login failed:", error)
       setError("Invalid credentials")
     }
   }
@@ -41,7 +42,7 @@ export function Login() {
     try {
       await signInWithGoogle()
     } catch (error) {
-      console.error("[Login] Google Sign-In failed:", error)
+      log.error("[Login] Google Sign-In failed:", error)
       setError("Google Sign-In failed. Please try again.")
     }
   }

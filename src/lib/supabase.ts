@@ -1,11 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
+import log from "./logger";
 
 // ✅ Ensure environment variables exist
 const supabaseUrl: string | undefined = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey: string | undefined = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("❌ Supabase environment variables are missing.");
+  log.error("❌ Supabase environment variables are missing.");
   throw new Error("⚠️ Missing Supabase URL or ANON KEY. Check your .env file and restart the server.");
 }
 
@@ -24,13 +25,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 if (typeof window !== 'undefined') {
   supabase.auth.onAuthStateChange((event, session) => {
-    console.log('[Supabase] Auth state changed:', event);
+    log.info('[Supabase] Auth state changed:', event);
     if (session?.user) {
-      console.log('[Supabase] User session active:', session.user.id);
+      log.info('[Supabase] User session active:', session.user.id);
     }
     // Auth state change handler - can be used for logging or analytics
     if (event === 'SIGNED_OUT') {
-      console.log('[Supabase] User signed out, clearing cached data');
+      log.info('[Supabase] User signed out, clearing cached data');
       // Clear any cached data on sign out
       localStorage.removeItem('supabase.auth.token');
     }
@@ -39,25 +40,25 @@ if (typeof window !== 'undefined') {
 
 // Verify environment variables are loaded
 if (import.meta.env.DEV) {
-  console.log('[Supabase] Environment check:');
-  console.log('[Supabase] - URL:', supabaseUrl ? '✓ Loaded' : '✗ Missing');
-  console.log('[Supabase] - Anon Key:', supabaseAnonKey ? '✓ Loaded' : '✗ Missing');
+  log.info('[Supabase] Environment check:');
+  log.info('[Supabase] - URL:', supabaseUrl ? '✓ Loaded' : '✗ Missing');
+  log.info('[Supabase] - Anon Key:', supabaseAnonKey ? '✓ Loaded' : '✗ Missing');
 }
 
 // Connection test in development mode only
 if (import.meta.env.DEV) {
   (async () => {
     try {
-      console.log('[Supabase] Testing database connection...');
+      log.info('[Supabase] Testing database connection...');
       const { error } = await supabase.from('visits').select('*', { count: 'exact', head: true });
       if (error) {
-        console.error('[Supabase] ✗ Connection test failed:', error.message);
-        console.error('[Supabase] Error details:', error);
+        log.error('[Supabase] ✗ Connection test failed:', error.message);
+        log.error('[Supabase] Error details:', error);
       } else {
-        console.log('[Supabase] ✓ Connection test successful');
+        log.info('[Supabase] ✓ Connection test successful');
       }
     } catch (err) {
-      console.error('[Supabase] ✗ Initialization error:', err);
+      log.error('[Supabase] ✗ Initialization error:', err);
     }
   })();
 }

@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import QRCode from "qrcode";
 import emailjs from "@emailjs/browser";
 import { v4 as uuidv4 } from "uuid";
+import log from "../lib/logger";
 
 type VisitorFormData = {
   name: string;
@@ -17,9 +18,6 @@ type VisitorFormData = {
   purpose: string;
   hostEmail: string;
   entityEmail: string; // Added field for entity email
-  checkInTime: string;
-  checkOutTime: string;
-  validUntil: string;
   notes: string;
   status?: string;
 };
@@ -37,21 +35,21 @@ export function VisitorRegistration() {
   // Get the current user session when component mounts
   useEffect(() => {
     async function getUserId() {
-      console.log('[VisitorRegistration] Fetching user session...');
+      log.info('[VisitorRegistration] Fetching user session...');
       const { data } = await supabase.auth.getSession();
       if (data.session?.user) {
-        console.log('[VisitorRegistration] User session found:', data.session.user.id);
+        log.info('[VisitorRegistration] User session found:', data.session.user.id);
         setUserId(data.session.user.id);
       } else {
-        console.warn('[VisitorRegistration] No user session found');
+        log.warn('[VisitorRegistration] No user session found');
       }
     }
     getUserId();
   }, []);
 
   const onSubmit = async (formData: VisitorFormData) => {
-    console.log('[VisitorRegistration] Form submission started');
-    console.log('[VisitorRegistration] Form data:', {
+    log.info('[VisitorRegistration] Form submission started');
+    log.info('[VisitorRegistration] Form data:', {
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
@@ -66,18 +64,18 @@ export function VisitorRegistration() {
     try {
       // Check if user is authenticated
       if (!userId) {
-        console.error('[VisitorRegistration] User not authenticated');
+        log.error('[VisitorRegistration] User not authenticated');
         toast.error("You must be logged in to register visitors");
         return;
       }
       
-      console.log('[VisitorRegistration] User authenticated:', userId);
+      log.info('[VisitorRegistration] User authenticated:', userId);
 
       let photoUrl = null;
 
       // Upload photo if provided
       if (formData.photo?.[0]) {
-        console.log('[VisitorRegistration] Uploading visitor photo...');
+        log.info('[VisitorRegistration] Uploading visitor photo...');
         const file = formData.photo[0];
         const fileExt = file.name.split(".").pop();
         const fileName = `${uuidv4()}.${fileExt}`; // Using UUID for unique filenames
@@ -92,11 +90,11 @@ export function VisitorRegistration() {
           });
 
         if (uploadError) {
-          console.error('[VisitorRegistration] Photo upload error:', uploadError);
+          log.error('[VisitorRegistration] Photo upload error:', uploadError);
           throw new Error(`Photo upload failed: ${uploadError.message}`);
         }
         
-        console.log('[VisitorRegistration] Photo uploaded successfully');
+        log.info('[VisitorRegistration] Photo uploaded successfully');
 
         const {
           data: { publicUrl },
@@ -110,7 +108,7 @@ export function VisitorRegistration() {
       // Get host details if email is provided
       let hostId = null;
       if (formData.hostEmail && formData.hostEmail.trim() !== "") {
-        console.log('[VisitorRegistration] Looking up host with email:', formData.hostEmail);
+        log.info('[VisitorRegistration] Looking up host with email:', formData.hostEmail);
         const { data: hostData, error: hostError } = await supabase
           .from("hosts")
           .select("id")
@@ -118,15 +116,15 @@ export function VisitorRegistration() {
           .maybeSingle();
 
         if (hostError && hostError.code !== "PGRST116") {
-          console.error('[VisitorRegistration] Host lookup error:', hostError);
+          log.error('[VisitorRegistration] Host lookup error:', hostError);
           throw new Error("Error looking up host: " + hostError.message);
         }
 
         if (hostData) {
           hostId = hostData.id;
-          console.log('[VisitorRegistration] Host found:', hostId);
+          log.info('[VisitorRegistration] Host found:', hostId);
         } else {
-          console.warn('[VisitorRegistration] No host found with email:', formData.hostEmail);
+          log.warn('[VisitorRegistration] No host found with email:', formData.hostEmail);
           toast.error(
             "No host found with the provided email. Please make sure the host exists in the system."
           );
@@ -139,7 +137,7 @@ export function VisitorRegistration() {
       // Look up entity by email in the hosts table, if provided
       let entityId = null;
       if (formData.entityEmail && formData.entityEmail.trim() !== "") {
-        console.log('[VisitorRegistration] Looking up entity with email:', formData.entityEmail);
+        log.info('[VisitorRegistration] Looking up entity with email:', formData.entityEmail);
         const { data: entityData, error: entityError } = await supabase
           .from("hosts")
           .select("id")
@@ -148,15 +146,15 @@ export function VisitorRegistration() {
           .maybeSingle();
 
         if (entityError && entityError.code !== "PGRST116") {
-          console.error('[VisitorRegistration] Entity lookup error:', entityError);
+          log.error('[VisitorRegistration] Entity lookup error:', entityError);
           throw new Error("Error looking up entity: " + entityError.message);
         }
 
         if (entityData) {
           entityId = entityData.id;
-          console.log('[VisitorRegistration] Entity found:', entityId);
+          log.info('[VisitorRegistration] Entity found:', entityId);
         } else {
-          console.warn('[VisitorRegistration] No entity found with email:', formData.entityEmail);
+          log.warn('[VisitorRegistration] No entity found with email:', formData.entityEmail);
           toast.error(
             "No entity found with the provided email. Please make sure the entity exists in the system."
           );
@@ -169,7 +167,7 @@ export function VisitorRegistration() {
       // Step 1: Create or find existing visitor
       let visitorId;
 
-      console.log('[VisitorRegistration] Checking for existing visitor with email:', formData.email);
+      log.info('[VisitorRegistration] Checking for existing visitor with email:', formData.email);
       const { data: existingVisitor, error: visitorLookupError } =
         await supabase
           .from("visitors")
@@ -178,12 +176,12 @@ export function VisitorRegistration() {
           .maybeSingle();
 
       if (visitorLookupError && visitorLookupError.code !== "PGRST116") {
-        console.error('[VisitorRegistration] Visitor lookup error:', visitorLookupError);
+        log.error('[VisitorRegistration] Visitor lookup error:', visitorLookupError);
         throw visitorLookupError;
       }
 
       if (existingVisitor) {
-        console.log('[VisitorRegistration] Existing visitor found:', existingVisitor.id);
+        log.info('[VisitorRegistration] Existing visitor found:', existingVisitor.id);
         visitorId = existingVisitor.id;
 
         const { error: updateError } = await supabase
@@ -198,12 +196,12 @@ export function VisitorRegistration() {
           .eq("id", visitorId);
 
         if (updateError) {
-          console.error('[VisitorRegistration] Visitor update error:', updateError);
+          log.error('[VisitorRegistration] Visitor update error:', updateError);
           throw updateError;
         }
-        console.log('[VisitorRegistration] Visitor updated successfully');
+        log.info('[VisitorRegistration] Visitor updated successfully');
       } else {
-        console.log('[VisitorRegistration] Creating new visitor...');
+        log.info('[VisitorRegistration] Creating new visitor...');
         const { data: newVisitor, error: createError } = await supabase
           .from("visitors")
           .insert({
@@ -219,19 +217,19 @@ export function VisitorRegistration() {
           .single();
 
         if (createError) {
-          console.error('[VisitorRegistration] Visitor creation error:', createError);
+          log.error('[VisitorRegistration] Visitor creation error:', createError);
           throw createError;
         }
 
         visitorId = newVisitor.id;
-        console.log('[VisitorRegistration] New visitor created:', visitorId);
+        log.info('[VisitorRegistration] New visitor created:', visitorId);
       }
 
       // Step 2: Create visit record
       const currentTime = new Date().toISOString();
       const visitId = uuidv4(); // Generate unique visit ID
       
-      console.log('[VisitorRegistration] Creating visit record with ID:', visitId);
+      log.info('[VisitorRegistration] Creating visit record with ID:', visitId);
 
       const { error: visitError } = await supabase.from("visits").insert({
         id: visitId,
@@ -240,39 +238,27 @@ export function VisitorRegistration() {
         entity_id: entityId, // Now using the correctly looked-up entity ID
         purpose: formData.purpose,
         status: "pending",
-        check_in_time: formData.checkInTime
-          ? new Date(formData.checkInTime).toISOString()
-          : null,
-        check_out_time: formData.checkOutTime
-          ? new Date(formData.checkOutTime).toISOString()
-          : null,
-        valid_until: new Date(formData.validUntil).toISOString(),
         notes: formData.notes || null,
         created_at: currentTime,
         updated_at: currentTime,
       });
 
       if (visitError) {
-        console.error('[VisitorRegistration] Visit creation error:', visitError);
+        log.error('[VisitorRegistration] Visit creation error:', visitError);
         throw visitError;
       }
       
-      console.log('[VisitorRegistration] Visit record created successfully');
+      log.info('[VisitorRegistration] Visit record created successfully');
 
       // Step 3: Generate QR code with visit info
-      console.log('[VisitorRegistration] Generating QR code...');
+      log.info('[VisitorRegistration] Generating QR code...');
       const qrData = JSON.stringify({
         visitId,
-        name: formData.name,
-        email: formData.email,
-        purpose: formData.purpose,
-        validUntil: formData.validUntil,
-        entityEmail: formData.entityEmail || null,
       });
 
       const qrUrl = await QRCode.toDataURL(qrData);
       setQrImageUrl(qrUrl);
-      console.log('[VisitorRegistration] QR code generated successfully');
+      log.info('[VisitorRegistration] QR code generated successfully');
 
       // Step 4: Send Email using EmailJS
       const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
@@ -280,10 +266,10 @@ export function VisitorRegistration() {
       const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
       if (!emailServiceId || !emailTemplateId || !emailPublicKey) {
-        console.warn('[VisitorRegistration] EmailJS credentials not configured. Skipping email notification.');
+        log.warn('[VisitorRegistration] EmailJS credentials not configured. Skipping email notification.');
       } else {
         try {
-          console.log('[VisitorRegistration] Sending email to:', formData.email);
+          log.info('[VisitorRegistration] Sending email to:', formData.email);
           const emailParams = {
             to_name: formData.name,
             to_email: formData.email,
@@ -296,10 +282,9 @@ export function VisitorRegistration() {
             host_email: formData.hostEmail || "N/A",
             host_name: formData.hostEmail || "N/A",
             entity_email: formData.entityEmail || "N/A",
-            valid_until: new Date(formData.validUntil).toLocaleString(),
           };
           
-          console.log('[VisitorRegistration] Email parameters:', emailParams);
+          log.info('[VisitorRegistration] Email parameters:', emailParams);
           
           const emailResult = await emailjs.send(
             emailServiceId,
@@ -308,23 +293,23 @@ export function VisitorRegistration() {
             emailPublicKey
           );
 
-          console.log('[VisitorRegistration] Email send result:', emailResult);
+          log.info('[VisitorRegistration] Email send result:', emailResult);
           if (emailResult.status !== 200) {
-            console.warn('[VisitorRegistration] Email sending failed with status:', emailResult.status);
+            log.warn('[VisitorRegistration] Email sending failed with status:', emailResult.status);
           } else {
-            console.log('[VisitorRegistration] Email sent successfully');
+            log.info('[VisitorRegistration] Email sent successfully');
           }
         } catch (emailError) {
-          console.error('[VisitorRegistration] Failed to send email:', emailError);
+          log.error('[VisitorRegistration] Failed to send email:', emailError);
           // Continue execution even if email fails
         }
       }
 
-      console.log('[VisitorRegistration] Registration completed successfully');
+      log.info('[VisitorRegistration] Registration completed successfully');
       toast.success("Visitor registered successfully!");
       reset();
     } catch (error: unknown) {
-      console.error('[VisitorRegistration] Registration error:', error);
+      log.error('[VisitorRegistration] Registration error:', error);
       toast.error(`Failed: ${(error as Error).message || "Unknown error"}`);
     }
   };
@@ -524,54 +509,7 @@ export function VisitorRegistration() {
                       </p>
                     </div>
 
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="checkInTime"
-                        className="block text-sm font-medium text-gray-700 dark:text-slate-300"
-                      >
-                        Check-in time
-                      </label>
-                      <input
-                        type="datetime-local"
-                        {...register("checkInTime")}
-                        className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="checkOutTime"
-                        className="block text-sm font-medium text-gray-700 dark:text-slate-300"
-                      >
-                        Check-out time
-                      </label>
-                      <input
-                        type="datetime-local"
-                        {...register("checkOutTime")}
-                        className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="validUntil"
-                        className="block text-sm font-medium text-gray-700 dark:text-slate-300"
-                      >
-                        Valid until
-                      </label>
-                      <input
-                        type="datetime-local"
-                        {...register("validUntil", {
-                          required: "Valid until date is required",
-                        })}
-                        className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-slate-800 dark:border-slate-600 dark:text-white"
-                      />
-                      {errors.validUntil && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {errors.validUntil.message}
-                        </p>
-                      )}
-                    </div>
+                    
 
                     <div className="col-span-6">
                       <label

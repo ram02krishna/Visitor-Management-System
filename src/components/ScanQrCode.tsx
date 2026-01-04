@@ -75,7 +75,26 @@ export function ScanQrCode() {
           throw error
         }
 
-        setVisit(data as Visit)
+        if (data.status !== 'approved') {
+          setError("Your visit is not approved by Guard.");
+          setVisit(null);
+        } else {
+          const { error: updateError } = await supabase
+            .from("visits")
+            .update({
+              check_in_time: new Date().toISOString(),
+              status: "checked-in",
+            })
+            .eq("id", visitId);
+
+          if (updateError) {
+            throw updateError;
+          }
+
+          toast.success("Visitor checked in successfully!");
+          setVisit(data as Visit)
+        }
+
       } catch (err: unknown) {
         let errorMessage = "Failed to fetch visit details."
         if (err instanceof Error) {
@@ -93,122 +112,6 @@ export function ScanQrCode() {
     fetchVisitDetails()
   }, [scanResult])
 
-  const handleCheckIn = async () => {
-    if (!visit) return
-    setLoading(true)
-    try {
-      if (visit.status !== "approved") {
-        toast.error("Visit must be approved before check-in.")
-        setLoading(false)
-        return
-      }
-      if (visit.check_in_time) {
-        toast.error("Visitor already checked in.")
-        setLoading(false)
-        return
-      }
-
-      const { error } = await supabase
-        .from("visits")
-        .update({
-          check_in_time: new Date().toISOString(),
-          status: "checked-in",
-        })
-        .eq("id", visit.id)
-
-      if (error) {
-        throw error
-      }
-      toast.success("Visitor checked in successfully!")
-
-      const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
-      const checkinTemplateId = import.meta.env.VITE_EMAILJS_CHECKIN_TEMPLATE_ID
-      const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-
-      if (emailServiceId && checkinTemplateId && emailPublicKey) {
-        try {
-          await emailjs.send(
-            emailServiceId,
-            checkinTemplateId,
-            {
-              to_name: visit.hosts.name,
-              to_email: visit.hosts.email,
-              visitor_name: visit.visitors.name,
-              check_in_time: new Date().toLocaleString(),
-            },
-            emailPublicKey,
-          )
-        } catch (emailError) {
-          console.error("Failed to send check-in email to host:", emailError)
-          toast.error("Failed to send check-in email to host.")
-        }
-      } else {
-        console.warn("EmailJS credentials for check-in notification not configured.")
-      }
-
-      setVisit(null)
-      setScanResult(null)
-      scannerRef.current?.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        (decodedText) => {
-          setScanResult(decodedText)
-          scannerRef.current?.stop()
-        },
-        () => {},
-      )
-    } catch (err: unknown) {
-      let errorMessage = "Failed to check in visitor."
-      if (err instanceof Error) {
-        errorMessage = err.message
-      } else if (typeof err === "string") {
-        errorMessage = err
-      }
-      toast.error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDeny = async () => {
-    if (!visit) return
-    setLoading(true)
-    try {
-      const { error } = await supabase.from("visits").update({ status: "denied" }).eq("id", visit.id)
-      if (error) {
-        throw error
-      }
-      toast.success("Visitor denied entry.")
-      setVisit(null)
-      setScanResult(null)
-      scannerRef.current?.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        (decodedText) => {
-          setScanResult(decodedText)
-          scannerRef.current?.stop()
-        },
-        () => {},
-      )
-    } catch (err: unknown) {
-      let errorMessage = "Failed to deny visitor."
-      if (err instanceof Error) {
-        errorMessage = err.message
-      } else if (typeof err === "string") {
-        errorMessage = err
-      }
-      toast.error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <div className="px-4 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
@@ -220,7 +123,7 @@ export function ScanQrCode() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scan QR Code</h1>
           </div>
           <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">
-            Scan a visitor's QR code to check them in or deny entry.
+            Scan a visitor's QR code to check them in.
           </p>
         </div>
       </div>
@@ -250,27 +153,11 @@ export function ScanQrCode() {
               </div>
               <div className="flex items-center gap-4">
                 <Clock className="h-5 w-5 text-gray-500" />
-                <p>Valid Until: {new Date(visit.valid_until).toLocaleString()}</p>
+                <p>Checked-in at: {new Date(visit.check_in_time!).toLocaleString()}</p>
               </div>
               <div className="flex items-center gap-4">
                 <User className="h-5 w-5 text-gray-500" />
                 <p>Host: {visit.hosts.name}</p>
-              </div>
-              <div className="mt-6 flex justify-end gap-4">
-                <button
-                  onClick={handleDeny}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                >
-                  <X /> Deny
-                </button>
-                <button
-                  onClick={handleCheckIn}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  <Check /> Check In
-                </button>
               </div>
             </div>
           </div>

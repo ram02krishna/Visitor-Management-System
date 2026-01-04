@@ -24,19 +24,21 @@ import { BulkVisitorUpload } from "./components/BulkVisitorUpload"
 import { ExportData } from "./components/ExportData"
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard"
 import { ScanQrCode } from "./components/ScanQrCode"
+import { OngoingVisits } from "./components/OngoingVisits"
+import log from "./lib/logger";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
 
-  console.log("[PrivateRoute] Auth status:", { isAuthenticated, isLoading })
+  log.info("[PrivateRoute] Auth status:", { isAuthenticated, isLoading })
 
   if (isLoading) {
-    console.log("[PrivateRoute] Still loading authentication...")
+    log.info("[PrivateRoute] Still loading authentication...")
     return <div className="loading">🔄 Loading authentication...</div>
   }
 
   if (!isAuthenticated) {
-    console.log("[PrivateRoute] User not authenticated, redirecting to login")
+    log.info("[PrivateRoute] User not authenticated, redirecting to login")
   }
 
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />
@@ -75,7 +77,6 @@ function App() {
             }
           >
             <Route path="/app/dashboard" element={<Dashboard />} />
-            <Route path="/app/register" element={<RegisterVisitor />} />
             <Route path="/app/approval" element={<VisitorApproval />} />
             <Route path="/app/users" element={<UserManagement />} />
             <Route path="/app/logs" element={<VisitLogs />} />
@@ -85,6 +86,7 @@ function App() {
             <Route path="/app/bulk-visitor-upload" element={<BulkVisitorUpload />} />
             <Route path="/app/export" element={<ExportData />} />
             <Route path="/app/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/app/ongoing-visits" element={<OngoingVisits />} />
           </Route>
         </Routes>
         <Toaster />

@@ -1,4 +1,4 @@
-import { Users, ClipboardList, User, Download, TrendingUp, Camera } from "lucide-react";
+import { Users, ClipboardList, User, Download, TrendingUp, Camera, Clock } from "lucide-react";
 
 export const navLinks = [
   {
@@ -30,6 +30,12 @@ export const navLinks = [
     label: "Scan QR Code",
     icon: Camera,
     roles: ["guard"],
+  },
+  {
+    href: "/app/ongoing-visits",
+    label: "Ongoing Visits",
+    icon: Clock,
+    roles: ["admin", "guard"],
   },
   {
     href: "/app/bulk-visitor-upload",

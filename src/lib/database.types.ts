@@ -8,12 +8,15 @@ export type Json =
 
 export type Visit = {
   id: string;
-  visitor_name: string;
+  visitor_id: string;
+  host_id: string;
   purpose: string;
-  host_name: string;
-  check_in: string | null;
-  check_out: string | null;
-  status: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled';
+  status: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled' | 'checked-in';
+  check_in_time: string;
+  check_out_time: string | null;
+  visitor: {
+    name: string;
+  }
 };
 
 export type Database = {
@@ -112,10 +115,10 @@ export type Database = {
           visitor_id: string
           host_id: string
           purpose: string
-          status: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled'
+          status: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled' | 'checked-in'
           check_in_time: string | null
           check_out_time: string | null
-          valid_until: string
+          valid_until: string | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -125,10 +128,10 @@ export type Database = {
           visitor_id: string
           host_id: string
           purpose: string
-          status?: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled'
+          status?: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled' | 'checked-in'
           check_in_time?: string | null
           check_out_time?: string | null
-          valid_until: string
+          valid_until?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -138,10 +141,10 @@ export type Database = {
           visitor_id?: string
           host_id?: string
           purpose?: string
-          status?: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled'
+          status?: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled' | 'checked-in'
           check_in_time?: string | null
           check_out_time?: string | null
-          valid_until?: string
+          valid_until?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -156,7 +159,7 @@ export type Database = {
     }
     Enums: {
       user_role: 'admin' | 'guard' | 'host'
-      visit_status: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled'
+      visit_status: 'pending' | 'approved' | 'denied' | 'completed' | 'cancelled' | 'checked-in'
     }
   }
 }

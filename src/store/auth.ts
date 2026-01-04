@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase.ts";
 import type { Database } from "../lib/database.types";
+import log from "../lib/logger.ts";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
 
@@ -33,20 +34,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   //  Initialize authentication
   initialize: async () => {
-    console.log('[Auth] Initializing authentication...');
+    log.info('[Auth] Initializing authentication...');
     try {
-      console.log('[Auth] Fetching session from Supabase...');
+      log.info('[Auth] Fetching session from Supabase...');
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        console.error('[Auth] Session fetch error:', error.message);
+        log.error('[Auth] Session fetch error:', error.message);
         set({ isAuthenticated: false, isLoading: false });
         return;
       }
 
       if (session?.user) {
-        console.log('[Auth] Session found for user:', session.user.id);
-        console.log('[Auth] Fetching host data from database...');
+        log.info('[Auth] Session found for user:', session.user.id);
+        log.info('[Auth] Fetching host data from database...');
         
         const { data: hostData, error: hostError } = await supabase
           .from("hosts")
@@ -55,12 +56,12 @@ export const useAuthStore = create<AuthState>((set) => ({
           .single();
 
         if (hostError && hostError.code !== 'PGRST116') {
-          console.error('[Auth] Host data fetch error:', hostError);
+          log.error('[Auth] Host data fetch error:', hostError);
           throw hostError;
         }
 
         if (hostData) {
-          console.log('[Auth] Host data retrieved:', { 
+          log.info('[Auth] Host data retrieved:', { 
             id: hostData.id, 
             name: hostData.name, 
             role: hostData.role,
@@ -68,11 +69,11 @@ export const useAuthStore = create<AuthState>((set) => ({
           });
 
           if (hostData.role === "visitor") {
-            console.warn('[Auth] Visitor role blocked');
+            log.warn('[Auth] Visitor role blocked');
             throw new Error("Visitor role is no longer supported");
           }
 
-          console.log('[Auth] Authentication successful');
+          log.info('[Auth] Authentication successful');
           set({
             user: hostData as User,
             isAuthenticated: true,
@@ -80,16 +81,16 @@ export const useAuthStore = create<AuthState>((set) => ({
             error: null,
           });
         } else {
-          console.log('[Auth] No host data found for session user.');
+          log.info('[Auth] No host data found for session user.');
           set({ isAuthenticated: false, isLoading: false, user: null });
         }
       } else {
-        console.log('[Auth] No active session found');
+        log.info('[Auth] No active session found');
         set({ isAuthenticated: false, isLoading: false, user: null });
       }
     } catch (err: unknown) {
-      console.error('[Auth] Authentication initialization failed:', (err as Error).message);
-      console.error('[Auth] Error details:', err);
+      log.error('[Auth] Authentication initialization failed:', (err as Error).message);
+      log.error('[Auth] Error details:', err);
       set({
         isAuthenticated: false,
         isLoading: false,
@@ -100,21 +101,21 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   //  Login function
   login: async (email: string, password: string) => {
-    console.log('[Auth] Login attempt for email:', email);
+    log.info('[Auth] Login attempt for email:', email);
     try {
       set({ isLoading: true, error: null });
 
-      console.log('[Auth] Signing in with Supabase...');
+      log.info('[Auth] Signing in with Supabase...');
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
-        console.error('[Auth] Sign-in error:', error.message);
+        log.error('[Auth] Sign-in error:', error.message);
         throw error;
       }
 
       if (data?.user) {
-        console.log('[Auth] Sign-in successful, user ID:', data.user.id);
-        console.log('[Auth] Fetching host data...');
+        log.info('[Auth] Sign-in successful, user ID:', data.user.id);
+        log.info('[Auth] Fetching host data...');
         
         const { data: hostData, error: hostError } = await supabase
           .from("hosts")
@@ -123,11 +124,11 @@ export const useAuthStore = create<AuthState>((set) => ({
           .single();
 
         if (hostError) {
-          console.error('[Auth] Host data fetch error:', hostError);
+          log.error('[Auth] Host data fetch error:', hostError);
           throw hostError;
         }
 
-        console.log('[Auth] Host data retrieved:', {
+        log.info('[Auth] Host data retrieved:', {
           id: hostData.id,
           name: hostData.name,
           role: hostData.role,
@@ -136,11 +137,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
         //  Block visitor role
         if (hostData.role === "visitor") {
-          console.warn('[Auth] Login blocked: visitor role');
+          log.warn('[Auth] Login blocked: visitor role');
           throw new Error("Visitor role is no longer supported");
         }
 
-        console.log('[Auth] Login successful');
+        log.info('[Auth] Login successful');
         set({
           user: hostData as User,
           isAuthenticated: true,
@@ -149,8 +150,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         });
       }
     } catch (error: unknown) {
-      console.error('[Auth] Login failed:', (error as Error).message);
-      console.error('[Auth] Error details:', error);
+      log.error('[Auth] Login failed:', (error as Error).message);
+      log.error('[Auth] Error details:', error);
       set({
         error: (error as Error).message || "Invalid credentials",
         isLoading: false,
@@ -162,11 +163,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   // Signup function
   signup: async (email: string, password: string, name: string, departmentId: string) => {
-    console.log('[Auth] Signup attempt:', { email, name, departmentId });
+    log.info('[Auth] Signup attempt:', { email, name, departmentId });
     try {
       set({ isLoading: true, error: null });
 
-      console.log('[Auth] Creating auth user in Supabase...');
+      log.info('[Auth] Creating auth user in Supabase...');
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -179,24 +180,24 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
 
       if (signUpError) {
-        console.error('[Auth] Sign-up error:', signUpError.message);
+        log.error('[Auth] Sign-up error:', signUpError.message);
         throw signUpError;
       }
 
       if (!authData.user) {
-        console.error('[Auth] No user data returned from sign-up');
+        log.error('[Auth] No user data returned from sign-up');
         throw new Error("Failed to create user account");
       }
 
-      console.log('[Auth] Auth user created:', authData.user.id);
+      log.info('[Auth] Auth user created:', authData.user.id);
       
       // Host record will be created by a database trigger.
       // Now, simply set loading to false and clear error.
-      console.log('[Auth] Signup successful; host record handled by trigger.');
+      log.info('[Auth] Signup successful; host record handled by trigger.');
       set({ isLoading: false, error: null });
     } catch (error: unknown) {
-      console.error('[Auth] Signup failed:', (error as Error).message);
-      console.error('[Auth] Error details:', error);
+      log.error('[Auth] Signup failed:', (error as Error).message);
+      log.error('[Auth] Error details:', error);
       set({
         error: (error as Error).message || "Failed to create account",
         isLoading: false,
@@ -207,34 +208,34 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   // Logout function
   logout: async () => {
-    console.log('[Auth] Logout initiated');
+    log.info('[Auth] Logout initiated');
     try {
       set({ isLoading: true, error: null });
-      console.log('[Auth] Signing out from Supabase...');
+      log.info('[Auth] Signing out from Supabase...');
       await supabase.auth.signOut();
-      console.log('[Auth] Logout successful');
+      log.info('[Auth] Logout successful');
       set({ user: null, isAuthenticated: false, isLoading: false, error: null });
     } catch (error: unknown) {
-      console.error('[Auth] Logout failed:', (error as Error).message);
-      console.error('[Auth] Error details:', error);
+      log.error('[Auth] Logout failed:', (error as Error).message);
+      log.error('[Auth] Error details:', error);
       set({ error: "Failed to logout", isLoading: false });
     }
   },
 
   // Sign in with Google
   signInWithGoogle: async () => {
-    console.log('[Auth] Initiating Google Sign-In...');
+    log.info('[Auth] Initiating Google Sign-In...');
     try {
       set({ isLoading: true, error: null });
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
       });
       if (error) {
-        console.error('[Auth] Google Sign-In error:', error.message);
+        log.error('[Auth] Google Sign-In error:', error.message);
         throw error;
       }
     } catch (error: unknown) {
-      console.error('[Auth] Google Sign-In failed:', (error as Error).message);
+      log.error('[Auth] Google Sign-In failed:', (error as Error).message);
       set({
         error: (error as Error).message || 'Google Sign-In failed',
         isLoading: false,

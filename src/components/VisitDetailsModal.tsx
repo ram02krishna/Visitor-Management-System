@@ -82,7 +82,7 @@ export function VisitDetailsModal({
         .from("visits")
         .update(updates)
         .eq("id", visit.id)
-        .select("*, visitors(*)")
+        .select("*, visitor:visitors(*)")
         .single()
 
       if (error) throw error
@@ -91,8 +91,8 @@ export function VisitDetailsModal({
         try {
           const qrData = JSON.stringify({
             visitId: visit.id,
-            name: data.visitors?.name,
-            email: data.visitors?.email,
+            name: data.visitor?.name,
+            email: data.visitor?.email,
             purpose: data.purpose,
           })
 
@@ -107,8 +107,8 @@ export function VisitDetailsModal({
               emailServiceId,
               emailTemplateId,
               {
-                to_name: data.visitors?.name,
-                to_email: data.visitors?.email,
+                to_name: data.visitor?.name,
+                to_email: data.visitor?.email,
                 qr_code: qrUrl,
                 visit_id: data.id,
                 visit_purpose: data.purpose,
