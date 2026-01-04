@@ -1,48 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { supabase } from "../lib/supabase"
-import { X, Check, Ban, CheckCircle } from "lucide-react"
-import QRCode from "qrcode"
-import emailjs from "@emailjs/browser"
-import { toast } from "react-toastify"
+import { useState } from "react";
+import { supabase } from "../lib/supabase";
+import { X, Check, Ban, CheckCircle } from "lucide-react";
+import QRCode from "qrcode";
+import emailjs from "@emailjs/browser";
+import { toast } from "react-toastify";
 
 export type Visit = {
-  id: string
-  visitor_name: string
-  host_name: string
-  purpose: string
-  status: string
-  check_in_time?: string
-  check_out_time?: string
-  created_at: string
-  approved_at?: string
-  scheduled_time?: string
-  visitors?: { name: string; email: string }
-  hosts?: { name: string }
-  entity_id?: string
-}
+  id: string;
+  visitor_name: string;
+  host_name: string;
+  purpose: string;
+  status: string;
+  check_in_time?: string;
+  check_out_time?: string;
+  created_at: string;
+  approved_at?: string;
+  scheduled_time?: string;
+  visitors?: { name: string; email: string };
+  hosts?: { name: string };
+  entity_id?: string;
+};
 
 type VisitDetailsModalProps = {
-  status: string
-  isOpen: boolean
-  onClose: () => void
-  userRole?: string
-  userId?: string
-  visits: Visit[]
-  onStatusChange: () => void
-  limit: number
-  offset: number
-  setOffset: (offset: number) => void
-  totalVisits: number
-}
+  status: string;
+  isOpen: boolean;
+  onClose: () => void;
+  userRole?: string;
+  visits: Visit[];
+  onStatusChange: () => void;
+  limit: number;
+  offset: number;
+  setOffset: (offset: number) => void;
+  totalVisits: number;
+};
 
 export function VisitDetailsModal({
   status,
   isOpen,
   onClose,
   userRole,
-  userId,
   visits,
   onStatusChange,
   limit,
@@ -50,13 +48,13 @@ export function VisitDetailsModal({
   setOffset,
   totalVisits,
 }: VisitDetailsModalProps) {
-  const [loading, setLoading] = useState(false)
-  const [currentVisit, setCurrentVisit] = useState<Visit | null>(null)
-  const [actionType, setActionType] = useState<"approve" | "deny" | "complete" | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [currentVisit, setCurrentVisit] = useState<Visit | null>(null);
+  const [actionType, setActionType] = useState<"approve" | "deny" | "complete" | null>(null);
 
   const handleStatusUpdate = async (visit: Visit, newStatus: string) => {
-    setLoading(true)
-    setCurrentVisit(visit)
+    setLoading(true);
+    setCurrentVisit(visit);
     setActionType(
       newStatus === "approved"
         ? "approve"
@@ -64,8 +62,8 @@ export function VisitDetailsModal({
           ? "deny"
           : newStatus === "completed"
             ? "complete"
-            : null,
-    )
+            : null
+    );
 
     try {
       const updates = {
@@ -76,16 +74,16 @@ export function VisitDetailsModal({
         ...(newStatus === "completed" && {
           check_out_time: new Date().toISOString(),
         }),
-      }
+      };
 
       const { data, error } = await supabase
         .from("visits")
         .update(updates)
         .eq("id", visit.id)
         .select("*, visitor:visitors(*)")
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
       if (newStatus === "approved" && data) {
         try {
@@ -94,13 +92,13 @@ export function VisitDetailsModal({
             name: data.visitor?.name,
             email: data.visitor?.email,
             purpose: data.purpose,
-          })
+          });
 
-          const qrUrl = await QRCode.toDataURL(qrData)
+          const qrUrl = await QRCode.toDataURL(qrData);
 
-          const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
-          const emailTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-          const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+          const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+          const emailTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+          const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
           if (emailServiceId && emailTemplateId && emailPublicKey) {
             await emailjs.send(
@@ -114,75 +112,75 @@ export function VisitDetailsModal({
                 visit_purpose: data.purpose,
                 approved_at: new Date(data.approved_at).toLocaleString(),
               },
-              emailPublicKey,
-            )
+              emailPublicKey
+            );
           }
         } catch (emailError) {
-          console.error("Failed to send QR code email:", emailError)
+          console.error("Failed to send QR code email:", emailError);
         }
       }
 
-      onStatusChange()
-      toast.success(`Visit ${newStatus} successfully!`)
+      onStatusChange();
+      toast.success(`Visit ${newStatus} successfully!`);
     } catch (error) {
-      console.error("Error updating visit status:", error)
-      toast.error("Failed to update visit status")
+      console.error("Error updating visit status:", error);
+      toast.error("Failed to update visit status");
     } finally {
-      setLoading(false)
-      setCurrentVisit(null)
-      setActionType(null)
+      setLoading(false);
+      setCurrentVisit(null);
+      setActionType(null);
     }
-  }
+  };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending":
-        return "Pending"
+        return "Pending";
       case "approved":
-        return "Approved"
+        return "Approved";
       case "completed":
-        return "Completed"
+        return "Completed";
       case "cancelled":
-        return "Cancelled"
+        return "Cancelled";
       case "denied":
-        return "Denied"
+        return "Denied";
       case "cancelled_denied":
-        return "Cancelled/Denied"
+        return "Cancelled/Denied";
       default:
-        return status
+        return status;
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "text-yellow-600 bg-yellow-50"
+        return "text-yellow-600 bg-yellow-50";
       case "approved":
-        return "text-green-600 bg-green-50"
+        return "text-green-600 bg-green-50";
       case "completed":
-        return "text-indigo-600 bg-indigo-50"
+        return "text-indigo-600 bg-indigo-50";
       case "cancelled":
-        return "text-red-600 bg-red-50"
+        return "text-red-600 bg-red-50";
       case "denied":
-        return "text-red-600 bg-red-50"
+        return "text-red-600 bg-red-50";
       default:
-        return "text-gray-600 bg-gray-50"
+        return "text-gray-600 bg-gray-50";
     }
-  }
+  };
 
   const formatDateTime = (dateString?: string) => {
-    if (!dateString) return "N/A"
-    return new Date(dateString).toLocaleString()
-  }
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString();
+  };
 
-  const canPerformAction = (visit: Visit) => {
+  const canPerformAction = () => {
     if (userRole === "admin" || userRole === "guard") {
-      return true
+      return true;
     }
-    return false
-  }
+    return false;
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
@@ -191,7 +189,10 @@ export function VisitDetailsModal({
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-sky-600 animate-pulse"></span>
             {getStatusLabel(status)} Visits
-            {status !== "cancelled" && status !== "denied" && status !== "cancelled_denied" && " - Today"}
+            {status !== "cancelled" &&
+              status !== "denied" &&
+              status !== "cancelled_denied" &&
+              " - Today"}
           </h2>
           <button
             onClick={onClose}
@@ -306,16 +307,22 @@ export function VisitDetailsModal({
                         </td>
                       )}
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {canPerformAction(visit) && (
+                        {canPerformAction() && (
                           <div className="flex gap-2">
                             {visit.status === "pending" && (
                               <>
                                 <button
                                   onClick={() => handleStatusUpdate(visit, "approved")}
-                                  disabled={loading && currentVisit?.id === visit.id && actionType === "approve"}
+                                  disabled={
+                                    loading &&
+                                    currentVisit?.id === visit.id &&
+                                    actionType === "approve"
+                                  }
                                   className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-all"
                                 >
-                                  {loading && currentVisit?.id === visit.id && actionType === "approve" ? (
+                                  {loading &&
+                                  currentVisit?.id === visit.id &&
+                                  actionType === "approve" ? (
                                     <span className="animate-spin">↻</span>
                                   ) : (
                                     <>
@@ -326,10 +333,16 @@ export function VisitDetailsModal({
                                 </button>
                                 <button
                                   onClick={() => handleStatusUpdate(visit, "denied")}
-                                  disabled={loading && currentVisit?.id === visit.id && actionType === "deny"}
+                                  disabled={
+                                    loading &&
+                                    currentVisit?.id === visit.id &&
+                                    actionType === "deny"
+                                  }
                                   className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-all"
                                 >
-                                  {loading && currentVisit?.id === visit.id && actionType === "deny" ? (
+                                  {loading &&
+                                  currentVisit?.id === visit.id &&
+                                  actionType === "deny" ? (
                                     <span className="animate-spin">↻</span>
                                   ) : (
                                     <>
@@ -343,10 +356,16 @@ export function VisitDetailsModal({
                             {visit.status === "approved" && visit.check_in_time && (
                               <button
                                 onClick={() => handleStatusUpdate(visit, "completed")}
-                                disabled={loading && currentVisit?.id === visit.id && actionType === "complete"}
+                                disabled={
+                                  loading &&
+                                  currentVisit?.id === visit.id &&
+                                  actionType === "complete"
+                                }
                                 className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all"
                               >
-                                {loading && currentVisit?.id === visit.id && actionType === "complete" ? (
+                                {loading &&
+                                currentVisit?.id === visit.id &&
+                                actionType === "complete" ? (
                                   <span className="animate-spin">↻</span>
                                 ) : (
                                   <>
@@ -370,7 +389,8 @@ export function VisitDetailsModal({
         <div className="border-t dark:border-slate-800 p-6 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
           <div>
             <p className="text-sm font-semibold text-gray-700 dark:text-slate-300">
-              Showing {offset + 1} to {Math.min(offset + limit, totalVisits)} of {totalVisits} results
+              Showing {offset + 1} to {Math.min(offset + limit, totalVisits)} of {totalVisits}{" "}
+              results
             </p>
           </div>
           <div className="flex gap-3">
@@ -392,5 +412,5 @@ export function VisitDetailsModal({
         </div>
       </div>
     </div>
-  )
+  );
 }

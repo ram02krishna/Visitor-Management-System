@@ -1,28 +1,27 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { Html5Qrcode } from "html5-qrcode"
-import { supabase } from "../lib/supabase"
-import { toast } from "../../hooks/use-toast"
-import { Camera, User, Check, X, Calendar, Clock, AlertTriangle } from "lucide-react"
-import type { Database } from "../lib/database.types"
-import emailjs from "@emailjs/browser"
+import { useEffect, useRef, useState } from "react";
+import { Html5Qrcode } from "html5-qrcode";
+import { supabase } from "../lib/supabase";
+import { toast } from "../../hooks/use-toast";
+import { Camera, User, Calendar, Clock, AlertTriangle } from "lucide-react";
+import type { Database } from "../lib/database.types";
 
 type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
-  visitors: Database["public"]["Tables"]["visitors"]["Row"]
-  hosts: Database["public"]["Tables"]["hosts"]["Row"]
-}
+  visitors: Database["public"]["Tables"]["visitors"]["Row"];
+  hosts: Database["public"]["Tables"]["hosts"]["Row"];
+};
 
 export function ScanQrCode() {
-  const [scanResult, setScanResult] = useState<string | null>(null)
-  const [visit, setVisit] = useState<Visit | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const scannerRef = useRef<Html5Qrcode | null>(null)
+  const [scanResult, setScanResult] = useState<string | null>(null);
+  const [visit, setVisit] = useState<Visit | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
-    const scanner = new Html5Qrcode("qr-reader")
-    scannerRef.current = scanner
+    const scanner = new Html5Qrcode("qr-reader");
+    scannerRef.current = scanner;
 
     const startScanner = async () => {
       try {
@@ -33,49 +32,49 @@ export function ScanQrCode() {
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
-            setScanResult(decodedText)
-            if (scannerRef.current?.isScanning) scannerRef.current.stop()
+            setScanResult(decodedText);
+            if (scannerRef.current?.isScanning) scannerRef.current.stop();
           },
-          () => {},
-        )
+          () => {}
+        );
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_err) {
-        setError("Failed to start QR code scanner. Please ensure camera permissions are granted.")
+        setError("Failed to start QR code scanner. Please ensure camera permissions are granted.");
       }
-    }
+    };
 
-    startScanner()
+    startScanner();
 
     return () => {
       if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop()
+        scannerRef.current.stop();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   useEffect(() => {
-    if (!scanResult) return
+    if (!scanResult) return;
 
     const fetchVisitDetails = async () => {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       try {
-        const { visitId } = JSON.parse(scanResult)
+        const { visitId } = JSON.parse(scanResult);
         if (!visitId) {
-          throw new Error("Invalid QR code format.")
+          throw new Error("Invalid QR code format.");
         }
 
         const { data, error } = await supabase
           .from("visits")
           .select("*, visitors(*), hosts(*)")
           .eq("id", visitId)
-          .single()
+          .single();
 
         if (error) {
-          throw error
+          throw error;
         }
 
-        if (data.status !== 'approved') {
+        if (data.status !== "approved") {
           setError("Your visit is not approved by Guard.");
           setVisit(null);
         } else {
@@ -92,25 +91,24 @@ export function ScanQrCode() {
           }
 
           toast.success("Visitor checked in successfully!");
-          setVisit(data as Visit)
+          setVisit(data as Visit);
         }
-
       } catch (err: unknown) {
-        let errorMessage = "Failed to fetch visit details."
+        let errorMessage = "Failed to fetch visit details.";
         if (err instanceof Error) {
-          errorMessage = err.message
+          errorMessage = err.message;
         } else if (typeof err === "string") {
-          errorMessage = err
+          errorMessage = err;
         }
-        setError(errorMessage)
-        toast.error(errorMessage)
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchVisitDetails()
-  }, [scanResult])
+    fetchVisitDetails();
+  }, [scanResult]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -164,5 +162,5 @@ export function ScanQrCode() {
         )}
       </div>
     </div>
-  )
+  );
 }

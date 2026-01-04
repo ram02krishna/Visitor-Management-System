@@ -30,42 +30,39 @@ export function Dashboard() {
   const [totalVisits, setTotalVisits] = useState(0);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const handleStatCardClick = useCallback(async (status: string) => {
-    if (status === "total_users") {
-      navigate("/users");
-      return;
-    }
-
-    setSelectedStatus(status);
-    setOffset(0);
-    try {
-      const isMultiStatus = status === "cancelled_denied";
-      const statusFilter = isMultiStatus 
-        ? [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]
-        : [status];
-
-      let countQuery = supabase
-        .from("visits")
-        .select("*", { count: "exact", head: true });
-
-      if (isMultiStatus) {
-        countQuery = countQuery.in("status", statusFilter);
-      } else {
-        countQuery = countQuery.eq("status", status);
+  const handleStatCardClick = useCallback(
+    async (status: string) => {
+      if (status === "total_users") {
+        navigate("/users");
+        return;
       }
 
-      if (user?.role === "host") {
-        countQuery = countQuery.not("host_id", "is", null);
-      }
+      setSelectedStatus(status);
+      setOffset(0);
+      try {
+        const isMultiStatus = status === "cancelled_denied";
+        const statusFilter = isMultiStatus
+          ? [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]
+          : [status];
 
-      const { count, error: countError } = await countQuery;
+        let countQuery = supabase.from("visits").select("*", { count: "exact", head: true });
 
-      if (countError) throw countError;
-      setTotalVisits(count || 0);
+        if (isMultiStatus) {
+          countQuery = countQuery.in("status", statusFilter);
+        } else {
+          countQuery = countQuery.eq("status", status);
+        }
 
-      let query = supabase
-        .from("visits")
-        .select(
+        if (user?.role === "host") {
+          countQuery = countQuery.not("host_id", "is", null);
+        }
+
+        const { count, error: countError } = await countQuery;
+
+        if (countError) throw countError;
+        setTotalVisits(count || 0);
+
+        let query = supabase.from("visits").select(
           `
           *,
           visitors:visitor_id (name),
@@ -73,36 +70,36 @@ export function Dashboard() {
         `
         );
 
-      if (isMultiStatus) {
-        query = query.in("status", statusFilter);
-      } else {
-        query = query.eq("status", status);
+        if (isMultiStatus) {
+          query = query.in("status", statusFilter);
+        } else {
+          query = query.eq("status", status);
+        }
+
+        if (user?.role === "host") {
+          query = query.not("host_id", "is", null);
+        }
+
+        query = query.order("created_at", { ascending: false }).range(0, limit - 1);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        const transformedData =
+          data?.map((visit) => ({
+            ...visit,
+            visitor_name: visit.visitors?.name || "Unknown Visitor",
+            host_name: visit.hosts?.name || "Unknown Host",
+          })) || [];
+
+        setSelectedVisits(transformedData as Visit[]);
+        setIsModalOpen(true);
+      } catch (error) {
+        console.error("Error fetching visits:", error);
       }
-
-      if (user?.role === "host") {
-        query = query.not("host_id", "is", null);
-      }
-
-      query = query
-        .order("created_at", { ascending: false })
-        .range(0, limit - 1);
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      const transformedData =
-        data?.map((visit) => ({
-          ...visit,
-          visitor_name: visit.visitors?.name || "Unknown Visitor",
-          host_name: visit.hosts?.name || "Unknown Host",
-        })) || [];
-
-      setSelectedVisits(transformedData as Visit[]);
-      setIsModalOpen(true);
-    } catch (error) {
-      console.error("Error fetching visits:", error);
-    }
-  }, [limit, navigate, user?.role]);
+    },
+    [limit, navigate, user?.role]
+  );
 
   useEffect(() => {
     if (!user?.role) return;
@@ -139,14 +136,10 @@ export function Dashboard() {
 
     const channel = supabase
       .channel("visits_realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "visits" },
-        () => {
-          fetchStats();
-          setLastRefresh(new Date());
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "visits" }, () => {
+        fetchStats();
+        setLastRefresh(new Date());
+      })
       .subscribe();
 
     return () => {
@@ -190,7 +183,6 @@ export function Dashboard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         userRole={user?.role}
-        userId={user?.id}
         visits={selectedVisits}
         onStatusChange={handleStatusChange}
         limit={limit}

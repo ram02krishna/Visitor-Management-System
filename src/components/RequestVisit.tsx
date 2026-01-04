@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import React from "react"
-import { Camera } from "lucide-react"
-import { v4 as uuidv4 } from "uuid"
-import emailjs from "@emailjs/browser"
-import { supabase } from "../lib/supabase"
-import { BackButton } from "./BackButton"
+import React from "react";
+import { Camera } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
+import emailjs from "@emailjs/browser";
+import { supabase } from "../lib/supabase";
+import { BackButton } from "./BackButton";
 
 interface VisitorFormData {
-  name: string
-  email: string
-  phone: string
-  company: string
-  purpose: string
-  entityEmail: string
-  visitDate: string
-  notes: string
-  photo?: FileList
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  purpose: string;
+  entityEmail: string;
+  visitDate: string;
+  notes: string;
+  photo?: FileList;
 }
 
 export function RequestVisit() {
@@ -29,84 +29,86 @@ export function RequestVisit() {
     entityEmail: "",
     visitDate: "",
     notes: "",
-  })
-  const [loading, setLoading] = React.useState(false)
-  const [success, setSuccess] = React.useState(false)
-  const [error, setError] = React.useState("")
+  });
+  const [loading, setLoading] = React.useState(false);
+  const [success, setSuccess] = React.useState(false);
+  const [error, setError] = React.useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target
+    const { name, value, type } = e.target;
     if (type === "file" && (e.target as HTMLInputElement).files) {
-      setFormData((prev) => ({ ...prev, photo: (e.target as HTMLInputElement).files! }))
+      setFormData((prev) => ({ ...prev, photo: (e.target as HTMLInputElement).files! }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }))
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-    setSuccess(false)
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess(false);
 
     try {
-      let photoUrl = null
+      let photoUrl = null;
 
       if (formData.photo?.[0]) {
-        const file = formData.photo[0]
-        const fileExt = file.name.split(".").pop()
-        const fileName = `${uuidv4()}.${fileExt}`
-        const filePath = fileName
+        const file = formData.photo[0];
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = fileName;
 
-        const { error: uploadError } = await supabase.storage.from("identification-images").upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        })
+        const { error: uploadError } = await supabase.storage
+          .from("identification-images")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+          });
 
         if (uploadError) {
-          throw new Error(`Photo upload failed: ${uploadError.message}`)
+          throw new Error(`Photo upload failed: ${uploadError.message}`);
         }
 
         const {
           data: { publicUrl },
-        } = supabase.storage.from("identification-images").getPublicUrl(filePath)
+        } = supabase.storage.from("identification-images").getPublicUrl(filePath);
 
-        photoUrl = publicUrl
+        photoUrl = publicUrl;
       }
 
-      let entityId = null
-      let hostName = null
+      let entityId = null;
+      let hostName = null;
       if (formData.entityEmail && formData.entityEmail.trim() !== "") {
         const { data: entityData, error: entityError } = await supabase
           .from("hosts")
           .select("id, name")
           .eq("email", formData.entityEmail)
           .in("role", ["host", "admin"])
-          .maybeSingle()
+          .maybeSingle();
 
         if (entityError && entityError.code !== "PGRST116") {
-          throw new Error("Error looking up entity: " + entityError.message)
+          throw new Error("Error looking up entity: " + entityError.message);
         }
 
         if (entityData) {
-          entityId = entityData.id
-          hostName = entityData.name
+          entityId = entityData.id;
+          hostName = entityData.name;
         }
       }
 
-      let visitorId
+      let visitorId;
       const { data: existingVisitor, error: visitorLookupError } = await supabase
         .from("visitors")
         .select("id")
         .eq("email", formData.email)
-        .maybeSingle()
+        .maybeSingle();
 
       if (visitorLookupError && visitorLookupError.code !== "PGRST116") {
-        throw visitorLookupError
+        throw visitorLookupError;
       }
 
       if (existingVisitor) {
-        visitorId = existingVisitor.id
+        visitorId = existingVisitor.id;
         const { error: updateError } = await supabase
           .from("visitors")
           .update({
@@ -116,10 +118,10 @@ export function RequestVisit() {
             photo_url: photoUrl,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", visitorId)
+          .eq("id", visitorId);
 
         if (updateError) {
-          throw updateError
+          throw updateError;
         }
       } else {
         const { data: newVisitor, error: createError } = await supabase
@@ -132,19 +134,19 @@ export function RequestVisit() {
             photo_url: photoUrl,
           })
           .select()
-          .single()
+          .single();
 
         if (createError) {
-          throw createError
+          throw createError;
         }
 
-        visitorId = newVisitor.id
+        visitorId = newVisitor.id;
       }
 
-      const visitDate = new Date(formData.visitDate)
-      visitDate.setHours(23, 59, 59, 999)
+      const visitDate = new Date(formData.visitDate);
+      visitDate.setHours(23, 59, 59, 999);
 
-      const visitId = uuidv4()
+      const visitId = uuidv4();
       const { error: visitError } = await supabase.from("visits").insert({
         id: visitId,
         visitor_id: visitorId,
@@ -156,15 +158,15 @@ export function RequestVisit() {
         check_out_time: null,
         valid_until: visitDate.toISOString(),
         notes: formData.notes || null,
-      })
+      });
 
       if (visitError) {
-        throw visitError
+        throw visitError;
       }
 
-      const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
-      const adminTemplateId = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID
-      const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const adminTemplateId = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID;
+      const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
       if (emailServiceId && adminTemplateId && emailPublicKey) {
         try {
@@ -172,10 +174,10 @@ export function RequestVisit() {
             .from("hosts")
             .select("name, email")
             .in("role", ["guard", "admin"])
-            .eq("active", true)
+            .eq("active", true);
 
           if (fetchError) {
-            console.error("Failed to fetch guards and admins:", fetchError)
+            console.error("Failed to fetch guards and admins:", fetchError);
           } else if (guardsAndAdmins && guardsAndAdmins.length > 0) {
             for (const recipient of guardsAndAdmins) {
               try {
@@ -191,19 +193,19 @@ export function RequestVisit() {
                     host_name: hostName || "Not specified",
                     dashboard_link: window.location.origin + "/app/approval",
                   },
-                  emailPublicKey,
-                )
+                  emailPublicKey
+                );
               } catch (emailError) {
-                console.error(`Failed to send email to ${recipient.email}:`, emailError)
+                console.error(`Failed to send email to ${recipient.email}:`, emailError);
               }
             }
           }
         } catch (err) {
-          console.error("Error sending notification emails:", err)
+          console.error("Error sending notification emails:", err);
         }
       }
 
-      setSuccess(true)
+      setSuccess(true);
       setFormData({
         name: "",
         email: "",
@@ -213,13 +215,13 @@ export function RequestVisit() {
         entityEmail: "",
         visitDate: "",
         notes: "",
-      })
+      });
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to request visit. Please try again.")
+      setError((err as Error).message || "Failed to request visit. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
@@ -231,14 +233,19 @@ export function RequestVisit() {
         <div className="md:grid md:grid-cols-3 md:gap-6">
           <div className="md:col-span-1 animate-fadeIn">
             <div className="px-4 sm:px-0">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Request a Visit</h3>
+              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
+                Request a Visit
+              </h3>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                 Please fill in the details for your visit request.
               </p>
             </div>
           </div>
 
-          <div className="mt-5 md:mt-0 md:col-span-2 animate-fadeInUp" style={{ animationDelay: "0.1s" }}>
+          <div
+            className="mt-5 md:mt-0 md:col-span-2 animate-fadeInUp"
+            style={{ animationDelay: "0.1s" }}
+          >
             <form onSubmit={handleSubmit}>
               <div className="shadow-xl sm:rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-500">
                 <div className="px-4 py-5 glass space-y-6 sm:p-6">
@@ -260,8 +267,8 @@ export function RequestVisit() {
                         </div>
                         <div className="ml-3">
                           <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                            Visit request submitted successfully! The host will review and approve your visit. You will
-                            receive a QR code via email after approval.
+                            Visit request submitted successfully! The host will review and approve
+                            your visit. You will receive a QR code via email after approval.
                           </p>
                         </div>
                       </div>
@@ -285,7 +292,9 @@ export function RequestVisit() {
                           </svg>
                         </div>
                         <div className="ml-3">
-                          <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+                          <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                            {error}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -293,7 +302,10 @@ export function RequestVisit() {
 
                   <div className="grid grid-cols-6 gap-6">
                     <div className="col-span-6 sm:col-span-3">
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <label
+                        htmlFor="name"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                      >
                         Full name
                       </label>
                       <input
@@ -306,9 +318,11 @@ export function RequestVisit() {
                         className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
                       />
                     </div>
-
                     <div className="col-span-6 sm:col-span-3">
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                      >
                         Email address
                       </label>
                       <input
@@ -321,9 +335,11 @@ export function RequestVisit() {
                         className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
                       />
                     </div>
-
                     <div className="col-span-6 sm:col-span-3">
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <label
+                        htmlFor="phone"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                      >
                         Phone number
                       </label>
                       <input
@@ -336,9 +352,11 @@ export function RequestVisit() {
                         className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
                       />
                     </div>
-
                     <div className="col-span-6 sm:col-span-3">
-                      <label htmlFor="company" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <label
+                        htmlFor="company"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                      >
                         Company
                       </label>
                       <input
@@ -350,9 +368,11 @@ export function RequestVisit() {
                         className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
                       />
                     </div>
-
                     <div className="col-span-6 sm:col-span-3">
-                      <label htmlFor="purpose" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <label
+                        htmlFor="purpose"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                      >
                         Purpose of visit
                       </label>
                       <input
@@ -365,27 +385,30 @@ export function RequestVisit() {
                         className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
                       />
                     </div>
-
-                                    <div className="col-span-6">
-                                      <label
-                                        htmlFor="entityEmail"
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                                      >
-                                        Host email (optional)
-                                      </label>
-                                      <input
-                                        type="email"
-                                        name="entityEmail"
-                                        id="entityEmail"
-                                        value={formData.entityEmail}
-                                        onChange={handleChange}
-                                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
-                                      />
-                                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                        Enter the email of the host associated with this visit
-                                      </p>
-                                    </div>                    <div className="col-span-6 sm:col-span-3">
-                      <label htmlFor="visitDate" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    <div className="col-span-6">
+                      <label
+                        htmlFor="entityEmail"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                      >
+                        Host email (optional)
+                      </label>
+                      <input
+                        type="email"
+                        name="entityEmail"
+                        id="entityEmail"
+                        value={formData.entityEmail}
+                        onChange={handleChange}
+                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Enter the email of the host associated with this visit
+                      </p>
+                    </div>{" "}
+                    <div className="col-span-6 sm:col-span-3">
+                      <label
+                        htmlFor="visitDate"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                      >
                         Date of visit
                       </label>
                       <input
@@ -399,9 +422,11 @@ export function RequestVisit() {
                         className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
                       />
                     </div>
-
                     <div className="col-span-6">
-                      <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <label
+                        htmlFor="notes"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                      >
                         Notes (optional)
                       </label>
                       <textarea
@@ -439,7 +464,9 @@ export function RequestVisit() {
                           </label>
                           <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          PNG, JPG, GIF up to 10MB
+                        </p>
                         {formData.photo && formData.photo.length > 0 && (
                           <p className="text-sm text-green-600 dark:text-green-400 mt-2">
                             Selected: {formData.photo[0].name}
@@ -464,5 +491,5 @@ export function RequestVisit() {
         </div>
       </div>
     </div>
-  )
+  );
 }

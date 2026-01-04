@@ -1,51 +1,51 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import { Shield } from "lucide-react"
-import { useAuthStore } from "../store/auth"
-import { BackButton } from "./BackButton"
-import log from "../lib/logger"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Shield } from "lucide-react";
+import { useAuthStore } from "../store/auth";
+import { BackButton } from "./BackButton";
+import log from "../lib/logger";
 
 export function Login() {
-  const navigate = useNavigate()
-  const { login, signInWithGoogle, isAuthenticated } = useAuthStore()
-  const isLoading = useAuthStore((state) => state.isLoading)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const navigate = useNavigate();
+  const { login, signInWithGoogle, isAuthenticated } = useAuthStore();
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/app/dashboard")
+      navigate("/app/dashboard");
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    log.info("[Login] Form submitted with email:", email)
-    setError("")
+    e.preventDefault();
+    log.info("[Login] Form submitted with email:", email);
+    setError("");
 
     try {
-      log.info("[Login] Calling login function...")
-      await login(email, password)
-      log.info("[Login] Login successful, navigating to dashboard")
-      navigate("/app/dashboard")
+      log.info("[Login] Calling login function...");
+      await login(email, password);
+      log.info("[Login] Login successful, navigating to dashboard");
+      navigate("/app/dashboard");
     } catch (error) {
-      log.error("[Login] Login failed:", error)
-      setError("Invalid credentials")
+      log.error("[Login] Login failed:", error);
+      setError("Invalid credentials");
     }
-  }
+  };
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle()
+      await signInWithGoogle();
     } catch (error) {
-      log.error("[Login] Google Sign-In failed:", error)
-      setError("Google Sign-In failed. Please try again.")
+      log.error("[Login] Google Sign-In failed:", error);
+      setError("Google Sign-In failed. Please try again.");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -67,11 +67,17 @@ export function Login() {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-fadeInUp" style={{ animationDelay: "0.2s" }}>
+      <div
+        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-fadeInUp"
+        style={{ animationDelay: "0.2s" }}
+      >
         <div className="glass py-6 sm:py-8 px-4 sm:px-10 shadow-xl rounded-2xl hover:shadow-2xl transition-all duration-500">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-slate-300">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
                 Email address
               </label>
               <div className="mt-1">
@@ -89,7 +95,10 @@ export function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-slate-300">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
                 Password
               </label>
               <div className="mt-1">
@@ -163,5 +172,5 @@ export function Login() {
         </div>
       </div>
     </div>
-  )
+  );
 }

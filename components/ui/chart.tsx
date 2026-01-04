@@ -107,6 +107,7 @@ interface TooltipPayload {
   dataKey?: string | number;
   name?: string;
   value?: string | number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: any; // The original data object
   color?: string;
   fill?: string;
@@ -119,7 +120,9 @@ interface ChartTooltipContentProps extends React.HTMLAttributes<HTMLDivElement> 
   active?: boolean;
   payload?: TooltipPayload[];
   label?: string | number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   labelFormatter?: RechartsPrimitive.TooltipProps<any, any>['labelFormatter'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatter?: RechartsPrimitive.TooltipProps<any, any>['formatter'];
   color?: string;
   hideLabel?: boolean;
@@ -209,7 +212,8 @@ const ChartTooltipContent = React.forwardRef<
           {payload.map((item: TooltipPayload, index: number) => { // Explicitly type item and index
             const key = `${nameKey || item.name || item.dataKey || 'value'}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
-            const indicatorColor = color || item.payload?.fill || item.color
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const indicatorColor = color || (item.payload as any)?.fill || item.color
 
             return (
               <div
@@ -219,8 +223,10 @@ const ChartTooltipContent = React.forwardRef<
                   indicator === 'dot' && 'items-center',
                 )}
               >
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter(item.value, item.name, item, index, item.payload as any) as React.ReactNode
                 ) : (
                   <>
                     {itemConfig?.icon ? (
@@ -284,7 +290,7 @@ interface LegendPayloadItem {
   id?: string;
   type?: string; // 'rect', 'line', etc.
   color?: string;
-  payload?: any; // The original data object
+  payload?: unknown; // The original data object
   dataKey?: string | number;
   name?: string;
 }

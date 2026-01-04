@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   Search,
   Download,
@@ -12,145 +12,145 @@ import {
   XCircle,
   Ban,
   CircleDot,
-} from "lucide-react"
-import { supabase } from "../lib/supabase"
+} from "lucide-react";
+import { supabase } from "../lib/supabase";
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
-import Papa from "papaparse"
-import { toast } from "../../hooks/use-toast"
+} from "@/components/ui/pagination";
+import Papa from "papaparse";
+import { toast } from "../../hooks/use-toast";
 
 // A custom hook for debouncing a value
 const useDebounce = <T,>(value: T, delay: number): T => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedValue(value)
-    }, delay)
+      setDebouncedValue(value);
+    }, delay);
 
     return () => {
-      clearTimeout(handler)
-    }
-  }, [value, delay])
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
 
-  return debouncedValue
-}
+  return debouncedValue;
+};
 
 type VisitLog = {
-  id: string
-  visitor_name: string
-  purpose: string
-  host_name: string
-  check_in: string | null
-  check_out: string | null
-  status: "pending" | "approved" | "denied" | "completed" | "cancelled"
-}
+  id: string;
+  visitor_name: string;
+  purpose: string;
+  host_name: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: "pending" | "approved" | "denied" | "completed" | "cancelled";
+};
 
 const getDynamicStatus = (visit: VisitLog) => {
-  const now = new Date()
-  const currentTimestamp = now.getTime()
+  const now = new Date();
+  const currentTimestamp = now.getTime();
 
-  const checkIn = visit.check_in ? new Date(visit.check_in) : null
-  const checkInTimestamp = checkIn ? checkIn.getTime() : null
+  const checkIn = visit.check_in ? new Date(visit.check_in) : null;
+  const checkInTimestamp = checkIn ? checkIn.getTime() : null;
 
-  const checkOut = visit.check_out ? new Date(visit.check_out) : null
-  const checkOutTimestamp = checkOut ? checkOut.getTime() : null
+  const checkOut = visit.check_out ? new Date(visit.check_out) : null;
+  const checkOutTimestamp = checkOut ? checkOut.getTime() : null;
 
-  if (visit.status === "denied") return "denied"
-  if (visit.status === "cancelled") return "cancelled"
+  if (visit.status === "denied") return "denied";
+  if (visit.status === "cancelled") return "cancelled";
 
-  if (!checkInTimestamp) return "upcoming"
+  if (!checkInTimestamp) return "upcoming";
 
   if (checkOutTimestamp && currentTimestamp >= checkOutTimestamp) {
-    return "completed"
+    return "completed";
   }
 
   if (currentTimestamp >= checkInTimestamp) {
-    return "ongoing"
+    return "ongoing";
   }
 
-  return "upcoming"
-}
+  return "upcoming";
+};
 
 export function VisitLogs() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [dateFilter, setDateFilter] = useState("")
-  const [logs, setLogs] = useState<VisitLog[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
-  const [totalItems, setTotalItems] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [exporting, setExporting] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [logs, setLogs] = useState<VisitLog[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  const debouncedSearchTerm = useDebounce(searchTerm, 500)
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const fetchVisits = async () => {
-    setLoading(true)
+    setLoading(true);
     const { data, error } = await supabase.rpc("get_visits", {
       p_search_term: debouncedSearchTerm,
       p_date_filter: dateFilter,
       p_page_number: currentPage,
       p_page_size: itemsPerPage,
-    })
+    });
 
     if (error) {
       if (import.meta.env.DEV) {
-        console.error("Error fetching visits:", error)
+        console.error("Error fetching visits:", error);
       }
-      setLogs([])
-      setTotalItems(0)
+      setLogs([]);
+      setTotalItems(0);
     } else {
-      setLogs(data || [])
-      setTotalItems(data?.[0]?.total_count || 0)
+      setLogs(data || []);
+      setTotalItems(data?.[0]?.total_count || 0);
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    fetchVisits()
-  }, [currentPage, itemsPerPage, debouncedSearchTerm, dateFilter])
+    fetchVisits();
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, dateFilter]);
 
   useEffect(() => {
     const subscription = supabase
       .channel("custom-all-channel")
       .on("postgres_changes", { event: "*", schema: "public", table: "visits" }, () => {
-        fetchVisits()
+        fetchVisits();
       })
-      .subscribe()
+      .subscribe();
 
     return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleExport = async () => {
-    setExporting(true)
+    setExporting(true);
     const { data, error } = await supabase.rpc("export_visits", {
       p_search_term: debouncedSearchTerm,
       p_date_filter: dateFilter,
-    })
+    });
 
     if (error) {
-      console.error("Error exporting visits:", error)
+      console.error("Error exporting visits:", error);
     } else {
-      const csv = Papa.unparse(data)
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-      const link = document.createElement("a")
-      const url = URL.createObjectURL(blob)
-      link.setAttribute("href", url)
-      link.setAttribute("download", "visit_logs.csv")
-      link.style.visibility = "hidden"
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      const csv = Papa.unparse(data);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "visit_logs.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
-    setExporting(false)
-  }
+    setExporting(false);
+  };
 
   const handleComplete = async (visitId: string) => {
     try {
@@ -158,23 +158,23 @@ export function VisitLogs() {
         .from("visits")
         .select("*")
         .eq("id", visitId)
-        .single()
+        .single();
 
       if (fetchError) {
-        throw fetchError
+        throw fetchError;
       }
 
       if (currentVisit.status !== "approved" && currentVisit.status !== "checked-in") {
-        toast.error("Visit must be approved or checked-in before completion.")
-        return
+        toast.error("Visit must be approved or checked-in before completion.");
+        return;
       }
       if (!currentVisit.check_in_time) {
-        toast.error("Visitor has not checked in yet.")
-        return
+        toast.error("Visitor has not checked in yet.");
+        return;
       }
       if (currentVisit.check_out_time) {
-        toast.error("Visit already completed.")
-        return
+        toast.error("Visit already completed.");
+        return;
       }
 
       const { error: updateError } = await supabase
@@ -184,21 +184,21 @@ export function VisitLogs() {
           check_out_time: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq("id", visitId)
+        .eq("id", visitId);
 
       if (updateError) {
-        throw updateError
+        throw updateError;
       }
 
-      toast.success("Visit completed successfully!")
-      fetchVisits()
+      toast.success("Visit completed successfully!");
+      fetchVisits();
     } catch (error) {
-      console.error("Failed to complete visit:", error)
-      toast.error("Failed to complete visit.")
+      console.error("Failed to complete visit:", error);
+      toast.error("Failed to complete visit.");
     }
-  }
+  };
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -316,7 +316,7 @@ export function VisitLogs() {
                       </tr>
                     ) : (
                       logs.map((log) => {
-                        const dynamicStatus = getDynamicStatus(log)
+                        const dynamicStatus = getDynamicStatus(log);
                         return (
                           <tr key={log.id}>
                             <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
@@ -384,7 +384,7 @@ export function VisitLogs() {
                               )}
                             </td>
                           </tr>
-                        )
+                        );
                       })
                     )}
                   </tbody>
@@ -399,8 +399,8 @@ export function VisitLogs() {
                         <PaginationPrevious
                           href="#"
                           onClick={(e) => {
-                            e.preventDefault()
-                            setCurrentPage((prev) => Math.max(1, prev - 1))
+                            e.preventDefault();
+                            setCurrentPage((prev) => Math.max(1, prev - 1));
                           }}
                           className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                         />
@@ -409,10 +409,12 @@ export function VisitLogs() {
                         <PaginationNext
                           href="#"
                           onClick={(e) => {
-                            e.preventDefault()
-                            setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev))
+                            e.preventDefault();
+                            setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev));
                           }}
-                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                          className={
+                            currentPage === totalPages ? "pointer-events-none opacity-50" : ""
+                          }
                         />
                       </PaginationItem>
                     </PaginationContent>
@@ -424,5 +426,5 @@ export function VisitLogs() {
         </div>
       </div>
     </div>
-  )
+  );
 }

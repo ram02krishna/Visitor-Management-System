@@ -1,31 +1,31 @@
-"use client"
+"use client";
 
-import { useNavigate } from "react-router-dom"
-import { useEffect, useState } from "react"
-import { ShieldCheck, ClipboardList, BarChart2, Menu, X } from "lucide-react"
-import { ThemeSwitcher } from "./ThemeSwitcher"
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { ShieldCheck, ClipboardList, BarChart2, Menu, X } from "lucide-react";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
-import { useAuthStore } from "../store/auth"
+import { useAuthStore } from "../store/auth";
 
 const Home = () => {
-  const navigate = useNavigate()
-  const [scrolled, setScrolled] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { isAuthenticated } = useAuthStore()
+  const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/app/dashboard")
+      navigate("/app/dashboard");
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col scroll-smooth bg-gray-50 dark:bg-slate-950">
@@ -37,7 +37,10 @@ const Home = () => {
             : "bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg"
         }`}
       >
-        <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group" onClick={() => navigate("/")}>
+        <div
+          className="flex items-center gap-2 sm:gap-3 cursor-pointer group"
+          onClick={() => navigate("/")}
+        >
           <img src="/visitor-management.png" alt="Logo" className="h-7 w-7 sm:h-8 sm:w-8" />
           <div className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 dark:from-sky-400 dark:to-blue-400 bg-clip-text text-transparent animate-fadeIn">
             <span className="hidden sm:inline">Visitor Management System</span>
@@ -84,8 +87,8 @@ const Home = () => {
           <div className="px-4 py-3 space-y-2">
             <button
               onClick={() => {
-                navigate("/request-visit")
-                setMobileMenuOpen(false)
+                navigate("/request-visit");
+                setMobileMenuOpen(false);
               }}
               className="w-full text-left px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all duration-300 font-medium"
             >
@@ -93,8 +96,8 @@ const Home = () => {
             </button>
             <button
               onClick={() => {
-                navigate("/signup")
-                setMobileMenuOpen(false)
+                navigate("/signup");
+                setMobileMenuOpen(false);
               }}
               className="w-full text-left px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all duration-300 font-medium"
             >
@@ -102,8 +105,8 @@ const Home = () => {
             </button>
             <button
               onClick={() => {
-                navigate("/login")
-                setMobileMenuOpen(false)
+                navigate("/login");
+                setMobileMenuOpen(false);
               }}
               className="w-full text-left px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-lg transition-all duration-300 font-medium"
             >
@@ -128,8 +131,8 @@ const Home = () => {
             className="text-gray-700 dark:text-slate-300 text-base sm:text-lg mb-6 sm:mb-8 animate-fadeInUp text-pretty"
             style={{ animationDelay: "0.2s" }}
           >
-            Modernize your front desk with our easy-to-use visitor management system. Enhance security and efficiency
-            seamlessly.
+            Modernize your front desk with our easy-to-use visitor management system. Enhance
+            security and efficiency seamlessly.
           </p>
           <button
             onClick={() => navigate("/login")}
@@ -150,7 +153,9 @@ const Home = () => {
                 <ShieldCheck size={40} className="text-white" strokeWidth={2.5} />
               </div>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-900 dark:text-slate-100">Secure Check-ins</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-900 dark:text-slate-100">
+              Secure Check-ins
+            </h3>
             <p className="text-sm sm:text-base text-gray-600 dark:text-slate-300">
               Ensure only authorized visitors gain access.
             </p>
@@ -165,7 +170,9 @@ const Home = () => {
                 <ClipboardList size={40} className="text-white" strokeWidth={2.5} />
               </div>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-900 dark:text-slate-100">Easy Registration</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 text-gray-900 dark:text-slate-100">
+              Easy Registration
+            </h3>
             <p className="text-sm sm:text-base text-gray-600 dark:text-slate-300">
               Quick and intuitive visitor registration process.
             </p>
@@ -196,8 +203,8 @@ const Home = () => {
         </p>
       </footer>
     </div>
-  )
-}
+  );
+};
 
-export default Home
-export { Home }
+export default Home;
+export { Home };

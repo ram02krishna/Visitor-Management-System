@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Download, FileText, Table2, Calendar } from "lucide-react"
-import { supabase } from "../lib/supabase"
-import { toast } from "react-hot-toast"
-import { format } from "date-fns"
-import type { Database } from '../lib/database.types'
+import { useState } from "react";
+import { Download, FileText, Table2, Calendar } from "lucide-react";
+import { supabase } from "../lib/supabase";
+import { toast } from "react-hot-toast";
+import { format } from "date-fns";
+import type { Database } from "../lib/database.types";
 
-type ExportFormat = "csv" | "json"
-type DataType = "visits" | "visitors" | "users"
+type ExportFormat = "csv" | "json";
+type DataType = "visits" | "visitors" | "users";
 
 type ExportRow =
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | (Database['public']['Tables']['visits']['Row'] & { [key: string]: any })
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | (Database['public']['Tables']['visitors']['Row'] & { [key: string]: any })
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | (Database['public']['Tables']['hosts']['Row'] & { [key: string]: any });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | (Database["public"]["Tables"]["visits"]["Row"] & { [key: string]: any })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | (Database["public"]["Tables"]["visitors"]["Row"] & { [key: string]: any })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | (Database["public"]["Tables"]["hosts"]["Row"] & { [key: string]: any });
 
 export function ExportData() {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
@@ -27,72 +27,72 @@ export function ExportData() {
 
   const exportToCSV = (data: ExportRow[], filename: string) => {
     if (!data || data.length === 0) {
-      toast.error("No data to export")
-      return
+      toast.error("No data to export");
+      return;
     }
 
-    const headers = Object.keys(data[0])
+    const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(","),
       ...data.map((row) => headers.map((header) => JSON.stringify(row[header] || "")).join(",")),
-    ].join("\n")
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    link.href = URL.createObjectURL(blob)
-    link.download = `${filename}_${format(new Date(), "yyyy-MM-dd")}.csv`
-    link.click()
-  }
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+  };
 
   const exportToJSON = (data: ExportRow[], filename: string) => {
     if (!data || data.length === 0) {
-      toast.error("No data to export")
-      return
+      toast.error("No data to export");
+      return;
     }
 
-    const jsonContent = JSON.stringify(data, null, 2)
-    const blob = new Blob([jsonContent], { type: "application/json" })
-    const link = document.createElement("a")
-    link.href = URL.createObjectURL(blob)
-    link.download = `${filename}_${format(new Date(), "yyyy-MM-dd")}.json`
-    link.click()
-  }
+    const jsonContent = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonContent], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}_${format(new Date(), "yyyy-MM-dd")}.json`;
+    link.click();
+  };
 
   const handleExport = async () => {
-    setIsExporting(true)
+    setIsExporting(true);
     try {
-      let query = supabase.from(dataType).select("*")
+      let query = supabase.from(dataType).select("*");
 
       if (startDate) {
-        query = query.gte("created_at", new Date(startDate).toISOString())
+        query = query.gte("created_at", new Date(startDate).toISOString());
       }
       if (endDate) {
-        query = query.lte("created_at", new Date(endDate).toISOString())
+        query = query.lte("created_at", new Date(endDate).toISOString());
       }
 
-      const { data, error } = await query
+      const { data, error } = await query;
 
-      if (error) throw error
+      if (error) throw error;
 
       if (!data || data.length === 0) {
-        toast.error("No data found for the selected criteria")
-        return
+        toast.error("No data found for the selected criteria");
+        return;
       }
 
       if (exportFormat === "csv") {
-        exportToCSV(data, dataType)
+        exportToCSV(data, dataType);
       } else {
-        exportToJSON(data, dataType)
+        exportToJSON(data, dataType);
       }
 
-      toast.success(`Successfully exported ${data.length} records`)
+      toast.success(`Successfully exported ${data.length} records`);
     } catch (error) {
-      console.error("Export error:", error)
-      toast.error("Failed to export data")
+      console.error("Export error:", error);
+      toast.error("Failed to export data");
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
-  }
+  };
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -115,7 +115,10 @@ export function ExportData() {
           <div className="px-4 py-5 sm:p-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div>
-                <label htmlFor="dataType" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label
+                  htmlFor="dataType"
+                  className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+                >
                   Data Type
                 </label>
                 <div className="relative">
@@ -129,7 +132,10 @@ export function ExportData() {
                     <option value="visitors">Visitors</option>
                     <option value="users">Users</option>
                   </select>
-                  <Table2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" strokeWidth={2} />
+                  <Table2
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
+                    strokeWidth={2}
+                  />
                 </div>
               </div>
 
@@ -158,7 +164,10 @@ export function ExportData() {
               </div>
 
               <div>
-                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label
+                  htmlFor="startDate"
+                  className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+                >
                   Start Date (Optional)
                 </label>
                 <div className="relative">
@@ -177,7 +186,10 @@ export function ExportData() {
               </div>
 
               <div>
-                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <label
+                  htmlFor="endDate"
+                  className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+                >
                   End Date (Optional)
                 </label>
                 <div className="relative">
@@ -210,5 +222,5 @@ export function ExportData() {
         </div>
       </div>
     </div>
-  )
+  );
 }

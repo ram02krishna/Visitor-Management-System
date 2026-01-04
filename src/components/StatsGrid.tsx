@@ -1,8 +1,8 @@
-import React from 'react';
-import { StatItem, StatItemProps } from './StatItem';
+import React from "react";
+import { StatItem, StatItemProps } from "./StatItem";
 
 type StatsGridProps = {
-  stats: Omit<StatItemProps, 'onClick'>[];
+  stats: Omit<StatItemProps, "onClick">[];
   handleStatCardClick: (status: string) => void;
 };
 

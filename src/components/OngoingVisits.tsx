@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
 import { Eye, CheckCircle } from "lucide-react";
-import { VisitDetailsModal } from "./VisitDetailsModal";
+import { VisitDetails } from "./VisitDetails";
 import type { Visit } from "../lib/database.types";
 import log from "../lib/logger";
 
@@ -69,13 +69,22 @@ export function OngoingVisits() {
               <table className="min-w-full divide-y divide-gray-300 dark:divide-slate-700">
                 <thead className="bg-gray-50 dark:bg-slate-800">
                   <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">
+                    <th
+                      scope="col"
+                      className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6"
+                    >
                       Visitor
                     </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
+                    >
                       Purpose
                     </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
+                    >
                       Check-in Time
                     </th>
                     <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -86,13 +95,19 @@ export function OngoingVisits() {
                 <tbody className="divide-y divide-gray-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={4} className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center">
+                      <td
+                        colSpan={4}
+                        className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center"
+                      >
                         Loading...
                       </td>
                     </tr>
                   ) : ongoingVisits.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center">
+                      <td
+                        colSpan={4}
+                        className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center"
+                      >
                         No ongoing visits.
                       </td>
                     </tr>
@@ -102,7 +117,9 @@ export function OngoingVisits() {
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
                           {visit.visitor.name}
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{visit.purpose}</td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {visit.purpose}
+                        </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {new Date(visit.check_in_time).toLocaleString()}
                         </td>
@@ -130,10 +147,7 @@ export function OngoingVisits() {
         </div>
       </div>
       {selectedVisit && (
-        <VisitDetailsModal
-          visit={selectedVisit}
-          onClose={() => setSelectedVisit(null)}
-        />
+        <VisitDetails visit={selectedVisit} onClose={() => setSelectedVisit(null)} />
       )}
     </div>
   );

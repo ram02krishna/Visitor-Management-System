@@ -1,30 +1,30 @@
-import { useState, useEffect } from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Sun, Moon } from "lucide-react";
 
 export const ThemeSwitcher = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    const isDark = localStorage.getItem('theme') === 'dark';
+    const isDark = localStorage.getItem("theme") === "dark";
     setIsDarkMode(isDark);
     if (isDark) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     }
   }, []);
 
   const toggleTheme = () => {
     setIsAnimating(true);
     const newIsDarkMode = !isDarkMode;
-    
+
     setTimeout(() => {
       setIsDarkMode(newIsDarkMode);
       if (newIsDarkMode) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
       } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
       }
       setIsAnimating(false);
     }, 150);
@@ -37,14 +37,11 @@ export const ThemeSwitcher = () => {
       aria-label="Toggle theme"
       title="Toggle theme"
     >
-      <div className={`transition-all duration-300 ${isAnimating ? 'rotate-180 scale-0' : 'rotate-0 scale-100'}`}>
-        {isDarkMode ? (
-          <Sun className="h-5 w-5" />
-        ) : (
-          <Moon className="h-5 w-5" />
-        )}
+      <div
+        className={`transition-all duration-300 ${isAnimating ? "rotate-180 scale-0" : "rotate-0 scale-100"}`}
+      >
+        {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </div>
-      
     </button>
   );
 };

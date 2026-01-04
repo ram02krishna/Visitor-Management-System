@@ -1,68 +1,68 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { format } from "date-fns"
-import { CheckCircle, XCircle, Search, ShieldAlert } from "lucide-react"
-import emailjs from "@emailjs/browser"
-import { toast } from "../../hooks/use-toast"
-import { supabase } from "../lib/supabase"
-import { useAuthStore } from "../store/auth"
+import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { CheckCircle, XCircle, Search, ShieldAlert } from "lucide-react";
+import emailjs from "@emailjs/browser";
+import { toast } from "../../hooks/use-toast";
+import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../store/auth";
 
-import { useDebounce } from "../../hooks/use-debounce"
-import type { Database } from "../lib/database.types"
-import QRCode from "qrcode"
+import { useDebounce } from "../../hooks/use-debounce";
+import type { Database } from "../lib/database.types";
+import QRCode from "qrcode";
 
 type VisitorApprovalVisit = Database["public"]["Tables"]["visits"]["Row"] & {
-  visitors: Database["public"]["Tables"]["visitors"]["Row"]
-}
+  visitors: Database["public"]["Tables"]["visitors"]["Row"];
+};
 
 export function VisitorApproval() {
-  const user = useAuthStore((state) => state.user)
-  const [visits, setVisits] = useState<VisitorApprovalVisit[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const debouncedSearchTerm = useDebounce(searchTerm, 500)
+  const user = useAuthStore((state) => state.user);
+  const [visits, setVisits] = useState<VisitorApprovalVisit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const canApprove = user?.role === "admin" || user?.role === "guard"
+  const canApprove = user?.role === "admin" || user?.role === "guard";
 
   const loadVisits = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       let query = supabase
         .from("visits")
         .select("*, visitors(*), check_in_time, check_out_time")
         .eq("status", "pending") // Only fetch pending visits for approval
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (debouncedSearchTerm) {
         query = query.or(
-          `visitors.name.ilike.%${debouncedSearchTerm}%,visitors.email.ilike.%${debouncedSearchTerm}%,purpose.ilike.%${debouncedSearchTerm}%`,
-        )
+          `visitors.name.ilike.%${debouncedSearchTerm}%,visitors.email.ilike.%${debouncedSearchTerm}%,purpose.ilike.%${debouncedSearchTerm}%`
+        );
       }
 
-      const { data, error: queryError } = await query
+      const { data, error: queryError } = await query;
 
       if (queryError) {
-        throw queryError
+        throw queryError;
       }
 
-      setVisits(data as VisitorApprovalVisit[])
+      setVisits(data as VisitorApprovalVisit[]);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
-      toast.error("Failed to load pending visits")
+      toast.error("Failed to load pending visits");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    loadVisits()
-  }, [debouncedSearchTerm])
+    loadVisits();
+  }, [debouncedSearchTerm]);
 
   const handleApproval = async (visitId: string, approved: boolean) => {
     if (!canApprove) {
-      toast.error("You do not have permission to approve visits")
-      return
+      toast.error("You do not have permission to approve visits");
+      return;
     }
 
     try {
@@ -74,13 +74,13 @@ export function VisitorApproval() {
         })
         .eq("id", visitId)
         .select("*, visitors(*)")
-        .single()
+        .single();
 
       if (updateError) {
-        throw updateError
+        throw updateError;
       }
 
-      toast.success(`Visit ${approved ? "approved" : "denied"} successfully`)
+      toast.success(`Visit ${approved ? "approved" : "denied"} successfully`);
 
       if (approved && (updatedData as VisitorApprovalVisit)) {
         const qrData = JSON.stringify({
@@ -89,9 +89,9 @@ export function VisitorApproval() {
           email: updatedData.visitors.email,
           purpose: updatedData.purpose,
           validUntil: updatedData.valid_until,
-        })
+        });
 
-        const qrUrl = await QRCode.toDataURL(qrData)
+        const qrUrl = await QRCode.toDataURL(qrData);
 
         try {
           await emailjs.send(
@@ -105,21 +105,21 @@ export function VisitorApproval() {
               visit_purpose: updatedData.purpose,
               valid_until: new Date(updatedData.valid_until).toLocaleString(),
             },
-            "ApAlChy6Mq77wiEue",
-          )
-          toast.success("Approval email with QR code sent successfully!")
+            "ApAlChy6Mq77wiEue"
+          );
+          toast.success("Approval email with QR code sent successfully!");
         } catch (emailError) {
-          console.error("Failed to send approval email:", emailError)
-          toast.error("Failed to send approval email.")
+          console.error("Failed to send approval email:", emailError);
+          toast.error("Failed to send approval email.");
         }
       }
 
-      loadVisits()
+      loadVisits();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
-      toast.error("Failed to update visit status")
+      toast.error("Failed to update visit status");
     }
-  }
+  };
 
   if (!canApprove) {
     return (
@@ -128,12 +128,12 @@ export function VisitorApproval() {
           <ShieldAlert className="h-20 w-20 text-red-500 dark:text-red-400 mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h2>
           <p className="text-gray-600 dark:text-gray-400 text-center max-w-md">
-            Only guards and administrators have permission to approve visitor requests. If you believe this is an error,
-            please contact your system administrator.
+            Only guards and administrators have permission to approve visitor requests. If you
+            believe this is an error, please contact your system administrator.
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -143,7 +143,9 @@ export function VisitorApproval() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 dark:from-sky-400 dark:to-blue-400 bg-clip-text text-transparent">
             Pending Visits
           </h1>
-          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">Review and approve pending visitor requests</p>
+          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+            Review and approve pending visitor requests
+          </p>
         </div>
       </div>
 
@@ -226,14 +228,18 @@ export function VisitorApproval() {
                           style={{ animationDelay: `${index * 0.05}s` }}
                         >
                           <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                            <div className="font-medium text-gray-900 dark:text-white">{visit.visitors.name}</div>
-                            <div className="text-gray-500 dark:text-gray-300">{visit.visitors.email}</div>
+                            <div className="font-medium text-gray-900 dark:text-white">
+                              {visit.visitors.name}
+                            </div>
+                            <div className="text-gray-500 dark:text-gray-300">
+                              {visit.visitors.email}
+                            </div>
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
                             {visit.purpose}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
-                            {format(new Date(visit.valid_until), "PPP")}
+                            {visit.valid_until ? format(new Date(visit.valid_until), "PPP") : "N/A"}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
                             {format(new Date(visit.created_at), "PPp")}
@@ -267,5 +273,5 @@ export function VisitorApproval() {
         </div>
       </div>
     </div>
-  )
+  );
 }
