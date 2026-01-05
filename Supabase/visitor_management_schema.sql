@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS visits (
     check_out_time timestamptz,
     valid_until timestamptz,  -- This is OPTIONAL - can be NULL
     notes text,
+    qr_code text UNIQUE, -- Added for QR code check-in
     entity_id uuid,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
@@ -519,6 +520,13 @@ DROP FUNCTION IF EXISTS get_analytics(INT, UUID, visit_status) CASCADE;
 -- All timestamps returned in IST
 -- =====================================================
 
+CREATE OR REPLACE FUNCTION generate_qr_code(p_visit_id UUID)
+RETURNS TEXT AS $$
+BEGIN
+    RETURN 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' || p_visit_id::TEXT;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
 CREATE FUNCTION get_visits(
     p_search_term TEXT DEFAULT NULL,
     p_date_filter TEXT DEFAULT NULL,
@@ -544,6 +552,7 @@ RETURNS TABLE (
     valid_until TIMESTAMPTZ,
     approved_at TIMESTAMPTZ,
     notes TEXT,
+    qr_code_url TEXT, -- Added for QR code URL
     created_at TIMESTAMPTZ,
     total_count BIGINT
 )
@@ -588,6 +597,7 @@ BEGIN
             v.valid_until,
             v.approved_at,
             v.notes,
+            generate_qr_code(v.id) as qr_code_url,
             v.created_at,
             COUNT(*) OVER() AS total_count
         FROM visits v
@@ -680,7 +690,8 @@ RETURNS TABLE (
     visitor_phone TEXT,
     visitor_company TEXT,
     purpose TEXT,
-    created_at TIMESTAMPTZ
+    created_at TIMESTAMPTZ,
+    qr_code_url TEXT
 )
 SECURITY DEFINER
 AS $$
@@ -710,7 +721,8 @@ BEGIN
         vi.phone AS visitor_phone,
         vi.company AS visitor_company,
         v.purpose,
-        v.created_at
+        v.created_at,
+        generate_qr_code(v.id) as qr_code_url
     FROM visits v
     JOIN visitors vi ON v.visitor_id = vi.id
     WHERE
@@ -742,6 +754,7 @@ RETURNS TABLE (
     check_out TIMESTAMPTZ,
     status visit_status,
     approved_at TIMESTAMPTZ,
+    qr_code_url TEXT,
     created_at TIMESTAMPTZ
 )
 SECURITY DEFINER
@@ -774,6 +787,7 @@ BEGIN
         v.check_out_time AS check_out,
         v.status,
         v.approved_at,
+        generate_qr_code(v.id) as qr_code_url,
         v.created_at
     FROM visits v
     LEFT JOIN visitors vi ON v.visitor_id = vi.id
@@ -918,6 +932,70 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
+-- 6. GET ONGOING VISITS
+-- =====================================================
+
+CREATE FUNCTION get_ongoing_visits()
+RETURNS TABLE (
+    id uuid,
+    visitor_id uuid,
+    visitor_name TEXT,
+    visitor_email TEXT,
+    visitor_phone TEXT,
+    visitor_company TEXT,
+    purpose TEXT,
+    host_id uuid,
+    host_name TEXT,
+    host_email TEXT,
+    department_name TEXT,
+    check_in TIMESTAMPTZ,
+    check_out TIMESTAMPTZ,
+    status visit_status,
+    valid_until TIMESTAMPTZ,
+    approved_at TIMESTAMPTZ,
+    notes TEXT,
+    qr_code_url TEXT,
+    created_at TIMESTAMPTZ,
+    total_count BIGINT
+)
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        v.id,
+        v.visitor_id,
+        vi.name AS visitor_name,
+        vi.email AS visitor_email,
+        vi.phone AS visitor_phone,
+        vi.company AS visitor_company,
+        v.purpose,
+        v.host_id,
+        h.name AS host_name,
+        h.email AS host_email,
+        d.name AS department_name,
+        v.check_in_time AS check_in,
+        v.check_out_time AS check_out,
+        v.status,
+        v.valid_until,
+        v.approved_at,
+        v.notes,
+        generate_qr_code(v.id) as qr_code_url,
+        v.created_at,
+        COUNT(*) OVER() AS total_count
+    FROM visits v
+    LEFT JOIN visitors vi ON v.visitor_id = vi.id
+    LEFT JOIN hosts h ON v.host_id = h.id
+    LEFT JOIN departments d ON h.department_id = d.id
+    WHERE
+        v.status = 'checked-in'
+    ORDER BY
+        v.check_in_time DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+GRANT EXECUTE ON FUNCTION get_ongoing_visits TO authenticated;
+-- =====================================================
 -- GRANT EXECUTE PERMISSIONS
 -- =====================================================
 
@@ -935,6 +1013,8 @@ GRANT EXECUTE ON FUNCTION to_ist_date TO authenticated;
 GRANT EXECUTE ON FUNCTION to_ist_time TO authenticated;
 
 -- Grant to anon for public visitor registration
+GRANT EXECUTE ON FUNCTION generate_qr_code TO authenticated;
+GRANT EXECUTE ON FUNCTION generate_qr_code TO anon;
 GRANT EXECUTE ON FUNCTION is_admin TO anon;
 GRANT EXECUTE ON FUNCTION is_guard TO anon;
 GRANT EXECUTE ON FUNCTION is_host TO anon;
@@ -949,30 +1029,16 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-    INSERT INTO public.hosts (
-        auth_id,
-        name,
-        email,
-        role,
-        active,
-        department_id
-    ) VALUES (
+    INSERT INTO public.hosts (auth_id, name, email, role, active, department_id)
+    VALUES (
         NEW.id,
-        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+        NEW.raw_user_meta_data->>'full_name',
         NEW.email,
-        'host',
+        COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'host'),
         true,
         (NEW.raw_user_meta_data->>'department_id')::uuid
     );
     RETURN NEW;
-EXCEPTION
-    WHEN unique_violation THEN
-        -- Handle case where host already exists
-        RETURN NEW;
-    WHEN OTHERS THEN
-        -- Log error but don't fail the signup
-        RAISE WARNING 'Failed to create host record: %', SQLERRM;
-        RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
