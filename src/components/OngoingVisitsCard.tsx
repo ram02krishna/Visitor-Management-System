@@ -68,7 +68,7 @@ export function OngoingVisitsCard({ className, style }: OngoingVisitsCardProps) 
       <div className="px-6 py-2 bg-gray-50/50 dark:bg-slate-800/50 rounded-b-2xl border-t border-gray-100 dark:border-slate-600">
         <div className="flex items-center text-xs text-gray-500 dark:text-slate-400">
           <TrendingUp className="h-3 w-3 mr-1 transition-colors duration-300" />
-          <span>Live</span>
+          <span>Today</span>
         </div>
       </div>
     </Link>
