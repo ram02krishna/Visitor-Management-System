@@ -77,7 +77,7 @@ const getDynamicStatus = (visit: VisitLog) => {
   return "upcoming";
 };
 
-export default function VisitLogs() {
+export function VisitLogs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [logs, setLogs] = useState<VisitLog[]>([]);

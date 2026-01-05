@@ -1,51 +1,46 @@
-import React, { lazy, Suspense, useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import type React from "react";
+
+import { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "../components/ui/toaster";
+
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
+import { Login } from "./components/Login";
+import { Signup } from "./components/Signup";
+import { Dashboard } from "./components/Dashboard";
+import { VisitorApproval } from "./components/VisitorApproval";
+import { PublicDisplay } from "./components/PublicDisplay";
+import { UserManagement } from "./components/UserManagement";
+import { VisitLogs } from "./components/VisitLogs";
+import { VisitorRegistration } from "./components/VisitorRegistration";
+import { PreRegisterVisitor } from "./components/PreRegisterVisitor";
 import { useAuthStore } from "./store/auth";
+import Home from "./components/Home";
+import { RequestVisit } from "./components/RequestVisit";
+
+import { BulkVisitorUpload } from "./components/BulkVisitorUpload";
+import { ExportData } from "./components/ExportData";
+import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
+import { ScanQrCode } from "./components/ScanQrCode";
+import { OngoingVisits } from "./components/OngoingVisits";
 import log from "./lib/logger";
-import RoleBasedGuard from "./components/RoleBasedGuard";
-import { StatusIndicator } from "./components/StatusIndicator";
 
-// Lazy-loaded components
-const Home = lazy(() => import("./components/Home"));
-const Login = lazy(() => import("./components/Login"));
-const Signup = lazy(() => import("./components/Signup"));
-const Dashboard = lazy(() => import("./components/Dashboard"));
-const VisitorApproval = lazy(() => import("./components/VisitorApproval"));
-const PublicDisplay = lazy(() => import("./components/PublicDisplay"));
-const UserManagement = lazy(() => import("./components/UserManagement"));
-const VisitLogs = lazy(() => import("./components/VisitLogs"));
-const VisitorRegistration = lazy(() => import("./components/VisitorRegistration"));
-const PreRegisterVisitor = lazy(() => import("./components/PreRegisterVisitor"));
-const RequestVisit = lazy(() => import("./components/RequestVisit"));
-const BulkVisitorUpload = lazy(() => import("./components/BulkVisitorUpload"));
-const ExportData = lazy(() => import("./components/ExportData"));
-const AnalyticsDashboard = lazy(() => import("./components/AnalyticsDashboard"));
-const ScanQrCode = lazy(() => import("./components/ScanQrCode"));
-const OngoingVisits = lazy(() => import("./components/OngoingVisits"));
-
-function ProtectedRoute() {
+function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
 
-  log.info("[ProtectedRoute] Auth status:", { isAuthenticated, isLoading });
+  log.info("[PrivateRoute] Auth status:", { isAuthenticated, isLoading });
 
   if (isLoading) {
-    log.info("[ProtectedRoute] Still loading authentication...");
-    return <StatusIndicator isLoading={true} loadingMessage="Loading authentication..." error={null} />;
+    log.info("[PrivateRoute] Still loading authentication...");
+    return <div className="loading">🔄 Loading authentication...</div>;
   }
 
   if (!isAuthenticated) {
-    log.info("[ProtectedRoute] User not authenticated, redirecting to login");
-    return <Navigate to="/login" replace />;
+    log.info("[PrivateRoute] User not authenticated, redirecting to login");
   }
 
-  return (
-    <Layout>
-      <Outlet />
-    </Layout>
-  );
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
 function App() {
@@ -57,50 +52,42 @@ function App() {
   }, [initializeAuth]);
 
   if (!authInitialized) {
-    return <StatusIndicator isLoading={true} loadingMessage="Initializing authentication..." error={null} />;
+    return <div className="loading">🔄 Initializing authentication...</div>;
   }
 
   return (
     <ErrorBoundary>
       <Router>
-        <Suspense fallback={<StatusIndicator isLoading={true} loadingMessage="Loading page..." error={null} />}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/display" element={<PublicDisplay />} />
-            <Route path="/request-visit" element={<RequestVisit />} />
-            <Route path="/users" element={<Navigate to="/app/users" replace />} />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/display" element={<PublicDisplay />} />
+          <Route path="/request-visit" element={<RequestVisit />} />
+          <Route path="/users" element={<Navigate to="/app/users" replace />} />
 
-            {/* Private Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/app/dashboard" element={<Dashboard />} />
-              <Route path="/app/logs" element={<VisitLogs />} />
-              <Route path="/app/register-visitor" element={<VisitorRegistration />} />
-              <Route path="/app/pre-register-visitor" element={<PreRegisterVisitor />} />
-              <Route path="/app/bulk-visitor-upload" element={<BulkVisitorUpload />} />
-              <Route path="/app/export" element={<ExportData />} />
-              <Route path="/app/analytics" element={<AnalyticsDashboard />} />
-              <Route path="/app/ongoing-visits" element={<OngoingVisits />} />
-
-              {/* Admin only */}
-              <Route element={<RoleBasedGuard allowedRoles={['admin']} />}>
-                <Route path="/app/users" element={<UserManagement />} />
-              </Route>
-
-              {/* Admin and Guard */}
-              <Route element={<RoleBasedGuard allowedRoles={['admin', 'guard']} />}>
-                <Route path="/app/approval" element={<VisitorApproval />} />
-              </Route>
-
-              {/* Guard only */}
-              <Route element={<RoleBasedGuard allowedRoles={['guard']} />}>
-                <Route path="/app/scan" element={<ScanQrCode />} />
-              </Route>
-            </Route>
-          </Routes>
-        </Suspense>
+          {/* Private Routes */}
+          <Route
+            element={
+              <PrivateRoute>
+                <Layout />
+              </PrivateRoute>
+            }
+          >
+            <Route path="/app/dashboard" element={<Dashboard />} />
+            <Route path="/app/approval" element={<VisitorApproval />} />
+            <Route path="/app/users" element={<UserManagement />} />
+            <Route path="/app/logs" element={<VisitLogs />} />
+            <Route path="/app/scan" element={<ScanQrCode />} />
+            <Route path="/app/register-visitor" element={<VisitorRegistration />} />
+            <Route path="/app/pre-register-visitor" element={<PreRegisterVisitor />} />
+            <Route path="/app/bulk-visitor-upload" element={<BulkVisitorUpload />} />
+            <Route path="/app/export" element={<ExportData />} />
+            <Route path="/app/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/app/ongoing-visits" element={<OngoingVisits />} />
+          </Route>
+        </Routes>
         <Toaster />
       </Router>
     </ErrorBoundary>

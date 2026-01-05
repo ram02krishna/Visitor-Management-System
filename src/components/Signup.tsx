@@ -2,49 +2,29 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { useAuthStore } from "../store/auth";
 import { supabase } from "../lib/supabase";
 import { BackButton } from "./BackButton";
-import { SignupSchema } from "../lib/validators";
-import { z } from "zod";
-
-type SignupFormData = z.infer<typeof SignupSchema>;
 
 type Department = {
   id: string;
   name: string;
 };
 
-
-export default function Signup() {
+export function Signup() {
   const navigate = useNavigate();
   const signup = useAuthStore((state) => state.signup);
   const isLoading = useAuthStore((state) => state.isLoading);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [departments, setDepartments] = useState<Department[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
-
-  const toggleConfirmPasswordVisibility = () => {
-    setShowConfirmPassword((prev) => !prev);
-  };
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignupFormData>({
-    resolver: zodResolver(SignupSchema),
-  });
 
   useEffect(() => {
     loadDepartments();
@@ -61,12 +41,28 @@ export default function Signup() {
     }
   };
 
-  const onSubmit = async (data: SignupFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError("");
     setSuccess(false);
 
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (!departmentId) {
+      setError("Please select a department");
+      return;
+    }
+
     try {
-      await signup(data.email, data.password, data.name, data.departmentId);
+      await signup(email, password, name, departmentId);
       setSuccess(true);
       setTimeout(() => {
         navigate("/login");
@@ -107,7 +103,7 @@ export default function Signup() {
             </div>
           )}
 
-          <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="name"
@@ -118,13 +114,13 @@ export default function Signup() {
               <div className="mt-1">
                 <input
                   id="name"
+                  name="name"
                   type="text"
-                  {...register("name")}
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                )}
               </div>
             </div>
 
@@ -138,14 +134,14 @@ export default function Signup() {
               <div className="mt-1">
                 <input
                   id="email"
+                  name="email"
                   type="email"
                   autoComplete="email"
-                  {...register("email")}
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                )}
               </div>
             </div>
 
@@ -159,7 +155,10 @@ export default function Signup() {
               <div className="mt-1">
                 <select
                   id="department"
-                  {...register("departmentId")}
+                  name="department"
+                  required
+                  value={departmentId}
+                  onChange={(e) => setDepartmentId(e.target.value)}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 >
                   <option value="">Select a department</option>
@@ -169,9 +168,6 @@ export default function Signup() {
                     </option>
                   ))}
                 </select>
-                {errors.departmentId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.departmentId.message}</p>
-                )}
               </div>
             </div>
 
@@ -182,30 +178,21 @@ export default function Signup() {
               >
                 Password
               </label>
-              <div className="mt-1 relative">
+              <div className="mt-1">
                 <input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  type="password"
                   autoComplete="new-password"
-                  {...register("password")}
-                  className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400 pr-10"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 focus:outline-none"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                )}
               </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                Must be at least 6 characters
+              </p>
             </div>
 
             <div>
@@ -215,31 +202,17 @@ export default function Signup() {
               >
                 Confirm Password
               </label>
-              <div className="mt-1 relative">
+              <div className="mt-1">
                 <input
                   id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  type="password"
                   autoComplete="new-password"
-                  {...register("confirmPassword")}
-                  className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400 pr-10"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 />
-                <button
-                  type="button"
-                  onClick={toggleConfirmPasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 focus:outline-none"
-                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.confirmPassword.message}
-                  </p>
-                )}
               </div>
             </div>
 

@@ -10,7 +10,7 @@ type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
   hosts: Database["public"]["Tables"]["hosts"]["Row"];
 };
 
-export default function PublicDisplay() {
+export function PublicDisplay() {
   const [visits, setVisits] = useState<Visit[]>([]);
 
   const loadApprovedVisits = async () => {

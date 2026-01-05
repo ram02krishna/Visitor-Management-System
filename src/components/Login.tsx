@@ -1,38 +1,20 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Shield } from "lucide-react";
 import { useAuthStore } from "../store/auth";
 import { BackButton } from "./BackButton";
 import log from "../lib/logger";
-import { LoginSchema } from "../lib/validators";
-import { z } from "zod";
 
-type LoginFormData = z.infer<typeof LoginSchema>;
-
-
-export default function Login() {
+export function Login() {
   const navigate = useNavigate();
-  const { login, signInWithGoogle, isAuthenticated, error } = useAuthStore();
+  const { login, signInWithGoogle, isAuthenticated } = useAuthStore();
   const isLoading = useAuthStore((state) => state.isLoading);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(LoginSchema),
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -40,15 +22,19 @@ export default function Login() {
     }
   }, [isAuthenticated, navigate]);
 
-  const onSubmit = async (data: LoginFormData) => {
-    log.info("[Login] Form submitted with email:", data.email);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    log.info("[Login] Form submitted with email:", email);
+    setError("");
+
     try {
       log.info("[Login] Calling login function...");
-      await login(data.email, data.password);
+      await login(email, password);
       log.info("[Login] Login successful, navigating to dashboard");
       navigate("/app/dashboard");
     } catch (error) {
       log.error("[Login] Login failed:", error);
+      setError("Invalid credentials");
     }
   };
 
@@ -57,6 +43,7 @@ export default function Login() {
       await signInWithGoogle();
     } catch (error) {
       log.error("[Login] Google Sign-In failed:", error);
+      setError("Google Sign-In failed. Please try again.");
     }
   };
 
@@ -85,7 +72,7 @@ export default function Login() {
         style={{ animationDelay: "0.2s" }}
       >
         <div className="glass py-6 sm:py-8 px-4 sm:px-10 shadow-xl rounded-2xl hover:shadow-2xl transition-all duration-500">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="email"
@@ -96,14 +83,14 @@ export default function Login() {
               <div className="mt-1">
                 <input
                   id="email"
+                  name="email"
                   type="email"
                   autoComplete="email"
-                  {...register("email")}
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-all duration-300 hover:border-sky-400"
                 />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                )}
               </div>
             </div>
 
@@ -114,29 +101,17 @@ export default function Login() {
               >
                 Password
               </label>
-              <div className="mt-1 relative">
+              <div className="mt-1">
                 <input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  type="password"
                   autoComplete="current-password"
-                  {...register("password")}
-                  className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-all duration-300 hover:border-sky-400 pr-10" // Added pr-10 for padding
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-all duration-300 hover:border-sky-400"
                 />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 focus:outline-none"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                )}
               </div>
             </div>
 

@@ -6,7 +6,7 @@ import { VisitDetails } from "./VisitDetails";
 import type { Visit } from "../lib/database.types";
 import log from "../lib/logger";
 
-export default function OngoingVisits() {
+export function OngoingVisits() {
   const [ongoingVisits, setOngoingVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);

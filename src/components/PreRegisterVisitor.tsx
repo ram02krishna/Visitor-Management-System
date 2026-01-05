@@ -22,7 +22,7 @@ type PreRegisterFormData = {
   notes?: string;
 };
 
-export default function PreRegisterVisitor() {
+export function PreRegisterVisitor() {
   const { user } = useAuthStore();
   const {
     register,

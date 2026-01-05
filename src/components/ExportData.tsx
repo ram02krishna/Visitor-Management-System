@@ -18,7 +18,7 @@ type ExportRow =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | (Database["public"]["Tables"]["hosts"]["Row"] & { [key: string]: any });
 
-export default function ExportData() {
+export function ExportData() {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
   const [dataType, setDataType] = useState<DataType>("visits");
   const [startDate, setStartDate] = useState("");

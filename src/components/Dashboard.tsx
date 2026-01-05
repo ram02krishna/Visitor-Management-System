@@ -2,11 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 
+import { AlertCircle } from "lucide-react";
 import { VisitDetailsModal, Visit } from "./VisitDetailsModal";
 import { useNavigate } from "react-router-dom";
 import { useVisitStats } from "../hooks/useVisitStats";
 import { StatsGrid } from "./StatsGrid";
-import { StatusIndicator } from "./StatusIndicator";
 
 const VISIT_STATUS = {
   PENDING: "pending",
@@ -16,8 +16,7 @@ const VISIT_STATUS = {
   DENIED: "denied",
 };
 
-
-export default function Dashboard() {
+export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { stats, loading, error: statsError, fetchStats } = useVisitStats(user);
@@ -41,18 +40,59 @@ export default function Dashboard() {
       setSelectedStatus(status);
       setOffset(0);
       try {
-        const { data, error } = await supabase.rpc('get_visits_by_status', {
-          p_status: status,
-          p_user_role: user?.role || 'guest',
-          p_page_limit: limit,
-          p_page_offset: 0,
-        });
+        const isMultiStatus = status === "cancelled_denied";
+        const statusFilter = isMultiStatus
+          ? [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]
+          : [status];
 
+        let countQuery = supabase.from("visits").select("*", { count: "exact", head: true });
+
+        if (isMultiStatus) {
+          countQuery = countQuery.in("status", statusFilter);
+        } else {
+          countQuery = countQuery.eq("status", status);
+        }
+
+        if (user?.role === "host") {
+          countQuery = countQuery.not("host_id", "is", null);
+        }
+
+        const { count, error: countError } = await countQuery;
+
+        if (countError) throw countError;
+        setTotalVisits(count || 0);
+
+        let query = supabase.from("visits").select(
+          `
+          *,
+          visitors:visitor_id (name),
+          hosts:host_id (name)
+        `
+        );
+
+        if (isMultiStatus) {
+          query = query.in("status", statusFilter);
+        } else {
+          query = query.eq("status", status);
+        }
+
+        if (user?.role === "host") {
+          query = query.not("host_id", "is", null);
+        }
+
+        query = query.order("created_at", { ascending: false }).range(0, limit - 1);
+
+        const { data, error } = await query;
         if (error) throw error;
 
-        const result = data[0];
-        setTotalVisits(result.total_count || 0);
-        setSelectedVisits((result.visits || []) as Visit[]);
+        const transformedData =
+          data?.map((visit) => ({
+            ...visit,
+            visitor_name: visit.visitors?.name || "Unknown Visitor",
+            host_name: visit.hosts?.name || "Unknown Host",
+          })) || [];
+
+        setSelectedVisits(transformedData as Visit[]);
         setIsModalOpen(true);
       } catch (error) {
         console.error("Error fetching visits:", error);
@@ -124,12 +164,17 @@ export default function Dashboard() {
         <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
           Last updated: {lastRefresh.toLocaleTimeString()} • Auto-refreshes every 30s
         </p>
-        <StatusIndicator isLoading={false} error={connectionError || statsError} className="mt-4" />
+        {(connectionError || statsError) && (
+          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg flex items-center animate-fadeIn">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            <span>{connectionError || statsError}</span>
+          </div>
+        )}
       </div>
 
-      <StatusIndicator isLoading={loading} error={null} loadingMessage="Loading stats..." />
-
-      {!loading && (
+      {loading ? (
+        <div className="text-center py-8">Loading stats...</div>
+      ) : (
         <StatsGrid stats={stats} handleStatCardClick={handleStatCardClick} />
       )}
 
