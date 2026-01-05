@@ -2,29 +2,39 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router-dom";
 import { Shield } from "lucide-react";
 import { useAuthStore } from "../store/auth";
 import { supabase } from "../lib/supabase";
 import { BackButton } from "./BackButton";
+import { SignupSchema } from "../lib/validators";
+import { z } from "zod";
+
+type SignupFormData = z.infer<typeof SignupSchema>;
 
 type Department = {
   id: string;
   name: string;
 };
 
-export function Signup() {
+
+export default function Signup() {
   const navigate = useNavigate();
   const signup = useAuthStore((state) => state.signup);
   const isLoading = useAuthStore((state) => state.isLoading);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [departmentId, setDepartmentId] = useState("");
   const [departments, setDepartments] = useState<Department[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(SignupSchema),
+  });
 
   useEffect(() => {
     loadDepartments();
@@ -41,28 +51,12 @@ export function Signup() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: SignupFormData) => {
     setError("");
     setSuccess(false);
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
-    if (!departmentId) {
-      setError("Please select a department");
-      return;
-    }
-
     try {
-      await signup(email, password, name, departmentId);
+      await signup(data.email, data.password, data.name, data.departmentId);
       setSuccess(true);
       setTimeout(() => {
         navigate("/login");
@@ -103,7 +97,7 @@ export function Signup() {
             </div>
           )}
 
-          <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label
                 htmlFor="name"
@@ -114,13 +108,13 @@ export function Signup() {
               <div className="mt-1">
                 <input
                   id="name"
-                  name="name"
                   type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  {...register("name")}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                )}
               </div>
             </div>
 
@@ -134,14 +128,14 @@ export function Signup() {
               <div className="mt-1">
                 <input
                   id="email"
-                  name="email"
                   type="email"
                   autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  {...register("email")}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                )}
               </div>
             </div>
 
@@ -155,10 +149,7 @@ export function Signup() {
               <div className="mt-1">
                 <select
                   id="department"
-                  name="department"
-                  required
-                  value={departmentId}
-                  onChange={(e) => setDepartmentId(e.target.value)}
+                  {...register("departmentId")}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 >
                   <option value="">Select a department</option>
@@ -168,6 +159,9 @@ export function Signup() {
                     </option>
                   ))}
                 </select>
+                {errors.departmentId && (
+                  <p className="mt-1 text-sm text-red-600">{errors.departmentId.message}</p>
+                )}
               </div>
             </div>
 
@@ -181,18 +175,15 @@ export function Signup() {
               <div className="mt-1">
                 <input
                   id="password"
-                  name="password"
                   type="password"
                   autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  {...register("password")}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                )}
               </div>
-              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                Must be at least 6 characters
-              </p>
             </div>
 
             <div>
@@ -205,14 +196,16 @@ export function Signup() {
               <div className="mt-1">
                 <input
                   id="confirmPassword"
-                  name="confirmPassword"
                   type="password"
                   autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  {...register("confirmPassword")}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all duration-300 hover:border-sky-400"
                 />
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
             </div>
 

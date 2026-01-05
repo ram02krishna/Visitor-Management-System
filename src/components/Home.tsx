@@ -7,7 +7,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 
 import { useAuthStore } from "../store/auth";
 
-const Home = () => {
+export default function Home() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -206,5 +206,4 @@ const Home = () => {
   );
 };
 
-export default Home;
-export { Home };
+

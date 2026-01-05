@@ -17,7 +17,7 @@ type AnalyticsData = {
   daily_stats: Array<{ date: string; count: number }>;
 };
 
-export function AnalyticsDashboard() {
+export default function AnalyticsDashboard() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState(7);

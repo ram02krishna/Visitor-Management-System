@@ -7,7 +7,7 @@ import { LogOut, Menu, Home, X } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { navLinks } from "../lib/navigation";
 
-export function Layout() {
+export function Layout({ children }: { children?: React.ReactNode }) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);

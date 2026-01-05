@@ -13,7 +13,7 @@ type BulkUploadFormData = {
   approverEmail: string;
 };
 
-export function BulkVisitorUpload() {
+export default function BulkVisitorUpload() {
   const { user } = useAuthStore();
   const {
     register,

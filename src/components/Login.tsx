@@ -1,20 +1,32 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router-dom";
 import { Shield } from "lucide-react";
 import { useAuthStore } from "../store/auth";
 import { BackButton } from "./BackButton";
 import log from "../lib/logger";
+import { LoginSchema } from "../lib/validators";
+import { z } from "zod";
 
-export function Login() {
+type LoginFormData = z.infer<typeof LoginSchema>;
+
+
+export default function Login() {
   const navigate = useNavigate();
-  const { login, signInWithGoogle, isAuthenticated } = useAuthStore();
+  const { login, signInWithGoogle, isAuthenticated, error } = useAuthStore();
   const isLoading = useAuthStore((state) => state.isLoading);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(LoginSchema),
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -22,19 +34,15 @@ export function Login() {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    log.info("[Login] Form submitted with email:", email);
-    setError("");
-
+  const onSubmit = async (data: LoginFormData) => {
+    log.info("[Login] Form submitted with email:", data.email);
     try {
       log.info("[Login] Calling login function...");
-      await login(email, password);
+      await login(data.email, data.password);
       log.info("[Login] Login successful, navigating to dashboard");
       navigate("/app/dashboard");
     } catch (error) {
       log.error("[Login] Login failed:", error);
-      setError("Invalid credentials");
     }
   };
 
@@ -43,7 +51,6 @@ export function Login() {
       await signInWithGoogle();
     } catch (error) {
       log.error("[Login] Google Sign-In failed:", error);
-      setError("Google Sign-In failed. Please try again.");
     }
   };
 
@@ -72,7 +79,7 @@ export function Login() {
         style={{ animationDelay: "0.2s" }}
       >
         <div className="glass py-6 sm:py-8 px-4 sm:px-10 shadow-xl rounded-2xl hover:shadow-2xl transition-all duration-500">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label
                 htmlFor="email"
@@ -83,14 +90,14 @@ export function Login() {
               <div className="mt-1">
                 <input
                   id="email"
-                  name="email"
                   type="email"
                   autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  {...register("email")}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-all duration-300 hover:border-sky-400"
                 />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                )}
               </div>
             </div>
 
@@ -104,14 +111,14 @@ export function Login() {
               <div className="mt-1">
                 <input
                   id="password"
-                  name="password"
                   type="password"
                   autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  {...register("password")}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm sm:text-base bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 transition-all duration-300 hover:border-sky-400"
                 />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                )}
               </div>
             </div>
 

@@ -16,7 +16,7 @@ type VisitorApprovalVisit = Database["public"]["Tables"]["visits"]["Row"] & {
   visitors: Database["public"]["Tables"]["visitors"]["Row"];
 };
 
-export function VisitorApproval() {
+export default function VisitorApproval() {
   const user = useAuthStore((state) => state.user);
   const [visits, setVisits] = useState<VisitorApprovalVisit[]>([]);
   const [loading, setLoading] = useState(true);

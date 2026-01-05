@@ -19,7 +19,7 @@ interface VisitorFormData {
   photo?: FileList;
 }
 
-export function RequestVisit() {
+export default function RequestVisit() {
   const [formData, setFormData] = React.useState<VisitorFormData>({
     name: "",
     email: "",

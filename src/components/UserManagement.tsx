@@ -32,7 +32,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
-export function UserManagement() {
+export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState<Host[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
