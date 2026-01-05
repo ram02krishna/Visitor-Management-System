@@ -21,10 +21,24 @@ export function AnalyticsDashboard() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState(7);
+  const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
+    fetchDepartments();
     fetchAnalytics();
-  }, [dateRange]);
+  }, [dateRange, departmentFilter, statusFilter]);
+
+  const fetchDepartments = async () => {
+    try {
+      const { data, error } = await supabase.from("departments").select("id, name");
+      if (error) throw error;
+      setDepartments(data || []);
+    } catch (error) {
+      console.error("Failed to fetch departments:", error);
+    }
+  };
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -32,6 +46,8 @@ export function AnalyticsDashboard() {
       const { data, error } = await supabase
         .rpc("get_analytics", {
           p_date_range: dateRange,
+          p_department_id: departmentFilter,
+          p_status: statusFilter,
         })
         .single<AnalyticsData>();
 
@@ -80,7 +96,7 @@ export function AnalyticsDashboard() {
             Comprehensive insights into your visitor management system
           </p>
         </div>
-        <div className="mt-4 sm:mt-0">
+        <div className="mt-4 sm:mt-0 flex space-x-2">
           <select
             value={dateRange}
             onChange={(e) => setDateRange(Number(e.target.value))}
@@ -90,6 +106,31 @@ export function AnalyticsDashboard() {
             <option value={14}>Last 14 days</option>
             <option value={30}>Last 30 days</option>
             <option value={90}>Last 90 days</option>
+          </select>
+          <select
+            value={departmentFilter || ""}
+            onChange={(e) => setDepartmentFilter(e.target.value || null)}
+            className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+          >
+            <option value="">All Departments</option>
+            {departments.map((dept) => (
+              <option key={dept.id} value={dept.id}>
+                {dept.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={statusFilter || ""}
+            onChange={(e) => setStatusFilter(e.target.value || null)}
+            className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+          >
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="denied">Denied</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="checked-in">Checked-in</option>
           </select>
         </div>
       </div>

@@ -86,6 +86,7 @@ export function VisitLogs() {
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("");
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -96,6 +97,7 @@ export function VisitLogs() {
       p_date_filter: dateFilter,
       p_page_number: currentPage,
       p_page_size: itemsPerPage,
+      p_status_filter: statusFilter === "" ? null : statusFilter,
     });
 
     if (error) {
@@ -113,7 +115,7 @@ export function VisitLogs() {
 
   useEffect(() => {
     fetchVisits();
-  }, [currentPage, itemsPerPage, debouncedSearchTerm, dateFilter]);
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, dateFilter, statusFilter]);
 
   useEffect(() => {
     const subscription = supabase
@@ -264,6 +266,28 @@ export function VisitLogs() {
                 className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 leading-5 placeholder-gray-500 focus:border-primary-500 focus:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                 title="Select a date to filter visits"
               />
+            </div>
+            <div className="w-48">
+              <label htmlFor="statusFilter" className="sr-only">
+                Filter by status
+              </label>
+              <select
+                id="statusFilter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 leading-5 placeholder-gray-500 focus:border-primary-500 focus:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                title="Select a status to filter visits"
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="denied">Denied</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="checked-in">Checked-in</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="upcoming">Upcoming</option>
+              </select>
             </div>
           </div>
         </div>

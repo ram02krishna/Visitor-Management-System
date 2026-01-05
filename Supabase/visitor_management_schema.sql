@@ -843,7 +843,7 @@ BEGIN
             v.created_at,
             v.purpose
         FROM visits v
-        JOIN hosts h ON v.host_id = h.id
+        LEFT JOIN hosts h ON v.host_id = h.id
         WHERE
             v.created_at BETWEEN start_date AND end_date
             AND (p_department_id IS NULL OR h.department_id = p_department_id)
