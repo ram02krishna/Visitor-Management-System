@@ -8,10 +8,12 @@ export type StatItemProps = {
   color: string;
   status?: string;
   onClick: (status: string) => void;
+  style?: React.CSSProperties;
+  className?: string;
 };
 
 export const StatItem = React.memo(
-  ({ name, value, icon: Icon, color, status, onClick }: StatItemProps) => {
+  ({ name, value, icon: Icon, color, status, onClick, style, className }: StatItemProps) => {
     // Map colors to gradient backgrounds
     const getGradientClass = () => {
       if (color.includes("green")) return "bg-gradient-to-br from-emerald-500 to-green-600";
@@ -34,7 +36,8 @@ export const StatItem = React.memo(
         key={name}
         className={`glass rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 group animate-fadeInUp ${
           status ? "cursor-pointer" : ""
-        }`}
+        } ${className || ""}`}
+        style={style}
         onClick={() => status && onClick(status)}
         aria-label={status ? `View ${name.toLowerCase()}` : undefined}
         tabIndex={status ? 0 : undefined}

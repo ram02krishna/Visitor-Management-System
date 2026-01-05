@@ -32,12 +32,6 @@ export const navLinks = [
     roles: ["guard"],
   },
   {
-    href: "/app/ongoing-visits",
-    label: "Ongoing Visits",
-    icon: Clock,
-    roles: ["admin", "guard"],
-  },
-  {
     href: "/app/bulk-visitor-upload",
     label: "Bulk Upload",
     icon: Users,
