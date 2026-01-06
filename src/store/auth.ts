@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase.ts";
 import type { Database } from "../lib/database.types";
 import log from "../lib/logger.ts";
 
-type UserRole = Database["public"]["Enums"]["user_role"];
+export type UserRole = Database["public"]["Enums"]["user_role"];
 
 export interface User {
   id: string;
