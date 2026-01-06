@@ -84,7 +84,7 @@ export function Signup() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-sky-600 to-blue-600 dark:from-sky-400 dark:to-blue-400 bg-clip-text text-transparent animate-fadeInUp">
-          Campus VMS
+          Visitor Management System
         </h2>
         <p
           className="mt-2 text-center text-sm text-gray-600 dark:text-slate-300 animate-fadeInUp px-4"

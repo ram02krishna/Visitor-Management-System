@@ -44,7 +44,7 @@ const Home = () => {
           <img src="/visitor-management.png" alt="Logo" className="h-7 w-7 sm:h-8 sm:w-8" />
           <div className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 dark:from-sky-400 dark:to-blue-400 bg-clip-text text-transparent animate-fadeIn">
             <span className="hidden sm:inline">Visitor Management System</span>
-            <span className="sm:hidden">VMS</span>
+            <span className="sm:hidden">Visitor Management System</span>
           </div>
         </div>
 

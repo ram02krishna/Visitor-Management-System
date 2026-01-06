@@ -60,8 +60,8 @@ export function Layout() {
                   />
                 </div>
                 <span className="ml-2 sm:ml-3 font-bold text-base sm:text-lg">
-                  <span className="hidden sm:inline">Campus VMS</span>
-                  <span className="sm:hidden">VMS</span>
+                  <span className="hidden sm:inline">Visitor Management System</span>
+                  <span className="sm:hidden">Visitor Management System</span>
                 </span>
               </Link>
             </div>

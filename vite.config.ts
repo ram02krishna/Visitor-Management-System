@@ -15,7 +15,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'Visitor Management System',
-        short_name: 'VMS',
+        short_name: 'Visitor Management System',
         description: 'A modern, real-time Visitor Management System.',
         theme_color: '#ffffff',
         icons: [
