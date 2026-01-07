@@ -18,7 +18,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: typeof window !== "undefined" ? sessionStorage : undefined,
+    storage: typeof window !== "undefined" ? localStorage : undefined,
   },
   db: {
     schema: "public",
@@ -35,7 +35,7 @@ if (typeof window !== "undefined") {
     if (event === "SIGNED_OUT") {
       log.info("[Supabase] User signed out, clearing cached data");
       // Clear any cached data on sign out
-      sessionStorage.removeItem("supabase.auth.token");
+      localStorage.removeItem("supabase.auth.token");
     }
   });
 }

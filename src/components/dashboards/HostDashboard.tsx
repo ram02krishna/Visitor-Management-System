@@ -7,6 +7,7 @@ import { StatItem } from "../StatItem";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { Visit } from "../VisitDetailsModal";
+import { OngoingVisitsCard } from "../OngoingVisitsCard";
 
 export function HostDashboard() {
   const { user } = useAuthStore();
@@ -63,13 +64,6 @@ export function HostDashboard() {
       color: "green",
       status: "approved",
     },
-    {
-      name: "Ongoing Visits",
-      value: ongoingVisits.length,
-      icon: Clock,
-      color: "blue",
-      status: "checked-in",
-    },
   ];
 
   return (
@@ -114,6 +108,7 @@ export function HostDashboard() {
               style={{ animationDelay: `${index * 0.1}s` }}
             />
           ))}
+          <OngoingVisitsCard style={{ animationDelay: `${hostStats.length * 0.1}s` }} />
         </div>
       )}
 
