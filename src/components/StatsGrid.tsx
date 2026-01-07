@@ -1,6 +1,5 @@
 import React from "react";
 import { StatItem, StatItemProps } from "./StatItem";
-import { OngoingVisitsCard } from "./OngoingVisitsCard";
 
 type StatsGridProps = {
   stats: Omit<StatItemProps, "onClick">[];
@@ -18,7 +17,6 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, handleStatCardClick
           style={{ animationDelay: `${index * 0.1}s` }}
         />
       ))}
-      <OngoingVisitsCard style={{ animationDelay: `${stats.length * 0.1}s` }} />
     </div>
   );
 };

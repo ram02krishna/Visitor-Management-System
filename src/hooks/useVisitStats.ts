@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import { Users, UserCheck, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { Users, UserCheck, AlertCircle, CheckCircle, XCircle, Clock } from "lucide-react";
 import { User } from "../store/auth";
 
 export type StatItem = {
@@ -18,6 +18,7 @@ const VISIT_STATUS = {
   COMPLETED: "completed",
   CANCELLED: "cancelled",
   DENIED: "denied",
+  CHECKED_IN: "checked-in",
 };
 
 export const useVisitStats = (user: User | null) => {
@@ -59,6 +60,7 @@ export const useVisitStats = (user: User | null) => {
             { count: newRequestsToday },
             { count: completedToday },
             { count: cancelledAndDenied },
+            { count: ongoingVisits },
           ] = await Promise.all([
             supabase
               .from("visits")
@@ -80,6 +82,10 @@ export const useVisitStats = (user: User | null) => {
               .from("visits")
               .select("*", { count: "exact", head: true })
               .in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]),
+            supabase
+              .from("visits")
+              .select("*", { count: "exact", head: true })
+              .eq("status", VISIT_STATUS.CHECKED_IN),
           ]);
 
           statsData = [
@@ -98,6 +104,14 @@ export const useVisitStats = (user: User | null) => {
               color: "text-green-500",
               bgColor: "bg-green-50",
               status: VISIT_STATUS.APPROVED,
+            },
+            {
+              name: "Ongoing Visits",
+              value: ongoingVisits ?? 0,
+              icon: Clock,
+              color: "text-sky-500",
+              bgColor: "bg-sky-50",
+              status: VISIT_STATUS.CHECKED_IN,
             },
             {
               name: "New Visit Requests",
@@ -149,6 +163,10 @@ export const useVisitStats = (user: User | null) => {
               .from("visits")
               .select("*", { count: "exact", head: true })
               .in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]),
+            supabase
+              .from("visits")
+              .select("*", { count: "exact", head: true })
+              .eq("status", VISIT_STATUS.CHECKED_IN),
           ];
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,6 +180,7 @@ export const useVisitStats = (user: User | null) => {
             { count: newRequestsToday },
             { count: completedToday },
             { count: cancelledAndDenied },
+            { count: ongoingVisits },
           ] = await Promise.all(commonQueries.map(roleFilter));
 
           statsData = [
@@ -172,6 +191,14 @@ export const useVisitStats = (user: User | null) => {
               color: "text-green-500",
               bgColor: "bg-green-50",
               status: VISIT_STATUS.APPROVED,
+            },
+            {
+              name: "Ongoing Visits",
+              value: ongoingVisits ?? 0,
+              icon: Clock,
+              color: "text-sky-500",
+              bgColor: "bg-sky-50",
+              status: VISIT_STATUS.CHECKED_IN,
             },
             {
               name: "New Visit Requests",
