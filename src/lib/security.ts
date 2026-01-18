@@ -15,11 +15,15 @@ export function escapeHtml(str: string | null | undefined): string {
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
-    "'": "&#039;",
-    "/": "&#x2F;",
+    "'": "&#39;",
+    "/": "&#47;",
+    "`": "&#96;",
   };
 
-  return String(str).replace(/[&<>"'/]/g, (char) => map[char]);
+  return String(str).replace(/[&<>"'`\/]/g, (char) => {
+    const escaped = map[char];
+    return escaped || char;
+  });
 }
 
 /**
@@ -121,15 +125,18 @@ export function removeScriptPatterns(str: string): string {
 
   return (
     str
-      // Remove script tags
-      .replace(/<script[^>]*>.*?<\/script>/gi, "")
-      // Remove event handlers
-      .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
-      .replace(/on\w+\s*=\s*[^\s>]*/gi, "")
-      // Remove dangerous HTML
-      .replace(/<iframe[^>]*>.*?<\/iframe>/gi, "")
-      .replace(/<object[^>]*>.*?<\/object>/gi, "")
-      .replace(/<embed[^>]*>/gi, "")
+      // Remove script tags with proper character matching
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+      // Remove event handlers (all variations)
+      .replace(/on(?:load|error|click|change|submit|focus|blur)\s*=\s*["'](?:[^"]|\\")*["']/gi, "")
+      .replace(/on\w+\s*=\s*(?:[^\s>"']|["'][^"']*["'])+/gi, "")
+      // Remove dangerous HTML with proper character matching
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
+      .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, "")
+      .replace(/<embed\b[^>]*>/gi, "")
+      // Remove form tags that could be XSS vectors
+      .replace(/<form\b[^>]*>/gi, "")
+      .replace(/<\/form>/gi, "")
   );
 }
 
