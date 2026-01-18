@@ -1,4 +1,4 @@
-import { Users, ClipboardList, User, Download, TrendingUp, Camera, Clock } from "lucide-react";
+import { Users, ClipboardList, User, Download, TrendingUp, Camera } from "lucide-react";
 
 export const navLinks = [
   {

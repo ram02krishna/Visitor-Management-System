@@ -40,6 +40,12 @@ export default defineConfig({
   },
   server: {
     port: 5174,
+    headers: {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'SAMEORIGIN',
+      'X-XSS-Protection': '1; mode=block',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+    },
   },
   optimizeDeps: {
     exclude: ['lucide-react'],

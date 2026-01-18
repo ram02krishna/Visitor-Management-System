@@ -26,8 +26,11 @@ export function ScanQrCode() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
         if (error) {
           console.error("Auth check error:", error);
           setIsAuthenticated(false);
@@ -53,7 +56,9 @@ export function ScanQrCode() {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session?.user);
       if (!session?.user) {
         setError("You must be logged in to scan QR codes");
@@ -82,8 +87,8 @@ export function ScanQrCode() {
     const startScanner = async () => {
       try {
         // Small delay to ensure DOM is ready
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         scanner = new Html5Qrcode(qrCodeDivId);
         scannerRef.current = scanner;
 
@@ -102,7 +107,7 @@ export function ScanQrCode() {
           },
           () => {}
         );
-        
+
         setScannerReady(true);
         console.log("Scanner started successfully");
       } catch (err) {
@@ -132,13 +137,13 @@ export function ScanQrCode() {
 
       try {
         console.log("Raw scanResult:", scanResult);
-        
+
         // Parse QR code
         let visitId: string;
         try {
           const parsed = JSON.parse(scanResult);
           visitId = parsed.visitId;
-        } catch (parseError) {
+        } catch {
           visitId = scanResult.trim();
         }
 
@@ -151,11 +156,13 @@ export function ScanQrCode() {
         // Fetch visit with proper joins
         const { data: visitData, error: visitError } = await supabase
           .from("visits")
-          .select(`
+          .select(
+            `
             *,
             visitors:visitor_id (*),
             hosts:host_id (*)
-          `)
+          `
+          )
           .eq("id", visitId)
           .single();
 
@@ -178,7 +185,9 @@ export function ScanQrCode() {
         }
 
         if (visitData.status !== "approved") {
-          throw new Error(`Visit status is '${visitData.status}'. Only approved visits can be checked in.`);
+          throw new Error(
+            `Visit status is '${visitData.status}'. Only approved visits can be checked in.`
+          );
         }
 
         // Check if visit has expired
@@ -197,11 +206,13 @@ export function ScanQrCode() {
             status: "checked-in",
           })
           .eq("id", visitId)
-          .select(`
+          .select(
+            `
             *,
             visitors:visitor_id (*),
             hosts:host_id (*)
-          `)
+          `
+          )
           .single();
 
         if (updateError) {
@@ -213,18 +224,18 @@ export function ScanQrCode() {
           title: "Success!",
           description: "Visitor checked in successfully",
         });
-        
+
         setVisit(updatedVisit as Visit);
       } catch (err: unknown) {
         console.error("Fetch visit error:", err);
         let errorMessage = "Failed to fetch visit details";
-        
+
         if (err instanceof Error) {
           errorMessage = err.message;
         } else if (typeof err === "string") {
           errorMessage = err;
         }
-        
+
         setError(errorMessage);
         toast({
           title: "Error",
@@ -244,7 +255,7 @@ export function ScanQrCode() {
     setVisit(null);
     setError(null);
     setScannerReady(false);
-    
+
     if (!isAuthenticated) {
       setError("You must be logged in to scan QR codes");
       return;
@@ -276,7 +287,7 @@ export function ScanQrCode() {
         },
         () => {}
       );
-      
+
       setScannerReady(true);
     } catch (err) {
       console.error("Failed to restart scanner:", err);
@@ -323,7 +334,7 @@ export function ScanQrCode() {
               You must be logged in to scan QR codes
             </p>
             <button
-              onClick={() => window.location.href = '/login'}
+              onClick={() => (window.location.href = "/login")}
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
             >
               <LogIn className="h-5 w-5" />
@@ -399,12 +410,8 @@ export function ScanQrCode() {
                   <p className="font-semibold text-gray-900 dark:text-white">
                     {visit.visitors.name}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {visit.visitors.email}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {visit.visitors.phone}
-                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.visitors.email}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.visitors.phone}</p>
                   {visit.visitors.company && (
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {visit.visitors.company}
@@ -424,12 +431,14 @@ export function ScanQrCode() {
               <div className="flex items-start gap-4">
                 <Clock className="h-5 w-5 text-gray-500 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Check-in Time</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Check-in Time
+                  </p>
                   <p className="text-gray-900 dark:text-white">
-                    {new Date(visit.check_in_time!).toLocaleString('en-IN', {
-                      timeZone: 'Asia/Kolkata',
-                      dateStyle: 'medium',
-                      timeStyle: 'short'
+                    {new Date(visit.check_in_time!).toLocaleString("en-IN", {
+                      timeZone: "Asia/Kolkata",
+                      dateStyle: "medium",
+                      timeStyle: "short",
                     })}
                   </p>
                 </div>
@@ -440,9 +449,7 @@ export function ScanQrCode() {
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Host</p>
                   <p className="text-gray-900 dark:text-white">{visit.hosts.name}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {visit.hosts.email}
-                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.hosts.email}</p>
                 </div>
               </div>
 
@@ -450,12 +457,14 @@ export function ScanQrCode() {
                 <div className="flex items-start gap-4">
                   <Clock className="h-5 w-5 text-gray-500 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Valid Until</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Valid Until
+                    </p>
                     <p className="text-gray-900 dark:text-white">
-                      {new Date(visit.valid_until).toLocaleString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        dateStyle: 'medium',
-                        timeStyle: 'short'
+                      {new Date(visit.valid_until).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        dateStyle: "medium",
+                        timeStyle: "short",
                       })}
                     </p>
                   </div>

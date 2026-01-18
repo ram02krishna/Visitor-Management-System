@@ -1,19 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import { supabase } from "../lib/supabase";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { subDays } from "date-fns";
 
 type ChartData = {
@@ -49,10 +38,12 @@ export function VisitsChart() {
         return acc;
       }, {});
 
-      const formattedData = Object.entries(dailyCounts).map(([date, visits]) => ({
-        date,
-        visits,
-      })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const formattedData = Object.entries(dailyCounts)
+        .map(([date, visits]) => ({
+          date,
+          visits,
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
       setChartData(formattedData);
       setLoading(false);
@@ -87,12 +78,11 @@ export function VisitsChart() {
                 tickLine={false}
                 tickMargin={10}
                 axisLine={false}
-                tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                tickFormatter={(value) =>
+                  new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                }
               />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent indicator="dot" />}
-              />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
               <Bar dataKey="visits" fill="var(--color-visits)" radius={4} />
             </BarChart>
           </ChartContainer>

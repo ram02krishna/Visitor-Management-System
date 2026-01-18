@@ -26,7 +26,7 @@ export const useGuardStats = (user: User | null) => {
       if (error) {
         throw new Error(error.message);
       }
-      
+
       setStats(data);
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";

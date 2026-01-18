@@ -122,7 +122,10 @@ export function GuardDashboard() {
               <div key={visit.id} className="glass rounded-lg p-4">
                 <p className="font-bold">{visit.visitors?.name || "N/A"}</p>
                 <p>Host: {visit.hosts?.name || "N/A"}</p>
-                <p>Expected at: {visit.check_in_time ? new Date(visit.check_in_time).toLocaleTimeString() : "N/A"}</p>
+                <p>
+                  Expected at:{" "}
+                  {visit.check_in_time ? new Date(visit.check_in_time).toLocaleTimeString() : "N/A"}
+                </p>
               </div>
             ))}
           </div>

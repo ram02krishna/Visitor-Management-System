@@ -58,7 +58,9 @@ export function OngoingVisitsCard({ className, style }: OngoingVisitsCardProps) 
             <Clock className="h-7 w-7 text-white" strokeWidth={2.5} aria-hidden="true" />
           </div>
           <div className="ml-4">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-slate-300">Ongoing Visits</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-slate-300">
+              Ongoing Visits
+            </h3>
             <p className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 dark:text-slate-100 transition-transform duration-300">
               {loading ? "..." : ongoingVisitsCount}
             </p>

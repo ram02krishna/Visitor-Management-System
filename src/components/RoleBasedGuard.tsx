@@ -1,6 +1,5 @@
-
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthStore, UserRole } from '../store/auth';
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuthStore, UserRole } from "../store/auth";
 
 interface RoleBasedGuardProps {
   allowedRoles: UserRole[];

@@ -74,12 +74,18 @@ export function useScanQrCode() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
         if (error) {
           console.error("Auth check error:", error);
           dispatch({ type: "SET_IS_AUTHENTICATED", payload: false });
-          dispatch({ type: "SET_ERROR", payload: "Authentication error. Please try logging in again." });
+          dispatch({
+            type: "SET_ERROR",
+            payload: "Authentication error. Please try logging in again.",
+          });
         } else if (session?.user) {
           console.log("User authenticated:", session.user.id);
           dispatch({ type: "SET_IS_AUTHENTICATED", payload: true });
@@ -101,7 +107,9 @@ export function useScanQrCode() {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       dispatch({ type: "SET_IS_AUTHENTICATED", payload: !!session?.user });
       if (!session?.user) {
         dispatch({ type: "SET_ERROR", payload: "You must be logged in to scan QR codes" });
@@ -127,8 +135,8 @@ export function useScanQrCode() {
 
     const startScanner = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         scanner = new Html5Qrcode(qrCodeDivId);
         scannerRef.current = scanner;
 
@@ -146,11 +154,14 @@ export function useScanQrCode() {
           },
           () => {}
         );
-        
+
         dispatch({ type: "SET_SCANNER_READY", payload: true });
       } catch (err) {
         console.error("Scanner error:", err);
-        dispatch({ type: "SET_ERROR", payload: "Failed to start QR code scanner. Please ensure camera permissions are granted." });
+        dispatch({
+          type: "SET_ERROR",
+          payload: "Failed to start QR code scanner. Please ensure camera permissions are granted.",
+        });
       }
     };
 
@@ -177,7 +188,7 @@ export function useScanQrCode() {
         try {
           const parsed = JSON.parse(state.scanResult!);
           visitId = parsed.visitId;
-        } catch (parseError) {
+        } catch {
           visitId = state.scanResult!.trim();
         }
 
@@ -187,11 +198,13 @@ export function useScanQrCode() {
 
         const { data: visitData, error: visitError } = await supabase
           .from("visits")
-          .select(`
+          .select(
+            `
             *,
             visitors:visitor_id (*),
             hosts:host_id (*)
-          `)
+          `
+          )
           .eq("id", visitId)
           .single();
 
@@ -210,7 +223,9 @@ export function useScanQrCode() {
         }
 
         if (visitData.status !== "approved") {
-          throw new Error(`Visit status is '${visitData.status}'. Only approved visits can be checked in.`);
+          throw new Error(
+            `Visit status is '${visitData.status}'. Only approved visits can be checked in.`
+          );
         }
 
         if (visitData.valid_until) {
@@ -227,11 +242,13 @@ export function useScanQrCode() {
             status: "checked-in",
           })
           .eq("id", visitId)
-          .select(`
+          .select(
+            `
             *,
             visitors:visitor_id (*),
             hosts:host_id (*)
-          `)
+          `
+          )
           .single();
 
         if (updateError) {
@@ -242,15 +259,15 @@ export function useScanQrCode() {
           title: "Success!",
           description: "Visitor checked in successfully",
         });
-        
+
         dispatch({ type: "SET_VISIT", payload: updatedVisit as Visit });
       } catch (err: unknown) {
         let errorMessage = "Failed to fetch visit details";
-        
+
         if (err instanceof Error) {
           errorMessage = err.message;
         }
-        
+
         dispatch({ type: "SET_ERROR", payload: errorMessage });
         toast({
           title: "Error",

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const VisitorRegistrationSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters long" }),
@@ -7,8 +7,16 @@ export const VisitorRegistrationSchema = z.object({
   company: z.string().optional(),
   photo: z.instanceof(FileList).optional(),
   purpose: z.string().min(3, { message: "Purpose must be at least 3 characters long" }),
-  hostEmail: z.string().email({ message: "Invalid host email address" }).optional().or(z.literal('')),
-  entityEmail: z.string().email({ message: "Invalid entity email address" }).optional().or(z.literal('')),
+  hostEmail: z
+    .string()
+    .email({ message: "Invalid host email address" })
+    .optional()
+    .or(z.literal("")),
+  entityEmail: z
+    .string()
+    .email({ message: "Invalid entity email address" })
+    .optional()
+    .or(z.literal("")),
   notes: z.string().optional(),
 });
 
