@@ -21,8 +21,7 @@ export function escapeHtml(str: string | null | undefined): string {
   };
 
   return String(str).replace(/[&<>"'`\/]/g, (char) => {
-    const escaped = map[char];
-    return escaped || char;
+    return map[char] || char;
   });
 }
 
@@ -126,17 +125,24 @@ export function removeScriptPatterns(str: string): string {
   return (
     str
       // Remove script tags with proper character matching
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-      // Remove event handlers (all variations)
-      .replace(/on(?:load|error|click|change|submit|focus|blur)\s*=\s*["'](?:[^"]|\\")*["']/gi, "")
-      .replace(/on\w+\s*=\s*(?:[^\s>"']|["'][^"']*["'])+/gi, "")
-      // Remove dangerous HTML with proper character matching
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
-      .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, "")
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+      // Remove event handlers - specific attributes
+      .replace(/\bon(?:load|error|click|change|submit|focus|blur|mouse(?:over|out|enter|leave)|key(?:down|up|press))\s*=\s*["'`](?:\\.|[^\\])*?["'`]/gi, "")
+      // Remove generic on* event handlers with better character escaping
+      .replace(/\bon\w+\s*=\s*(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)/gi, "")
+      // Remove dangerous HTML tags - iframe with proper escaping
+      .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, "")
+      // Remove dangerous HTML tags - object with proper escaping
+      .replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, "")
+      // Remove embed tags
       .replace(/<embed\b[^>]*>/gi, "")
       // Remove form tags that could be XSS vectors
       .replace(/<form\b[^>]*>/gi, "")
       .replace(/<\/form>/gi, "")
+      // Remove style tags with proper escaping
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+      // Remove link tags with dangerous rel attributes
+      .replace(/<link\b[^>]*(?:rel\s*=\s*["']?(?:import|prefetch|preload|modulepreload)["']?)?[^>]*>/gi, "")
   );
 }
 
