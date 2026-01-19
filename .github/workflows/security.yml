@@ -21,34 +21,19 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-    
-    - name: Set up pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 10
-    
-    - name: Get pnpm store directory
-      run: echo "PNPM_HOME=$(pnpm store path --silent)" >> $GITHUB_ENV
-    
-    - name: Setup pnpm cache
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.PNPM_HOME }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
+        cache: 'npm'
     
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: npm install --legacy-peer-deps
     
     - name: Run security audit
-      run: pnpm audit --production
+      run: npm audit --production
       continue-on-error: true
     
     - name: Run ESLint
-      run: pnpm run lint
+      run: npm run lint
       continue-on-error: true
     
     - name: Type check
-      run: pnpm run type-check
+      run: npm run type-check
       continue-on-error: true
