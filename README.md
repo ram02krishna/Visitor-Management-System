@@ -162,9 +162,11 @@ DBMS_Project/
    VITE_SUPABASE_ANON_KEY=your-supabase-anonymous-key
 
    # EmailJS Configuration (Optional)
-   VITE_EMAILJS_SERVICE_ID=your-emailjs-service-id
-   VITE_EMAILJS_TEMPLATE_ID=your-emailjs-template-id
-   VITE_EMAILJS_PUBLIC_KEY=your-emailjs-public-key
+   VITE_EMAILJS_SERVICE_ID=service_your-id-here
+   VITE_EMAILJS_PUBLIC_KEY=your-public-key-here
+   VITE_EMAILJS_TEMPLATE_ID=template_your-id-here          # Visitor registration confirmation email
+   VITE_EMAILJS_APPROVAL_TEMPLATE_ID=template_your-id-here # Visitor approval email with QR code
+   VITE_EMAILJS_DENIAL_TEMPLATE_ID=template_your-id-here   # Visitor denial email
    ```
 
 4. **Set up Supabase Database:**
