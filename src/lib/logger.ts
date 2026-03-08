@@ -1,7 +1,6 @@
 import log from "loglevel";
 
-const isProduction = process.env.NODE_ENV === "production";
-
-log.setLevel(isProduction ? "warn" : "trace");
+// IMPORTANT: use import.meta.env.PROD (Vite) not process.env.NODE_ENV (Node-only, always undefined in browser/Vite).
+log.setLevel(import.meta.env.PROD ? "warn" : "trace");
 
 export default log;

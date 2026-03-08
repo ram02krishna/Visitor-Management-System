@@ -9,7 +9,7 @@ type StatsGridProps = {
 
 export const StatsGrid: React.FC<StatsGridProps> = ({ stats, handleStatCardClick }) => {
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat, index) => (
         <StatItem
           key={stat.name}
@@ -18,7 +18,10 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, handleStatCardClick
           style={{ animationDelay: `${index * 0.1}s` }}
         />
       ))}
-      <OngoingVisitsCard style={{ animationDelay: `${stats.length * 0.1}s` }} />
+      <OngoingVisitsCard
+        onClick={handleStatCardClick}
+        style={{ animationDelay: `${stats.length * 0.1}s` }}
+      />
     </div>
   );
 };

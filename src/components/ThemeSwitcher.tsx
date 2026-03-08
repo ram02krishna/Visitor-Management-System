@@ -2,16 +2,25 @@ import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 
 export const ThemeSwitcher = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("theme");
+      if (saved) return saved === "dark";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    const isDark = localStorage.getItem("theme") === "dark";
-    setIsDarkMode(isDark);
-    if (isDark) {
+    if (isDarkMode) {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
-  }, []);
+  }, [isDarkMode]);
 
   const toggleTheme = () => {
     setIsAnimating(true);

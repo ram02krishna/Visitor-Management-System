@@ -7,6 +7,7 @@ import QRCode from "qrcode";
 import emailjs from "@emailjs/browser";
 import { v4 as uuidv4 } from "uuid";
 import log from "../lib/logger";
+import { BackButton } from "./BackButton";
 
 type VisitorFormData = {
   name: string;
@@ -105,12 +106,13 @@ export function VisitorRegistration() {
 
       // Get host details if email is provided
       let hostId = null;
+      let hostNameFound = "N/A";
       if (formData.hostEmail && formData.hostEmail.trim() !== "") {
         log.info("[VisitorRegistration] Looking up host with email:", formData.hostEmail);
         const { data: hostData, error: hostError } = await supabase
           .from("hosts")
-          .select("id")
-          .eq("email", formData.hostEmail)
+          .select("id, name")
+          .ilike("email", formData.hostEmail.trim())
           .maybeSingle();
 
         if (hostError && hostError.code !== "PGRST116") {
@@ -120,6 +122,7 @@ export function VisitorRegistration() {
 
         if (hostData) {
           hostId = hostData.id;
+          hostNameFound = hostData.name;
           log.info("[VisitorRegistration] Host found:", hostId);
         } else {
           log.warn("[VisitorRegistration] No host found with email:", formData.hostEmail);
@@ -137,8 +140,7 @@ export function VisitorRegistration() {
         const { data: entityData, error: entityError } = await supabase
           .from("hosts")
           .select("id")
-          .eq("email", formData.entityEmail)
-          .eq("role", "host") // Make sure we're getting an entity role
+          .ilike("email", formData.entityEmail.trim())
           .maybeSingle();
 
         if (entityError && entityError.code !== "PGRST116") {
@@ -275,7 +277,7 @@ export function VisitorRegistration() {
             visit_purpose: formData.purpose,
             purpose: formData.purpose, // Alternative naming
             host_email: formData.hostEmail || "N/A",
-            host_name: formData.hostEmail || "N/A",
+            host_name: hostNameFound || "N/A",
             entity_email: formData.entityEmail || "N/A",
           };
 
@@ -310,7 +312,9 @@ export function VisitorRegistration() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="px-4 sm:px-6 lg:px-8 animate-fadeIn">
+      <BackButton />
+
       <div className="sm:flex sm:items-center mb-8">
         <div className="sm:flex-auto">
           <div className="flex items-center gap-3">

@@ -1,9 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html {
   scroll-behavior: smooth;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 @layer base {
@@ -13,26 +16,40 @@ html {
     transition-duration: 200ms;
   }
 
-  /* Improved dark mode theme with slate colors */
   body {
     @apply bg-gray-50 text-gray-900;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   .dark body {
     @apply bg-slate-950 text-slate-50;
   }
 
-  /* Smooth scrollbar for dark mode */
-  .dark ::-webkit-scrollbar {
-    width: 12px;
+  /* Scrollbar – light */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
 
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+
+  /* Scrollbar – dark */
   .dark ::-webkit-scrollbar-track {
     @apply bg-slate-900;
   }
 
   .dark ::-webkit-scrollbar-thumb {
-    @apply bg-slate-700 rounded-lg;
+    @apply bg-slate-700 rounded-full;
   }
 
   .dark ::-webkit-scrollbar-thumb:hover {
@@ -41,12 +58,14 @@ html {
 }
 
 @layer utilities {
-  /* Fade In Animation */
+
+  /* ── Fade / slide animations ── */
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(16px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -56,8 +75,9 @@ html {
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translateY(28px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -67,8 +87,9 @@ html {
   @keyframes slideInLeft {
     from {
       opacity: 0;
-      transform: translateX(-30px);
+      transform: translateX(-28px);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
@@ -78,8 +99,9 @@ html {
   @keyframes slideInRight {
     from {
       opacity: 0;
-      transform: translateX(30px);
+      transform: translateX(28px);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
@@ -89,55 +111,145 @@ html {
   @keyframes scaleIn {
     from {
       opacity: 0;
-      transform: scale(0.9);
+      transform: scale(0.92);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
     }
   }
 
+  /* ── Looping animations ── */
   @keyframes pulse-slow {
+
     0%,
     100% {
       opacity: 1;
     }
+
     50% {
-      opacity: 0.8;
+      opacity: 0.75;
+    }
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  @keyframes glow-pulse {
+
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+    }
+
+    50% {
+      box-shadow: 0 0 20px 4px rgba(14, 165, 233, 0.35);
+    }
+  }
+
+  @keyframes countUp {
+    from {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 
   .animate-fadeIn {
-    animation: fadeIn 0.6s ease-out;
+    animation: fadeIn 0.55s ease-out both;
   }
 
   .animate-fadeInUp {
-    animation: fadeInUp 0.8s ease-out;
+    animation: fadeInUp 0.7s ease-out both;
   }
 
   .animate-slideInLeft {
-    animation: slideInLeft 0.6s ease-out;
+    animation: slideInLeft 0.55s ease-out both;
   }
 
   .animate-slideInRight {
-    animation: slideInRight 0.6s ease-out;
+    animation: slideInRight 0.55s ease-out both;
   }
 
   .animate-scaleIn {
-    animation: scaleIn 0.5s ease-out;
+    animation: scaleIn 0.45s ease-out both;
   }
 
   .animate-pulse-slow {
     animation: pulse-slow 3s ease-in-out infinite;
   }
 
-  /* Hover Effects */
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 2.5s ease-in-out infinite;
+  }
+
+  .animate-countUp {
+    animation: countUp 0.5s ease-out both;
+  }
+
+  /* ── Skeleton shimmer ── */
+  .skeleton {
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite;
+    @apply rounded-lg;
+  }
+
+  .dark .skeleton {
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite;
+  }
+
+  /* ── Hover helpers ── */
   .hover-lift {
     @apply transition-all duration-300 ease-in-out;
   }
 
   .hover-lift:hover {
-    @apply transform -translate-y-2 shadow-2xl;
+    @apply -translate-y-1.5 shadow-xl;
   }
 
   .hover-scale {
@@ -145,7 +257,7 @@ html {
   }
 
   .hover-scale:hover {
-    @apply transform scale-105;
+    @apply scale-105;
   }
 
   .hover-glow {
@@ -153,20 +265,19 @@ html {
   }
 
   .hover-glow:hover {
-    @apply shadow-lg;
-    box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+    box-shadow: 0 0 22px rgba(14, 165, 233, 0.45);
   }
 
-  /* Glass Morphism */
+  /* ── Glassmorphism ── */
   .glass {
-    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg;
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl;
   }
 
   .glass-dark {
-    @apply bg-slate-950/80 backdrop-blur-lg;
+    @apply bg-slate-950/80 backdrop-blur-xl;
   }
 
-  /* Gradient Backgrounds */
+  /* ── Gradients ── */
   .gradient-primary {
     @apply bg-gradient-to-r from-sky-500 to-blue-600;
   }
@@ -179,21 +290,32 @@ html {
     @apply bg-gradient-to-r from-purple-500 to-pink-600;
   }
 
-  /* Button Animations */
+  /* ── Buttons ── */
   .btn-primary {
-    @apply bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95;
+    @apply bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/30 hover:scale-105 active:scale-95;
   }
 
   .btn-secondary {
-    @apply bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 hover:shadow-lg hover:scale-105 active:scale-95;
+    @apply bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-105 active:scale-95;
   }
 
-  /* Card Styles */
+  /* ── Cards ── */
   .card {
-    @apply bg-white dark:bg-slate-900 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6;
+    @apply bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 dark:border-slate-800;
   }
 
   .card-hover {
     @apply card hover:-translate-y-1;
+  }
+
+  /* ── Loading spinner ── */
+  .loading-spinner {
+    @apply inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full;
+    animation: spin-slow 0.75s linear infinite;
+  }
+
+  /* ── Active nav link ── */
+  .nav-link-active {
+    @apply bg-gradient-to-r from-sky-500/15 to-blue-500/15 text-sky-600 dark:text-sky-400 font-semibold;
   }
 }

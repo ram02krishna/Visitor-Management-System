@@ -32,17 +32,6 @@ export const useVisitStats = (user: User | null) => {
     setError(null);
 
     try {
-      const localToday = new Date();
-      localToday.setHours(0, 0, 0, 0);
-      const utcTodayStart = new Date(
-        localToday.getTime() - localToday.getTimezoneOffset() * 60000
-      ).toISOString();
-      const localTomorrow = new Date(localToday);
-      localTomorrow.setDate(localToday.getDate() + 1);
-      const utcTomorrowStart = new Date(
-        localTomorrow.getTime() - localTomorrow.getTimezoneOffset() * 60000
-      ).toISOString();
-
       let statsData: StatItem[] = [];
       const role = user.role;
 
@@ -63,9 +52,7 @@ export const useVisitStats = (user: User | null) => {
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.APPROVED)
-              .gte("approved_at", utcTodayStart)
-              .lt("approved_at", utcTomorrowStart),
+              .eq("status", VISIT_STATUS.APPROVED),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
@@ -73,9 +60,7 @@ export const useVisitStats = (user: User | null) => {
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.COMPLETED)
-              .gte("check_out_time", utcTodayStart)
-              .lt("check_out_time", utcTomorrowStart),
+              .eq("status", VISIT_STATUS.COMPLETED),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
@@ -100,7 +85,7 @@ export const useVisitStats = (user: User | null) => {
               status: VISIT_STATUS.APPROVED,
             },
             {
-              name: "New Visit Requests",
+              name: "Pending Approvals",
               value: newRequestsToday ?? 0,
               icon: AlertCircle,
               color: "text-yellow-500",
@@ -132,9 +117,7 @@ export const useVisitStats = (user: User | null) => {
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.APPROVED)
-              .gte("approved_at", utcTodayStart)
-              .lt("approved_at", utcTomorrowStart),
+              .eq("status", VISIT_STATUS.APPROVED),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
@@ -142,9 +125,7 @@ export const useVisitStats = (user: User | null) => {
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.COMPLETED)
-              .gte("check_out_time", utcTodayStart)
-              .lt("check_out_time", utcTomorrowStart),
+              .eq("status", VISIT_STATUS.COMPLETED),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
@@ -174,7 +155,7 @@ export const useVisitStats = (user: User | null) => {
               status: VISIT_STATUS.APPROVED,
             },
             {
-              name: "New Visit Requests",
+              name: "Pending Approvals",
               value: newRequestsToday ?? 0,
               icon: AlertCircle,
               color: "text-yellow-500",

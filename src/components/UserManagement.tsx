@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { UserPlus, Edit3, Trash2, Search, Mail, Shield, Users as UsersIcon } from "lucide-react";
+import { UserPlus, Edit3, Trash2, Search, Mail, Shield, Users as UsersIcon, Inbox } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
 import type { Database } from "../lib/database.types";
+import { BackButton } from "./BackButton";
 
 type Host = Database["public"]["Tables"]["hosts"]["Row"];
 type Department = Database["public"]["Tables"]["departments"]["Row"];
@@ -52,7 +53,17 @@ export function UserManagement() {
     formState: { errors, isSubmitting },
   } = useForm<AddUserFormData>();
 
-  async function fetchUsers() {
+  async function fetchDepartments() {
+    const { data, error } = await supabase.from("departments").select("*");
+    if (error) {
+      toast.error("Failed to fetch departments");
+      console.error(error);
+    } else {
+      setDepartments(data);
+    }
+  }
+
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     let query = supabase.from("hosts").select("*");
 
@@ -69,21 +80,11 @@ export function UserManagement() {
       setUsers(data);
     }
     setLoading(false);
-  }
-
-  async function fetchDepartments() {
-    const { data, error } = await supabase.from("departments").select("*");
-    if (error) {
-      toast.error("Failed to fetch departments");
-      console.error(error);
-    } else {
-      setDepartments(data);
-    }
-  }
+  }, [debouncedSearchTerm]);
 
   useEffect(() => {
     fetchUsers();
-  }, [debouncedSearchTerm]);
+  }, [fetchUsers]);
 
   useEffect(() => {
     fetchDepartments();
@@ -129,7 +130,9 @@ export function UserManagement() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="px-4 sm:px-6 lg:px-8 animate-fadeIn">
+      <BackButton />
+
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
           <div className="flex items-center gap-3">
@@ -212,8 +215,16 @@ export function UserManagement() {
                       </tr>
                     ) : users.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-8 text-gray-500">
-                          No users found.
+                        <td colSpan={5} className="px-3 py-16 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-full mb-4 ring-8 ring-gray-50/50 dark:ring-slate-800/20">
+                              <Inbox className="w-8 h-8 text-gray-400 dark:text-slate-500" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">No users found</h3>
+                            <p className="text-sm text-gray-500 dark:text-slate-400 max-w-sm mx-auto">
+                              There are currently no users registered in the system.
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -240,16 +251,14 @@ export function UserManagement() {
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
                             <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
-                                user.active
-                                  ? "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 dark:from-emerald-900/50 dark:to-green-900/50 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800"
-                                  : "bg-gradient-to-r from-red-100 to-rose-100 text-red-800 dark:from-red-900/50 dark:to-rose-900/50 dark:text-red-200 border border-red-300 dark:border-red-800"
-                              }`}
+                              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${user.active
+                                ? "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 dark:from-emerald-900/50 dark:to-green-900/50 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800"
+                                : "bg-gradient-to-r from-red-100 to-rose-100 text-red-800 dark:from-red-900/50 dark:to-rose-900/50 dark:text-red-200 border border-red-300 dark:border-red-800"
+                                }`}
                             >
                               <span
-                                className={`h-1.5 w-1.5 rounded-full ${
-                                  user.active ? "bg-emerald-500 animate-pulse" : "bg-red-500"
-                                }`}
+                                className={`h-1.5 w-1.5 rounded-full ${user.active ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                                  }`}
                               />
                               {user.active ? "Active" : "Inactive"}
                             </span>

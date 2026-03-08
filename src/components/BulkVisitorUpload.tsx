@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { Upload, FileSpreadsheet, Download, AlertCircle } from "lucide-react";
+import { BackButton } from "./BackButton";
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 import Papa from "papaparse";
+import { v4 as uuidv4 } from "uuid";
 
 type BulkUploadFormData = {
   file: FileList;
@@ -24,7 +26,7 @@ export function BulkVisitorUpload() {
   const [uploading, setUploading] = useState(false);
 
   useState(() => {
-    if ((user?.role === "guard" || user?.role === "admin") && user.email) {
+    if (user?.email && ["admin", "guard", "host"].includes(user.role || "")) {
       setValue("approverEmail", user.email);
     }
   });
@@ -59,8 +61,8 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
   const onSubmit = async (formData: BulkUploadFormData) => {
     setUploading(true);
     try {
-      if (!user || (user.role !== "guard" && user.role !== "admin")) {
-        throw new Error("Only guards and admins can bulk upload visitors.");
+      if (!user || (!["admin", "guard", "host"].includes(user.role || ""))) {
+        throw new Error("Only authorized users can bulk upload visitors.");
       }
 
       const file = formData.file[0];
@@ -69,18 +71,17 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
       }
 
       if (!formData.approverEmail) {
-        throw new Error("Approver email is required.");
+        throw new Error("Host email is required.");
       }
 
       const { data: approver, error: approverError } = await supabase
-        .from("users")
+        .from("hosts")
         .select("id")
-        .eq("email", formData.approverEmail)
-        .in("role", ["guard", "admin"])
+        .ilike("email", formData.approverEmail.trim())
         .maybeSingle();
 
       if (approverError || !approver) {
-        throw new Error(`No guard or admin found with email: ${formData.approverEmail}`);
+        throw new Error(`No host/admin found with email: ${formData.approverEmail}`);
       }
 
       const visitors = await processCsv(file);
@@ -110,11 +111,14 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
       const existingVisitorsMap = new Map(existingVisitors?.map((v) => [v.email, v.id]));
 
       const visitsToInsert: {
+        id: string;
         visitor_id: string | undefined;
         host_id: string;
         purpose: string;
         status: string;
-        scheduled_time: string;
+        valid_until: string;
+        created_at: string;
+        updated_at: string;
       }[] = [];
 
       for (const visitorData of visitors) {
@@ -130,13 +134,17 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
         }
 
         const visitDate = visitorData.visit_date ? new Date(visitorData.visit_date) : new Date();
+        visitDate.setHours(23, 59, 59, 999);
 
         visitsToInsert.push({
+          id: uuidv4(),
           visitor_id: visitorId,
           host_id: approver.id,
           purpose: visitorData.purpose || "N/A",
           status: "pending",
-          scheduled_time: visitDate.toISOString(),
+          valid_until: visitDate.toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
       }
 
@@ -176,9 +184,11 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
     }
   };
 
-  if (!user || (user.role !== "guard" && user.role !== "admin")) {
+  if (!user || (!["admin", "guard", "host"].includes(user.role || ""))) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-12">
+        <BackButton />
+
         <div className="max-w-2xl mx-auto text-center">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8">
             <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
@@ -186,7 +196,7 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
               Access Denied
             </h2>
             <p className="text-red-600 dark:text-red-400">
-              Only guards and administrators can perform bulk visitor uploads.
+              Only authorized users can perform bulk visitor uploads.
             </p>
           </div>
         </div>
@@ -196,6 +206,8 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6">
+      <BackButton />
+
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -219,15 +231,15 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
                 htmlFor="approverEmail"
                 className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
               >
-                Approver Email (Guard/Admin) *
+                Host Email (Admin/Guard/Host) *
               </label>
               <input
                 type="email"
                 id="approverEmail"
-                {...register("approverEmail", { required: "Approver email is required" })}
-                disabled={user?.role === "guard" || user?.role === "admin"}
+                {...register("approverEmail", { required: "Host email is required" })}
+                disabled={user?.role === "host"}
                 className="block w-full rounded-lg border-gray-300 dark:border-slate-600 shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-slate-800 dark:text-white disabled:bg-gray-100 dark:disabled:bg-slate-700"
-                placeholder="guard@example.com"
+                placeholder="host@example.com"
               />
               {errors.approverEmail && (
                 <p className="mt-1 text-sm text-red-600">{errors.approverEmail.message}</p>

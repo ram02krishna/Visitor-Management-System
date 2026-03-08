@@ -3,6 +3,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "../components/ui/toaster";
+import { Toaster as HotToaster } from "react-hot-toast";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
@@ -20,10 +21,9 @@ import Home from "./components/Home";
 import { RequestVisit } from "./components/RequestVisit";
 
 import { BulkVisitorUpload } from "./components/BulkVisitorUpload";
-import { ExportData } from "./components/ExportData";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { ScanQrCode } from "./components/ScanQrCode";
-import { OngoingVisits } from "./components/OngoingVisits";
+import { FilteredVisits } from "./components/FilteredVisits";
 import log from "./lib/logger";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -33,7 +33,14 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     log.info("[PrivateRoute] Still loading authentication...");
-    return <div className="loading">🔄 Loading authentication...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-500 mb-4"></div>
+          <p className="text-gray-600 dark:text-slate-400 font-medium">Authenticating...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -52,7 +59,14 @@ function App() {
   }, [initializeAuth]);
 
   if (!authInitialized) {
-    return <div className="loading">🔄 Initializing authentication...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-sky-600 dark:border-slate-700 dark:border-t-sky-500 mb-4"></div>
+          <p className="text-gray-600 dark:text-slate-400 font-medium">Initializing Workspace...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -83,12 +97,22 @@ function App() {
             <Route path="/app/register-visitor" element={<VisitorRegistration />} />
             <Route path="/app/pre-register-visitor" element={<PreRegisterVisitor />} />
             <Route path="/app/bulk-visitor-upload" element={<BulkVisitorUpload />} />
-            <Route path="/app/export" element={<ExportData />} />
             <Route path="/app/analytics" element={<AnalyticsDashboard />} />
-            <Route path="/app/ongoing-visits" element={<OngoingVisits />} />
+            <Route path="/app/visits/:status" element={<FilteredVisits />} />
           </Route>
         </Routes>
         <Toaster />
+        <HotToaster
+          position="top-center"
+          toastOptions={{
+            className: "dark:bg-slate-800 dark:text-white rounded-xl shadow-xl shadow-black/5 dark:shadow-black/20 border border-black/5 dark:border-white/10",
+            style: {
+              background: "var(--tw-bg-opacity, 1) rgba(255, 255, 255, 0.9)",
+              backdropFilter: "blur(12px)",
+              color: "inherit",
+            },
+          }}
+        />
       </Router>
     </ErrorBoundary>
   );

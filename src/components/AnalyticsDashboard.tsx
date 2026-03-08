@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { TrendingUp, Users, Clock, CheckCircle, Calendar } from "lucide-react";
+import { BackButton } from "./BackButton";
 
 type AnalyticsData = {
   total_visits: number;
@@ -25,12 +26,7 @@ export function AnalyticsDashboard() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
 
-  useEffect(() => {
-    fetchDepartments();
-    fetchAnalytics();
-  }, [dateRange, departmentFilter, statusFilter]);
-
-  const fetchDepartments = async () => {
+  const fetchDepartments = useCallback(async () => {
     try {
       const { data, error } = await supabase.from("departments").select("id, name");
       if (error) throw error;
@@ -38,9 +34,9 @@ export function AnalyticsDashboard() {
     } catch (error) {
       console.error("Failed to fetch departments:", error);
     }
-  };
+  }, []);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -62,11 +58,17 @@ export function AnalyticsDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange, departmentFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchDepartments();
+    fetchAnalytics();
+  }, [fetchDepartments, fetchAnalytics]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
         <div className="animate-pulse text-gray-600 dark:text-gray-300">Loading analytics...</div>
       </div>
     );
@@ -82,6 +84,8 @@ export function AnalyticsDashboard() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
+      <BackButton />
+
       <div className="sm:flex sm:items-center justify-between mb-8">
         <div className="sm:flex-auto">
           <div className="flex items-center gap-3">
@@ -204,26 +208,42 @@ export function AnalyticsDashboard() {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
           Daily Visit Trends
         </h2>
-        <div className="h-64 flex items-end justify-between gap-2">
-          {analytics.daily_stats.map((stat, index) => {
-            const maxCount = Math.max(...analytics.daily_stats.map((s) => s.count));
-            const height = maxCount > 0 ? (stat.count / maxCount) * 100 : 0;
-            return (
-              <div key={index} className="flex flex-col items-center flex-1 gap-2">
-                <div
-                  className="w-full bg-gradient-to-t from-sky-600 to-blue-500 rounded-t-lg hover:from-sky-700 hover:to-blue-600 transition-all duration-300 relative group"
-                  style={{ height: `${height}%`, minHeight: stat.count > 0 ? "8px" : "0" }}
-                >
-                  <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-gray-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    {stat.count}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-600 dark:text-slate-400 rotate-45 origin-left">
-                  {stat.date}
-                </span>
-              </div>
-            );
-          })}
+        <div className="overflow-x-auto">
+          <div className="flex items-end gap-2 h-52 min-w-0" style={{ minWidth: `${analytics.daily_stats.length * 40}px` }}>
+            {(() => {
+              const maxCount = Math.max(...analytics.daily_stats.map((s) => s.count), 1);
+              return analytics.daily_stats.map((stat, index) => {
+                const heightPct = stat.count > 0 ? Math.max((stat.count / maxCount) * 100, 4) : 0;
+                return (
+                  <div key={index} className="flex flex-col items-center flex-1 gap-1 group">
+                    {/* Count label above bar */}
+                    <span className={`text-xs font-bold transition-opacity duration-200 ${stat.count > 0 ? "text-gray-700 dark:text-slate-300 opacity-0 group-hover:opacity-100" : "opacity-0"}`}>
+                      {stat.count}
+                    </span>
+                    {/* Bar */}
+                    <div className="w-full flex items-end" style={{ height: "160px" }}>
+                      <div
+                        className="w-full bg-gradient-to-t from-sky-600 to-blue-400 dark:from-sky-500 dark:to-blue-400 rounded-t-lg hover:from-sky-700 hover:to-blue-500 transition-all duration-300 cursor-default"
+                        style={{ height: `${heightPct}%`, minHeight: stat.count > 0 ? "4px" : "0" }}
+                        title={`${stat.date}: ${stat.count} visits`}
+                      />
+                    </div>
+                    {/* Date label below bar */}
+                    <span className="text-[10px] text-gray-500 dark:text-slate-400 text-center w-full truncate leading-tight mt-1">
+                      {stat.date}
+                    </span>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          {/* Y-axis hint */}
+          <div className="flex justify-between mt-2 px-1">
+            <span className="text-[10px] text-gray-400 dark:text-slate-500">0</span>
+            <span className="text-[10px] text-gray-400 dark:text-slate-500">
+              Max: {Math.max(...analytics.daily_stats.map((s) => s.count), 0)}
+            </span>
+          </div>
         </div>
       </div>
 

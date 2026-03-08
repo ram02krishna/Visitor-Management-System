@@ -4,7 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from "../lib/supabase";
 import { toast } from "../../hooks/use-toast";
-import { Camera, User, Calendar, Clock, AlertTriangle, CheckCircle, LogIn } from "lucide-react";
+import {
+  CheckCircle,
+  Camera,
+  Clock,
+  User,
+  Printer,
+  LogIn,
+  AlertTriangle,
+  Calendar
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { BackButton } from "./BackButton";
 import type { Database } from "../lib/database.types";
 
 type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
@@ -13,6 +24,7 @@ type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
 };
 
 export function ScanQrCode() {
+  useNavigate();
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [visit, setVisit] = useState<Visit | null>(null);
@@ -105,7 +117,7 @@ export function ScanQrCode() {
               scanner.stop().catch(console.error);
             }
           },
-          () => {}
+          () => { }
         );
 
         setScannerReady(true);
@@ -250,7 +262,25 @@ export function ScanQrCode() {
     fetchVisitDetails();
   }, [scanResult, isAuthenticated]);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleScanAnother = async () => {
+    // Stop and clean up the current scanner first
+    if (scannerRef.current) {
+      try {
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
+        await scannerRef.current.clear();
+      } catch {
+        // Ignore cleanup errors
+      }
+      scannerRef.current = null;
+    }
+
+    // Reset state — this triggers React to re-render and show the #qr-reader div
     setScanResult(null);
     setVisit(null);
     setError(null);
@@ -261,38 +291,39 @@ export function ScanQrCode() {
       return;
     }
 
-    // Stop current scanner
-    if (scannerRef.current?.isScanning) {
-      await scannerRef.current.stop();
-    }
+    // Wait for React to re-render the #qr-reader div, then start scanner
+    setTimeout(async () => {
+      const qrCodeDivId = "qr-reader";
+      const el = document.getElementById(qrCodeDivId);
+      if (!el) {
+        setError("Scanner container not found. Please refresh the page.");
+        return;
+      }
+      // Clear any residual Html5Qrcode DOM content inside the div
+      el.innerHTML = "";
 
-    // Start new scanner
-    const qrCodeDivId = "qr-reader";
-    try {
-      const scanner = new Html5Qrcode(qrCodeDivId);
-      scannerRef.current = scanner;
+      try {
+        const scanner = new Html5Qrcode(qrCodeDivId);
+        scannerRef.current = scanner;
 
-      await scanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        (decodedText) => {
-          console.log("QR Code scanned:", decodedText);
-          setScanResult(decodedText);
-          if (scanner.isScanning) {
-            scanner.stop().catch(console.error);
-          }
-        },
-        () => {}
-      );
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            setScanResult(decodedText);
+            if (scanner.isScanning) {
+              scanner.stop().catch(console.error);
+            }
+          },
+          () => { }
+        );
 
-      setScannerReady(true);
-    } catch (err) {
-      console.error("Failed to restart scanner:", err);
-      setError("Failed to restart scanner");
-    }
+        setScannerReady(true);
+      } catch (err) {
+        console.error("Failed to restart scanner:", err);
+        setError("Failed to start camera. Please check camera permissions and try refreshing.");
+      }
+    }, 300); // 300ms gives React time to re-render the div
   };
 
   // Show loading state while checking auth
@@ -313,6 +344,8 @@ export function ScanQrCode() {
   if (!isAuthenticated) {
     return (
       <div className="px-4 sm:px-6 lg:px-8">
+        <BackButton />
+
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
             <div className="flex items-center gap-3">
@@ -348,6 +381,8 @@ export function ScanQrCode() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
+      <BackButton />
+
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
           <div className="flex items-center gap-3">
@@ -408,11 +443,11 @@ export function ScanQrCode() {
                 <User className="h-5 w-5 text-gray-500 mt-0.5" />
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">
-                    {visit.visitors.name}
+                    {visit.visitors?.name ?? "—"}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.visitors.email}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.visitors.phone}</p>
-                  {visit.visitors.company && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.visitors?.email ?? ""}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.visitors?.phone ?? ""}</p>
+                  {visit.visitors?.company && (
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {visit.visitors.company}
                     </p>
@@ -435,11 +470,13 @@ export function ScanQrCode() {
                     Check-in Time
                   </p>
                   <p className="text-gray-900 dark:text-white">
-                    {new Date(visit.check_in_time!).toLocaleString("en-IN", {
-                      timeZone: "Asia/Kolkata",
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
+                    {visit.check_in_time
+                      ? new Date(visit.check_in_time).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })
+                      : "—"}
                   </p>
                 </div>
               </div>
@@ -448,8 +485,8 @@ export function ScanQrCode() {
                 <User className="h-5 w-5 text-gray-500 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Host</p>
-                  <p className="text-gray-900 dark:text-white">{visit.hosts.name}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.hosts.email}</p>
+                  <p className="text-gray-900 dark:text-white">{visit.hosts?.name ?? "—"}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{visit.hosts?.email ?? ""}</p>
                 </div>
               </div>
 
@@ -472,12 +509,45 @@ export function ScanQrCode() {
               )}
             </div>
 
-            <button
-              onClick={handleScanAnother}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              Scan Another QR Code
-            </button>
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={handleScanAnother}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Scan Another QR Code
+              </button>
+              {!error && (
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print Badge
+                </button>
+              )}
+            </div>
+
+            {/* Hidden print-only visitor badge */}
+            {!error && visit && (
+              <div className="print-only hidden print:block fixed inset-0 bg-white p-8 z-[9999]">
+                <div className="max-w-sm mx-auto border-4 border-blue-600 rounded-2xl p-6 text-center">
+                  <div className="text-2xl font-black text-blue-700 mb-1">VISITOR PASS</div>
+                  <div className="text-xs text-gray-400 mb-4">Visitor Management System</div>
+                  <div className="w-20 h-20 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-4xl font-black mx-auto mb-4">
+                    {(visit.visitors?.name ?? "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{visit.visitors?.name ?? "—"}</div>
+                  <div className="text-sm text-gray-500 mb-4">{visit.visitors?.email ?? ""}</div>
+                  <div className="text-left space-y-2 bg-gray-50 rounded-xl p-4 text-sm">
+                    <div><span className="font-semibold text-gray-600">Purpose:</span> {visit.purpose}</div>
+                    <div><span className="font-semibold text-gray-600">Host:</span> {visit.hosts?.name ?? "—"}</div>
+                    <div><span className="font-semibold text-gray-600">Check-in:</span> {visit.check_in_time ? new Date(visit.check_in_time).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" }) : "—"}</div>
+                    <div><span className="font-semibold text-gray-600">Visit ID:</span> <span className="font-mono text-xs">{visit.id.substring(0, 8).toUpperCase()}</span></div>
+                  </div>
+                  <div className="mt-4 text-[10px] text-gray-400">This pass is valid for one visit only. Please surrender at exit.</div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

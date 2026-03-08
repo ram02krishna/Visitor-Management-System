@@ -6,8 +6,9 @@ export type Visit = {
   host_id: string;
   purpose: string;
   status: "pending" | "approved" | "denied" | "completed" | "cancelled" | "checked-in";
-  check_in_time: string;
+  check_in_time: string | null;
   check_out_time: string | null;
+  created_at: string;
   visitor: {
     name: string;
   };

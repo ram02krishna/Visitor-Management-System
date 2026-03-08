@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
-import { Camera } from "lucide-react";
+import { Camera, Download } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import emailjs from "@emailjs/browser";
 import { supabase } from "../lib/supabase";
 import { BackButton } from "./BackButton";
+import QRCode from "qrcode";
 
 interface VisitorFormData {
   name: string;
@@ -33,6 +34,8 @@ export function RequestVisit() {
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [qrCode, setQrCode] = React.useState<string | null>(null);
+  const [visitId, setVisitId] = React.useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -79,20 +82,26 @@ export function RequestVisit() {
       let entityId = null;
       let hostName = null;
       if (formData.entityEmail && formData.entityEmail.trim() !== "") {
-        const { data: entityData, error: entityError } = await supabase
+        // Normalize email for case-insensitive matching
+        const normalizedEmail = formData.entityEmail.trim().toLowerCase();
+        
+        console.log("🔍 Looking up host with email:", normalizedEmail);
+        
+        // Find matching host (case-insensitive) in the hosts table
+        const { data: matchingHost, error: hostError } = await supabase
           .from("hosts")
-          .select("id, name")
-          .eq("email", formData.entityEmail)
-          .in("role", ["host", "admin"])
+          .select("id, name, email")
+          .ilike("email", normalizedEmail)
           .maybeSingle();
 
-        if (entityError && entityError.code !== "PGRST116") {
-          throw new Error("Error looking up entity: " + entityError.message);
-        }
-
-        if (entityData) {
-          entityId = entityData.id;
-          hostName = entityData.name;
+        if (hostError) {
+          console.error("❌ Host lookup error:", hostError);
+        } else if (matchingHost) {
+          entityId = matchingHost.id;
+          hostName = matchingHost.name;
+          console.log("✅ Host found:", { entityId, hostName, email: matchingHost.email });
+        } else {
+          console.warn("❌ Host not found for email:", normalizedEmail);
         }
       }
 
@@ -150,8 +159,7 @@ export function RequestVisit() {
       const { error: visitError } = await supabase.from("visits").insert({
         id: visitId,
         visitor_id: visitorId,
-        host_id: entityId,
-        entity_id: entityId,
+        host_id: entityId, // This must be the host's ID from the hosts table
         purpose: formData.purpose,
         status: "pending",
         check_in_time: null,
@@ -164,46 +172,52 @@ export function RequestVisit() {
         throw visitError;
       }
 
+      // Generate QR code with visit details
+      const qrData = JSON.stringify({
+        visitId: visitId,
+        name: formData.name,
+        email: formData.email,
+        purpose: formData.purpose,
+        validUntil: visitDate,
+      });
+
+      const qrUrl = await QRCode.toDataURL(qrData);
+      setQrCode(qrUrl);
+      setVisitId(visitId);
+
+      // Send registration confirmation email with QR code to the visitor
       const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const adminTemplateId = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID;
+      const visitorTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
       const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-      if (emailServiceId && adminTemplateId && emailPublicKey) {
+      if (emailServiceId && visitorTemplateId && emailPublicKey && formData.email) {
         try {
-          const { data: guardsAndAdmins, error: fetchError } = await supabase
-            .from("hosts")
-            .select("name, email")
-            .in("role", ["guard", "admin"])
-            .eq("active", true);
-
-          if (fetchError) {
-            console.error("Failed to fetch guards and admins:", fetchError);
-          } else if (guardsAndAdmins && guardsAndAdmins.length > 0) {
-            for (const recipient of guardsAndAdmins) {
-              try {
-                await emailjs.send(
-                  emailServiceId,
-                  adminTemplateId,
-                  {
-                    to_name: recipient.name,
-                    to_email: recipient.email,
-                    visitor_name: formData.name,
-                    visit_purpose: formData.purpose,
-                    visit_date: new Date(formData.visitDate).toLocaleDateString(),
-                    host_name: hostName || "Not specified",
-                    dashboard_link: window.location.origin + "/app/approval",
-                  },
-                  emailPublicKey
-                );
-              } catch (emailError) {
-                console.error(`Failed to send email to ${recipient.email}:`, emailError);
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Error sending notification emails:", err);
+          await emailjs.send(
+            emailServiceId,
+            visitorTemplateId,
+            {
+              to_name: formData.name,
+              email: formData.email,
+              visitor_email: formData.email,
+              visit_id: visitId,
+              visit_purpose: formData.purpose,
+              host_name: hostName || "Not specified",
+              qr_code: qrUrl,
+              valid_until: visitDate.toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }),
+            },
+            emailPublicKey
+          );
+        } catch (emailError) {
+          // Non-fatal: visit was created, just log the email failure
+          console.error("Failed to send confirmation email with QR code to visitor:", emailError);
         }
       }
+
 
       setSuccess(true);
       setFormData({
@@ -246,61 +260,109 @@ export function RequestVisit() {
             className="mt-5 md:mt-0 md:col-span-2 animate-fadeInUp"
             style={{ animationDelay: "0.1s" }}
           >
-            <form onSubmit={handleSubmit}>
-              <div className="shadow-xl sm:rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-500">
+            {success ? (
+              // Success View - Show QR Code
+              <div className="shadow-xl sm:rounded-2xl overflow-hidden">
                 <div className="px-4 py-5 glass space-y-6 sm:p-6">
-                  {success && (
-                    <div className="rounded-lg bg-green-50 dark:bg-green-900/30 p-4 mb-4 border border-green-200 dark:border-green-700 animate-fadeIn">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <svg
-                            className="h-5 w-5 text-green-400 dark:text-green-300"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                            Visit request submitted successfully! The host will review and approve
-                            your visit. You will receive a QR code via email after approval.
-                          </p>
-                        </div>
+                  <div className="rounded-lg bg-green-50 dark:bg-green-900/30 p-6 border border-green-200 dark:border-green-700 animate-fadeIn space-y-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-green-400 dark:text-green-300"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3 flex-1">
+                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                          Visit request submitted successfully! Your QR code has been generated and sent to your email. A security guard or administrator will review your visit. You can use this QR code at the entrance when your visit is approved.
+                        </p>
                       </div>
                     </div>
-                  )}
 
-                  {error && (
-                    <div className="rounded-lg bg-red-50 dark:bg-red-900/30 p-4 mb-4 border border-red-200 dark:border-red-700 animate-fadeIn">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <svg
-                            className="h-5 w-5 text-red-400 dark:text-red-300"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 001.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
+                    {/* QR Code Display Section */}
+                    {qrCode && (
+                      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-green-100 dark:border-green-900/50 flex flex-col items-center gap-4">
+                        <div className="flex flex-col items-center gap-2">
+                          <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Your Visit QR Code</p>
+                          <img 
+                            src={qrCode} 
+                            alt="Visit QR Code" 
+                            className="w-40 h-40 border-4 border-green-500 dark:border-green-600 rounded-lg p-2 bg-white"
+                          />
                         </div>
-                        <div className="ml-3">
-                          <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                            {error}
-                          </p>
+                        <p className="text-xs text-gray-600 dark:text-slate-400 text-center max-w-xs">
+                          Save or screenshot this QR code. Present it at the entrance when you arrive for your visit.
+                        </p>
+                        <button
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = qrCode;
+                            link.download = `visit-qr-${visitId}.png`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium text-sm transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download QR Code
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t border-green-200 dark:border-green-900/50">
+                      <button
+                        onClick={() => {
+                          setSuccess(false);
+                          setQrCode(null);
+                          setVisitId(null);
+                        }}
+                        className="w-full inline-flex justify-center py-2 px-4 rounded-lg text-sm font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                      >
+                        Submit Another Request
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Form View
+              <form onSubmit={handleSubmit}>
+                <div className="shadow-xl sm:rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-500">
+                  <div className="px-4 py-5 glass space-y-6 sm:p-6">
+                    {error && (
+                      <div className="rounded-lg bg-red-50 dark:bg-red-900/30 p-4 mb-4 border border-red-200 dark:border-red-700 animate-fadeIn">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg
+                              className="h-5 w-5 text-red-400 dark:text-red-300"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 001.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                              {error}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <div className="grid grid-cols-6 gap-6">
+                    <div className="grid grid-cols-6 gap-6">
                     <div className="col-span-6 sm:col-span-3">
                       <label
                         htmlFor="name"
@@ -486,7 +548,8 @@ export function RequestVisit() {
                   </button>
                 </div>
               </div>
-            </form>
+              </form>
+            )}
           </div>
         </div>
       </div>

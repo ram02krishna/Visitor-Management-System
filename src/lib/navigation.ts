@@ -1,35 +1,35 @@
-import { Users, ClipboardList, User, Download, TrendingUp, Camera } from "lucide-react";
+import { LayoutDashboard, ClipboardList, User, TrendingUp, Camera, Users, UserPlus } from "lucide-react";
 
 export const navLinks = [
   {
-    href: "/app/users",
-    label: "Users",
-    icon: Users,
-    roles: ["admin"],
+    href: "/app/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["admin", "host", "guard"],
   },
   {
     href: "/app/logs",
     label: "Logs",
     icon: ClipboardList,
-    roles: ["admin"],
+    roles: ["admin", "host", "guard"],
+  },
+  {
+    href: "/app/register-visitor",
+    label: "Register Visitor",
+    icon: UserPlus,
+    roles: ["admin", "guard"],
+  },
+  {
+    href: "/app/scan",
+    label: "Scan QR Code",
+    icon: Camera,
+    roles: ["admin", "guard"],
   },
   {
     href: "/app/pre-register-visitor",
     label: "Pre-register",
     icon: User,
     roles: ["admin", "host"],
-  },
-  {
-    href: "/app/register-visitor",
-    label: "Register Visitor",
-    icon: User,
-    roles: ["guard"],
-  },
-  {
-    href: "/app/scan",
-    label: "Scan QR Code",
-    icon: Camera,
-    roles: ["guard"],
   },
   {
     href: "/app/bulk-visitor-upload",
@@ -43,10 +43,5 @@ export const navLinks = [
     icon: TrendingUp,
     roles: ["admin"],
   },
-  {
-    href: "/app/export",
-    label: "Export",
-    icon: Download,
-    roles: ["admin"],
-  },
 ];
+

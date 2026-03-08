@@ -9,6 +9,7 @@ import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 import { v4 as uuidv4 } from "uuid";
 import { Camera, UserPlus, Calendar, Mail, Phone, Building2, FileText, User } from "lucide-react";
+import { BackButton } from "./BackButton";
 
 type PreRegisterFormData = {
   name: string;
@@ -64,10 +65,9 @@ export function PreRegisterVisitor() {
       }
 
       const { data: approver, error: approverError } = await supabase
-        .from("users")
+        .from("hosts")
         .select("id")
-        .eq("email", formData.hostEmail)
-        .in("role", ["guard", "admin"])
+        .ilike("email", formData.hostEmail.trim())
         .maybeSingle();
 
       if (approverError) {
@@ -75,7 +75,7 @@ export function PreRegisterVisitor() {
       }
 
       if (!approver) {
-        throw new Error(`No guard or admin found with email: ${formData.hostEmail}`);
+        throw new Error(`No host, guard or admin found with email: ${formData.hostEmail}`);
       }
 
       // Create or find the visitor
@@ -165,6 +165,8 @@ export function PreRegisterVisitor() {
   if (!user || (user.role !== "guard" && user.role !== "admin")) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-12">
+        <BackButton />
+
         <div className="max-w-2xl mx-auto text-center">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8">
             <h2 className="text-2xl font-bold text-red-700 dark:text-red-300 mb-2">
@@ -181,6 +183,8 @@ export function PreRegisterVisitor() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6">
+      <BackButton />
+
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
