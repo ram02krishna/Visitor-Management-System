@@ -4,152 +4,184 @@ A modern, real-time Visitor Management System designed to streamline the process
 
 ## 🎯 Overview
 
-This project is a full-stack web application that helps organizations manage visitor access and tracking. It features real-time updates, role-based access control, automated QR code generation, and email notifications for approved visits.
+This project is a full-stack web application that helps organizations manage visitor access and tracking. It features real-time updates, role-based access control, automated QR code generation, and email notifications for approved visits. Built with React, TypeScript, and Supabase, it delivers a seamless experience across desktop and mobile devices with PWA support.
 
 ## ✨ Features
 
 ### Core Functionality
 - **Real-time Updates:** Dashboard and visit logs updated instantly using Supabase real-time capabilities
 - **User Roles:** Three distinct roles with specific permissions:
-  - **Host:** Register visitors, create visit requests, view visit logs
-  - **Guard:** Approve/deny visit requests, manage QR code check-ins
-  - **Admin:** Full system access, user management, analytics
-- **Visitor Registration:** Hosts can pre-register visitors with detailed information
-- **Public Visit Request:** Anonymous users can request visits without authentication
-- **Visit Approval Workflow:** Multi-stage approval process for visit requests
+  - **Host:** Register visitors, create visit requests, view visit logs, manage own visitors
+  - **Guard:** Approve/deny visit requests, manage QR code check-ins, scan visitor credentials
+  - **Admin:** Full system access, user management, analytics, bulk operations
+- **Visitor Registration:** Hosts can pre-register visitors with detailed information (name, email, phone, company)
+- **Public Visit Request:** Anonymous users can request visits without authentication via public form
+- **Visit Approval Workflow:** Multi-stage approval process (pending → approved/denied → checked-in → completed)
 - **QR Code Generation:** Automatic QR codes for approved visits with email delivery
-- **Email Notifications:** Automated emails via EmailJS with QR codes attached
+- **Email Notifications:** Automated emails via EmailJS with customizable templates and QR code attachments
 
 ### Administrative Features
-- **Dashboard Analytics:** Real-time statistics on visits, users, and trends
-- **User Management:** Add, edit, delete users with role assignment
-- **Bulk Visitor Upload:** CSV import for multiple visitor registrations
-- **Data Export:** Export visit logs and visitor data in CSV/JSON formats
-- **Visit Logs:** Comprehensive filtering and search capabilities
-- **Public Display:** Real-time visitor status display for lobby screens
+- **Dashboard Analytics:** Real-time statistics on visits, users, and trends with visual charts
+- **User Management:** Create, edit, delete users with role assignment and department management
+- **Bulk Visitor Upload:** CSV import for batch visitor registrations with validation
+- **Visit Logs:** Comprehensive filtering, search, and sorting capabilities with role-based view
+- **Public Display:** Real-time visitor status display for lobby screens (check-in/check-out updates)
+- **Analytics Dashboard:** Detailed visit trends, visitor statistics, and departmental insights
 
 ### Technical Features
-- **QR Code Scanning:** Built-in QR code scanner for check-in/check-out
-- **Ongoing Visits Tracking:** Monitor active visitor sessions
+- **QR Code Scanning:** Built-in HTML5 QR code scanner for check-in/check-out
+- **Ongoing Visits Tracking:** Monitor active visitor sessions in real-time
 - **Public Analytics Display:** Public-facing visitor status information
-- **Role-Based Guard:** Component-level access control
-- **Error Handling:** Comprehensive error boundaries and error logging
-- **Dark Mode Support:** Full theme switching capability
+- **Role-Based Access Control:** Component-level access control with RoleBasedGuard
+- **Error Handling:** Comprehensive error boundaries and structured error logging
+- **Dark Mode Support:** Full theme switching capability with persistent preferences
+- **Progressive Web App (PWA):** Offline support, installable, auto-updating
+- **Responsive Design:** Mobile-first design with adaptive layouts
+- **Data Validation:** Zod-based form validation for all inputs
+- **Secure Authentication:** Supabase Auth with session persistence
 
 ## 🛠️ Tech Stack
 
-| Category | Technology |
-|----------|-----------|
-| **Frontend** | [React 18](https://react.dev/) with [TypeScript](https://www.typescriptlang.org/) |
-| **Build Tool** | [Vite](https://vitejs.dev/) |
-| **UI Framework** | [Tailwind CSS](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/) |
-| **Component Library** | [shadcn/ui](https://ui.shadcn.com/) |
-| **Backend/Database** | [Supabase](https://supabase.io/) (PostgreSQL + Real-time + Auth) |
-| **State Management** | [Zustand](https://github.com/pmndrs/zustand) |
-| **Form Handling** | [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/) |
-| **Routing** | [React Router v6](https://reactrouter.com/) |
-| **Email Service** | [EmailJS](https://www.emailjs.com/) |
-| **QR Code** | [qrcode](https://github.com/davidshimjs/qrcodejs) + [react-qr-code](https://github.com/rosskhanas/react-qr-code) |
-| **QR Scanning** | [html5-qrcode](https://github.com/mebjas/html5-qrcode) |
-| **Charts** | [Recharts](https://recharts.org/) |
-| **CSV Processing** | [PapaParse](https://www.papaparse.com/) |
-| **Date Utilities** | [date-fns](https://date-fns.org/) |
-| **Notifications** | [react-hot-toast](https://react-hot-toast.com/), [Sonner](https://sonner.emilkowal.ski/), [react-toastify](https://fkhadra.github.io/react-toastify/) |
-| **Icons** | [Lucide React](https://lucide.dev/) |
-| **Code Quality** | [ESLint](https://eslint.org/), [Prettier](https://prettier.io/) |
-| **Testing** | [Vitest](https://vitest.dev/), [React Testing Library](https://testing-library.com/react) |
-| **PWA** | [vite-plugin-pwa](https://vite-plugin-pwa.netlify.app/) |
+| Category | Technology | Purpose |
+|----------|-----------|---------|
+| **Frontend** | React 18 + TypeScript | UI framework with type safety |
+| **Build Tool** | Vite | Fast development and production builds |
+| **Styling** | Tailwind CSS | Utility-first CSS framework |
+| **UI Components** | Radix UI + shadcn/ui | Accessible, unstyled component library |
+| **Backend/Database** | Supabase | PostgreSQL database, Auth, Real-time subscriptions |
+| **State Management** | Zustand | Lightweight state management (Auth store) |
+| **Form Handling** | React Hook Form + Zod | Form management with schema validation |
+| **Routing** | React Router v6 | Client-side routing with nested routes |
+| **Email Service** | EmailJS | Email delivery with custom templates |
+| **QR Code** | qrcode + react-qr-code | QR code generation and display |
+| **QR Scanning** | html5-qrcode | Browser-based QR code scanning |
+| **Charts & Graphs** | Recharts | Interactive data visualization |
+| **CSV Processing** | PapaParse | Parse and process CSV files |
+| **Date Utilities** | date-fns | Date manipulation and formatting |
+| **UI Notifications** | Sonner + react-hot-toast + react-toastify | Toast notifications system |
+| **Icons** | Lucide React | Consistent icon library |
+| **Code Quality** | ESLint + Prettier | Linting and code formatting |
+| **Type Checking** | TypeScript | Static type checking |
+| **Testing** | Vitest + React Testing Library | Unit and component testing |
+| **PWA** | vite-plugin-pwa | Progressive Web App support |
+| **HTTPS Dev** | vite-plugin-mkcert | Self-signed certificates for local HTTPS |
 
 ## 📦 Project Structure
 
 ```
-DBMS_Project/
-├── components/                      # Reusable UI components (shadcn/ui)
-│   ├── ui/                         # UI components (button, card, dialog, etc.)
-│   └── theme-provider.tsx          # Theme provider component
+Visitor-Management-System/
+├── components/                           # Reusable shadcn/ui components
+│   ├── ui/                               # Radix UI-based components (60+ components)
+│   │   ├── button.tsx, card.tsx, dialog.tsx, form.tsx, input.tsx
+│   │   ├── table.tsx, tabs.tsx, select.tsx, checkbox.tsx
+│   │   └── Other UI elements (badge, avatar, breadcrumb, tooltip, etc.)
+│   └── theme-provider.tsx                # Dark mode and theme management
+│
 ├── src/
-│   ├── App.tsx                     # Main app component with routing
-│   ├── main.tsx                    # Entry point
-│   ├── index.css                   # Global styles
-│   ├── vite-env.d.ts              # Vite environment types
-│   ├── registerSW.ts              # Service worker registration (PWA)
-│   ├── components/                 # Feature components
-│   │   ├── Layout.tsx             # Main layout wrapper
-│   │   ├── Login.tsx              # Login page
-│   │   ├── Signup.tsx             # Registration page
-│   │   ├── Dashboard.tsx          # Admin/Guard dashboard
-│   │   ├── VisitorRegistration.tsx    # Visitor registration form
-│   │   ├── VisitLogs.tsx          # Visit history and logs
-│   │   ├── VisitorApproval.tsx    # Approval queue
-│   │   ├── UserManagement.tsx     # User admin panel
-│   │   ├── BulkVisitorUpload.tsx  # CSV bulk upload
-│   │   ├── ExportData.tsx         # Data export functionality
-│   │   ├── ScanQrCode.tsx         # QR code scanner
-│   │   ├── OngoingVisits.tsx      # Active visit tracking
-│   │   ├── PublicDisplay.tsx      # Lobby display screen
-│   │   ├── AnalyticsDashboard.tsx # Analytics page
-│   │   ├── VisitDetailsModal.tsx  # Visit details modal
-│   │   ├── ErrorBoundary.tsx      # Error handling
-│   │   ├── RoleBasedGuard.tsx     # Role access control
-│   │   └── dashboards/            # Dashboard-specific components
-│   ├── hooks/                      # Custom React hooks
-│   │   ├── useVisitStats.ts       # Visit statistics hook
-│   │   ├── useHostStats.ts        # Host statistics hook
-│   │   ├── useGuardStats.ts       # Guard statistics hook
-│   │   ├── useScanQrCode.ts       # QR code scanning logic
-│   │   ├── use-debounce.ts        # Debounce utility hook
-│   │   ├── use-mobile.ts          # Mobile detection hook
-│   │   └── use-toast.ts           # Toast notification hook
-│   ├── lib/                        # Utilities and configurations
-│   │   ├── supabase.ts            # Supabase client initialization
-│   │   ├── utils.ts               # Utility functions
-│   │   ├── database.types.ts      # TypeScript database types
-│   │   └── logger.ts              # Logging utility
-│   ├── store/                      # Zustand state management
-│   │   └── auth.ts                # Authentication store
-│   └── tests/                      # Test files
-├── docs/
-│   ├── EMAILJS_SETUP.md           # EmailJS configuration guide
-├── Supabase/
-│   └── visitor_management_schema.sql    # Database schema
-├── public/                         # Static assets
-│   └── manifest.webmanifest       # PWA manifest
-├── styles/
-│   └── globals.css                # Additional global styles
-├── vite.config.ts                 # Vite configuration
-├── vitest.config.ts               # Vitest configuration
-├── tailwind.config.js             # Tailwind CSS configuration
-├── postcss.config.js              # PostCSS configuration
-├── tsconfig.json                  # TypeScript configuration
-├── eslint.config.js               # ESLint configuration
-├── components.json                # shadcn/ui components config
-├── index.html                     # HTML entry point
-├── package.json                   # Dependencies and scripts
-└── README.md                      # This file
+│   ├── App.tsx                           # Main application component with routing
+│   ├── main.tsx                          # Application entry point
+│   ├── index.css                         # Global CSS styles
+│   ├── vite-env.d.ts                     # Vite environment type definitions
+│   ├── registerSW.ts                     # Service worker registration for PWA
+│   │
+│   ├── components/                       # Feature-specific React components
+│   │   ├── Layout.tsx                    # Main layout wrapper with sidebar/navbar
+│   │   ├── Home.tsx                      # Landing/home page
+│   │   ├── Login.tsx                     # User login with email/password
+│   │   ├── Signup.tsx                    # New user registration
+│   │   ├── Dashboard.tsx                 # Role-based dashboard (Admin/Guard/Host)
+│   │   ├── AnalyticsDashboard.tsx        # Visitor statistics and trend charts
+│   │   ├── VisitsChart.tsx               # Chart component for visit trends
+│   │   ├── StatsGrid.tsx & StatItem.tsx  # Statistics display components
+│   │   ├── VisitorRegistration.tsx       # Register new visitors (Host feature)
+│   │   ├── PreRegisterVisitor.tsx        # Pre-registration form
+│   │   ├── BulkVisitorUpload.tsx         # CSV bulk import for multiple visitors
+│   │   ├── VisitorApproval.tsx           # Queue for pending visit approvals
+│   │   ├── VisitLogs.tsx & VisitDetails.tsx  # Visit history and details
+│   │   ├── FilteredVisits.tsx            # Advanced filtering component
+│   │   ├── OngoingVisitsCard.tsx         # Display currently active visits
+│   │   ├── ScanQrCode.tsx                # QR code scanner for check-in/out
+│   │   ├── RequestVisit.tsx              # Public visit request form
+│   │   ├── PublicDisplay.tsx             # Real-time lobby display screen
+│   │   ├── UserManagement.tsx            # Admin panel for user management
+│   │   ├── BackButton.tsx                # Navigation back button component
+│   │   ├── StatusIndicator.tsx           # Visit status badge component
+│   │   ├── ThemeSwitcher.tsx             # Dark/light mode toggle
+│   │   ├── RoleBasedGuard.tsx            # Role-based access control HOC
+│   │   └── ErrorBoundary.tsx             # Error boundary for error handling
+│   │
+│   ├── hooks/                            # Custom React hooks
+│   │   ├── useVisitStats.ts              # Fetch and manage visit statistics
+│   │   ├── useHostStats.ts               # Host-specific statistics hook
+│   │   ├── useGuardStats.ts              # Guard-specific statistics hook
+│   │   ├── useScanQrCode.ts              # QR code scanning logic
+│   │   ├── use-debounce.ts               # Debounce utility for inputs
+│   │   ├── use-mobile.ts                 # Mobile device detection
+│   │   └── use-toast.ts                  # Toast notification hook
+│   │
+│   ├── lib/                              # Utility functions and configurations
+│   │   ├── supabase.ts                   # Supabase client initialization
+│   │   ├── database.types.ts             # TypeScript types for DB tables/enums
+│   │   ├── logger.ts                     # Structured logging utility
+│   │   ├── utils.ts                      # Common helper functions
+│   │   ├── validators.ts                 # Zod schemas for form validation
+│   │   └── navigation.ts                 # Navigation path constants
+│   │
+│   ├── store/                            # Global state management
+│   │   └── auth.ts                       # Authentication state (Zustand)
+│   │
+│   └── styles/
+│       └── globals.css                   # Global stylesheet
+│
+├── docs/                                 # Documentation
+│   └── EMAILJS_SETUP.md                  # EmailJS configuration guide
+│
+├── Configuration Files
+│   ├── package.json                      # Dependencies and npm scripts
+│   ├── tsconfig.json                     # TypeScript configuration
+│   ├── vite.config.ts                    # Vite build configuration
+│   ├── tailwind.config.js                # Tailwind CSS configuration
+│   ├── postcss.config.js                 # PostCSS configuration
+│   ├── eslint.config.js                  # ESLint rules
+│   ├── components.json                   # shadcn/ui configuration
+│   ├── vercel.json                       # Vercel deployment config
+│   └── index.html                        # HTML entry point
 ```
+
+### Database Schema (Supabase PostgreSQL)
+
+**Tables:**
+- **hosts** - User accounts (Admin, Guard, Host)
+  - id, auth_id, name, email, department_id, role, active, created_at, updated_at
+- **visitors** - Visitor information
+  - id, name, email, phone, company, photo_url, created_at, updated_at
+- **visits** - Visit records and tracking
+  - id, visitor_id, host_id, purpose, status, check_in_time, check_out_time, valid_until, notes, created_at, updated_at
+- **departments** - Organization departments
+  - id, name, created_at, updated_at
+
+**Enums:**
+- **user_role**: admin, guard, host
+- **visit_status**: pending, approved, denied, completed, cancelled, checked-in
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) version 18 or later
-- [pnpm](https://pnpm.io/) package manager (or npm/yarn)
+- [npm](https://www.npmjs.com/) package manager
 - A [Supabase](https://supabase.com/) account (free tier available)
-- (Optional) EmailJS account for email notifications
+- (Optional) [EmailJS](https://www.emailjs.com/) account for automated email notifications
 
 ### Installation Steps
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/ByteOps02/DBMS_Project.git
-   cd DBMS_Project
+   git clone https://github.com/ram02krishna/Visitor-Management-System.git
+   cd Visitor-Management-System
    ```
 
 2. **Install dependencies:**
-   ```bash
-   pnpm install
-   ```
-   Or with npm:
    ```bash
    npm install
    ```
@@ -162,200 +194,145 @@ DBMS_Project/
    VITE_SUPABASE_ANON_KEY=your-supabase-anonymous-key
 
    # EmailJS Configuration (Optional)
-   VITE_EMAILJS_SERVICE_ID=service_your-id-here
-   VITE_EMAILJS_PUBLIC_KEY=your-public-key-here
-   VITE_EMAILJS_TEMPLATE_ID=template_your-id-here          # Visitor registration confirmation email
-   VITE_EMAILJS_APPROVAL_TEMPLATE_ID=template_your-id-here # Visitor approval email with QR code
-   VITE_EMAILJS_DENIAL_TEMPLATE_ID=template_your-id-here   # Visitor denial email
+   VITE_EMAILJS_SERVICE_ID=your-emailjs-service-id
+   VITE_EMAILJS_PUBLIC_KEY=your-emailjs-public-key
+   VITE_EMAILJS_TEMPLATE_ID=your-emailjs-template-id
    ```
 
 4. **Set up Supabase Database:**
-   - Log in to your [Supabase Dashboard](https://app.supabase.com)
-   - Open the SQL Editor
-   - Copy the entire content from `Supabase/visitor_management_schema.sql`
-   - Paste and execute the SQL to create all tables, policies, and triggers
-   - Ensure your timezone is set correctly (IST by default in schema)
+   - Create a new Supabase project
+   - Navigate to the SQL Editor
+   - Create tables for: `hosts`, `visitors`, `visits`, and `departments`
+   - Enable Row-Level Security (RLS) policies
+   - Set up authentication
 
-5. **Configure EmailJS (Optional but recommended):**
-   - Follow the detailed guide in [docs/EMAILJS_SETUP.md](docs/EMAILJS_SETUP.md)
-   - This enables automated email notifications with QR codes
+5. **Configure EmailJS (Optional):**
+   - Follow the setup guide in [docs/EMAILJS_SETUP.md](docs/EMAILJS_SETUP.md)
 
-6. **Start the development server:**
+6. **Start development server:**
    ```bash
-   pnpm run dev
+   npm run dev
    ```
-   The application will be available at `http://localhost:5174`
 
 ## 📋 Available Scripts
 
 | Command | Description |
 |---------|-------------|
-| `pnpm run dev` | Start development server with hot reload |
-| `pnpm run build` | Build for production |
-| `pnpm run preview` | Preview production build locally |
-| `pnpm run lint` | Run ESLint to check code quality |
-| `pnpm run lint:fix` | Automatically fix ESLint issues |
-| `pnpm run format` | Format code with Prettier |
-| `pnpm run format:check` | Check if code is properly formatted |
-| `pnpm run type-check` | Check TypeScript types without emitting |
-| `pnpm run validate` | Run type-check, lint, and format-check together |
-| `pnpm run clean` | Remove build artifacts and cache |
+| `npm run dev` | Start development server with hot reload |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint to check code quality |
+| `npm run lint:fix` | Automatically fix ESLint issues |
+| `npm run format` | Format code with Prettier |
+| `npm run format:check` | Check code formatting |
+| `npm run type-check` | Check TypeScript types |
+| `npm run validate` | Run all validation checks |
+| `npm run validate:fix` | Fix all validation issues |
+| `npm run clean` | Remove build artifacts |
+| `npm run security:audit` | Check for vulnerable packages |
 
 ## 📖 Usage Guide
 
 ### For Visitors
-1. Access the public visit request form
-2. Fill in your details (name, email, phone, company, purpose)
-3. Select the host/department you're visiting
-4. Submit the request
-5. Wait for approval (you'll receive an email with a QR code)
-6. Present QR code at the entrance for check-in
+1. Fill out public visit request form
+2. Provide your details and select host/purpose
+3. Wait for approval (email notification with QR code)
+4. Present QR code at entrance for check-in
 
 ### For Hosts
-1. Sign up with your email and password (default role: `host`)
-2. Pre-register visitors with their information
-3. Create visit requests for anticipated visitors
-4. View visit logs and active visits on your dashboard
-5. Track visitor check-in/check-out times
+1. Sign up with email and password
+2. Pre-register visitors
+3. Create visit requests
+4. View visit logs and check-in/out times
+5. Manage visitor records
 
 ### For Guards
-1. Access the approval queue to review pending visit requests
+1. Review pending visit requests
 2. Approve or deny requests
-3. Use QR code scanner to check visitors in/out
-4. Monitor ongoing visits in real-time
-5. View analytics and visit statistics
+3. Scan QR codes for check-in/out
+4. Monitor ongoing visits
+5. View analytics
 
 ### For Admins
-1. Access the complete admin dashboard
+1. Access complete admin dashboard
 2. Manage user accounts and roles
 3. View system-wide analytics
-4. Export data in CSV/JSON formats
-5. Upload bulk visitor lists via CSV
-6. Configure system settings and policies
-
-## 🗄️ Database Architecture
-
-### Tables
-- **hosts:** User accounts (admins, guards, hosts)
-- **visitors:** Visitor information and details
-- **visits:** Visit records with status tracking
-- **departments:** Organization departments/entities
-- **audit_logs:** Activity logging for compliance
-
-### Row-Level Security (RLS)
-- Anonymous users: Can only create visit requests
-- Authenticated hosts: Can view/manage their own visits and pre-registrations
-- Authenticated guards/admins: Can manage all visits and user approvals
-- All users: Limited to their role-specific actions
-
-See [Supabase/visitor_management_schema.sql](Supabase/visitor_management_schema.sql) for complete schema details.
+4. Bulk upload visitors via CSV
+5. Export data
 
 ## 🔐 Security Features
 
 - **Role-Based Access Control (RBAC):** Three-tier user hierarchy
-- **Row-Level Security (RLS):** Database-level access policies
-- **Email Verification:** Email-based authentication via Supabase
-- **Password Security:** Secure password hashing
-- **QR Code Validation:** Time-limited QR codes for visits
-- **Audit Logging:** Activity tracking for compliance
-- **CORS Protection:** Configured Supabase CORS rules
+- **Row-Level Security (RLS):** Database-enforced policies
+- **Email Authentication:** Supabase Auth
+- **Password Hashing:** Industry-standard encryption
+- **Time-Limited QR Codes:** Validity date enforcement
+- **Audit Logging:** Activity tracking
 - **HTTPS/TLS:** All communications encrypted
+- **Session Management:** Auto-refresh tokens
 
-## 🌙 Theme Support
+## 🎨 UI/UX Components
 
-The application includes full dark mode support with:
-- System theme detection
-- Manual theme switching via `ThemeSwitcher` component
-- Tailwind CSS dark mode classes
-- Persistent theme preference storage
+- **60+ UI Components:** Buttons, cards, dialogs, tables, forms, etc.
+- **Dark Mode:** Full theme switching support
+- **Responsive:** Mobile-first design
+- **Accessible:** WCAG 2.1 AA compliant
+- **Tailwind CSS:** Utility-first styling
 
 ## 📱 Progressive Web App (PWA)
 
-This application is configured as a PWA with:
-- Offline support via Service Worker
-- App installation capability
-- Responsive design for all devices
-- Fast loading times
+- **Offline Support:** Works without internet
+- **Installable:** Add to home screen
+- **Auto-Update:** Service worker handles updates
+- **Fast:** Optimized caching strategies
+- **Responsive:** Works on all devices
+
+## 🌙 Theme Support
+
+- **System Detection:** Automatically detects OS theme preference
+- **Manual Toggle:** ThemeSwitcher component for user control
+- **Persistent:** Remembers user preference
+- **Dark Mode Classes:** Tailwind dark mode support
 
 ## 🧪 Testing
 
-Run tests with:
 ```bash
-pnpm run test
+npm run test           # Run tests
+npm run test:watch    # Watch mode
+npm run test:ui       # UI mode
 ```
-
-Tests are located alongside components with `.test.ts` or `.test.tsx` extensions.
-
-## 📊 Environment Details
-
-- **Node Version:** 18+
-- **TypeScript:** Latest stable
-- **React:** 18.3.1
-- **Vite:** Latest
-- **Tailwind CSS:** Latest with forms plugin
-- **Supabase:** PostgreSQL database
 
 ## 🐛 Troubleshooting
 
-### Database Connection Issues
-- Verify Supabase URL and keys in `.env`
-- Check network connectivity
-- Ensure SQL schema has been executed
+### Supabase Connection Failed
+- Verify `.env` variables
+- Check project is active
+- Test network connectivity
 
-### Email Notifications Not Working
-- Verify EmailJS configuration in `.env`
-- Check EmailJS service limits and quota
-- Review email template configuration
+### Emails Not Sending
+- Verify EmailJS credentials
+- Check service quota
+- Review template configuration
 
-### QR Code Scanning Problems
-- Ensure camera permissions are granted
-- Test with different browsers (Chrome/Edge recommended)
-- Check lighting conditions
+### QR Scanner Issues
+- Grant camera permissions
+- Test in Chrome/Edge
+- Check lighting
 
-### Authentication Issues
-- Clear browser cache and cookies
-- Verify Supabase authentication settings
-- Check user role in Supabase `hosts` table
+### Build Errors
+- Clear `node_modules`: `npm install`
+- Run `npm run clean`
+- Check `npm run type-check`
 
 ## 📚 Documentation
 
-- [EmailJS Setup Guide](docs/EMAILJS_SETUP.md) - Email notification configuration
-- [Security Policy](SECURITY.md) - Security guidelines and procedures
-- [Supabase Schema](Supabase/visitor_management_schema.sql) - Database schema documentation
+- [EmailJS Setup](docs/EMAILJS_SETUP.md)
+- [Supabase Docs](https://supabase.com/docs)
+- [React Docs](https://react.dev)
+- [shadcn/ui](https://ui.shadcn.com)
 
-## 🤝 Contributing
+## 👨‍💻 Author
 
-Contributions are welcome! To contribute:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-Please ensure your code:
-- Passes all linting checks (`pnpm run lint`)
-- Is properly formatted (`pnpm run format`)
-- Has no TypeScript errors (`pnpm run type-check`)
-
-## 👤 Author
-
-**ByteOps02**
-- GitHub: [@ByteOps02](https://github.com/ByteOps02)
-- Repository: [DBMS_Project](https://github.com/ByteOps02/DBMS_Project)
-
-## 💬 Contact & Support
-
-For issues, questions, or suggestions:
-- Open an [Issue](https://github.com/ByteOps02/DBMS_Project/issues)
-- Submit a [Pull Request](https://github.com/ByteOps02/DBMS_Project/pulls)
-- Visit the [Discussions](https://github.com/ByteOps02/DBMS_Project/discussions) tab
-
-## 🙏 Acknowledgments
-
-- [shadcn/ui](https://ui.shadcn.com/) for beautiful UI components
-- [Supabase](https://supabase.io/) for backend infrastructure
-- [Radix UI](https://www.radix-ui.com/) for accessible component primitives
-- All contributors and maintainers
-
----
+**ram02krishna**
+- GitHub: [@ram02krishna](https://github.com/ram02krishna)
+- Repository: [Visitor-Management-System](https://github.com/ram02krishna/Visitor-Management-System)
