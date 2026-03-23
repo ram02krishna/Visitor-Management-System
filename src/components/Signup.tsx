@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Shield, Eye, EyeOff, ArrowRight, ArrowLeft, Building2, CheckCircle2 } from "lucide-react";
 import { useAuthStore } from "../store/auth";
 import { supabase } from "../lib/supabase";
+import log from "../lib/logger";
 
 type Department = {
   id: string;
@@ -61,13 +62,16 @@ export function Signup() {
     setSuccess(false);
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match"); return;
+      setError("Passwords do not match");
+      return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters"); return;
+      setError("Password must be at least 6 characters");
+      return;
     }
     if (!departmentId) {
-      setError("Please select a department"); return;
+      setError("Please select a department");
+      return;
     }
 
     try {
@@ -75,7 +79,13 @@ export function Signup() {
       setSuccess(true);
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to create account");
+      const errorMsg = (err as Error).message || "Failed to create account";
+      setError(errorMsg);
+      
+      // If the error is about user already being registered, highlight the login link
+      if (errorMsg.includes("already registered") || errorMsg.includes("already exists")) {
+        log.warn("[Signup] User already exists, directing to login");
+      }
     }
   };
 

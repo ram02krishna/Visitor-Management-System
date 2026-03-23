@@ -84,8 +84,10 @@ export const useAuthStore = create<AuthState>((set) => ({
             error: null,
           });
         } else {
-          log.info("[Auth] No host data found for session user.");
-          set({ isAuthenticated: false, isLoading: false, user: null });
+          log.warn("[Auth] Auth session exists but no host record found - account may be incomplete");
+          // Sign out the user since their host record doesn't exist
+          await supabase.auth.signOut();
+          set({ isAuthenticated: false, isLoading: false, user: null, error: null });
         }
       } else {
         log.info("[Auth] No active session found");
@@ -128,6 +130,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
         if (hostError) {
           log.error("[Auth] Host data fetch error:", hostError);
+          // If the error is "no rows" (PGRST116), provide a helpful message
+          if (hostError.code === "PGRST116") {
+            log.warn("[Auth] Auth user exists but no host record found - account setup may be incomplete");
+            // Sign out the user since their host record doesn't exist
+            await supabase.auth.signOut();
+            throw new Error("Your account setup is incomplete. Please contact support or try signing up again.");
+          }
           throw hostError;
         }
 
@@ -153,10 +162,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         });
       }
     } catch (error: unknown) {
-      log.error("[Auth] Login failed:", (error as Error).message);
+      const errorMessage = (error as Error).message || "Invalid credentials";
+      log.error("[Auth] Login failed:", errorMessage);
       log.error("[Auth] Error details:", error);
       set({
-        error: (error as Error).message || "Invalid credentials",
+        error: errorMessage,
         isLoading: false,
         isAuthenticated: false,
         user: null,
@@ -169,6 +179,23 @@ export const useAuthStore = create<AuthState>((set) => ({
     log.info("[Auth] Signup attempt:", { email, name, departmentId });
     try {
       set({ isLoading: true, error: null });
+
+      // First, check if a host record already exists with this email
+      log.info("[Auth] Checking for existing host with email:", email);
+      const { data: existingHost, error: checkError } = await supabase
+        .from("hosts")
+        .select("id, email, auth_id")
+        .eq("email", email)
+        .single();
+
+      if (checkError && checkError.code !== "PGRST116") {
+        log.error("[Auth] Error checking for existing host:", checkError.message);
+      }
+
+      if (existingHost) {
+        log.warn("[Auth] Host with this email already exists");
+        throw new Error("An account with this email already exists. Please sign in instead.");
+      }
 
       log.info("[Auth] Creating auth user in Supabase...");
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -184,6 +211,16 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       if (signUpError) {
         log.error("[Auth] Sign-up error:", signUpError.message);
+        
+        // Check if the error is about user already existing
+        if (signUpError.message.includes("already registered") || 
+            signUpError.message.includes("User already exists") ||
+            signUpError.message.includes("already exists") ||
+            signUpError.status === 422) {
+          log.warn("[Auth] Email already exists in auth system");
+          // Try to fetch existing auth user's role to provide helpful message
+          throw new Error("This email is already registered. Please sign in with your existing account, or reset your password if you forgot it.");
+        }
         throw signUpError;
       }
 
@@ -199,10 +236,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       log.info("[Auth] Signup successful; host record handled by trigger.");
       set({ isLoading: false, error: null });
     } catch (error: unknown) {
-      log.error("[Auth] Signup failed:", (error as Error).message);
+      const errorMessage = (error as Error).message || "Failed to create account";
+      log.error("[Auth] Signup failed:", errorMessage);
       log.error("[Auth] Error details:", error);
       set({
-        error: (error as Error).message || "Failed to create account",
+        error: errorMessage,
         isLoading: false,
       });
       throw error;
