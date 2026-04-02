@@ -2,11 +2,11 @@
 
 A modern, real-time Visitor Management System designed to streamline the process of managing visitors in a corporate or campus environment. It provides a secure, efficient, and user-friendly way to track and manage visitor information, ensuring a smooth experience for both visitors and hosts.
 
-## 🎯 Overview
+## Overview
 
 This project is a full-stack web application that helps organizations manage visitor access and tracking. It features real-time updates, role-based access control, automated QR code generation, and email notifications for approved visits. Built with React, TypeScript, and Supabase, it delivers a seamless experience across desktop and mobile devices with PWA support.
 
-## ✨ Features
+## Features
 
 ### Core Functionality
 - **Real-time Updates:** Dashboard and visit logs updated instantly using Supabase real-time capabilities
@@ -40,7 +40,7 @@ This project is a full-stack web application that helps organizations manage vis
 - **Data Validation:** Zod-based form validation for all inputs
 - **Secure Authentication:** Supabase Auth with session persistence
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Category | Technology | Purpose |
 |----------|-----------|---------|
@@ -66,7 +66,7 @@ This project is a full-stack web application that helps organizations manage vis
 | **PWA** | vite-plugin-pwa | Progressive Web App support |
 | **HTTPS Dev** | vite-plugin-mkcert | Self-signed certificates for local HTTPS |
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 Visitor-Management-System/
@@ -164,15 +164,6 @@ Visitor-Management-System/
 - **user_role**: admin, guard, host
 - **visit_status**: pending, approved, denied, completed, cancelled, checked-in
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) version 18 or later
-- [npm](https://www.npmjs.com/) package manager
-- A [Supabase](https://supabase.com/) account (free tier available)
-- (Optional) [EmailJS](https://www.emailjs.com/) account for automated email notifications
-
 ### Installation Steps
 
 1. **Clone the repository:**
@@ -214,7 +205,7 @@ Visitor-Management-System/
    npm run dev
    ```
 
-## 📋 Available Scripts
+## Available Scripts
 
 | Command | Description |
 |---------|-------------|
@@ -231,7 +222,7 @@ Visitor-Management-System/
 | `npm run clean` | Remove build artifacts |
 | `npm run security:audit` | Check for vulnerable packages |
 
-## 📖 Usage Guide
+
 
 ### For Visitors
 1. Fill out public visit request form
@@ -260,7 +251,7 @@ Visitor-Management-System/
 4. Bulk upload visitors via CSV
 5. Export data
 
-## 🔐 Security Features
+## Security Features
 
 - **Role-Based Access Control (RBAC):** Three-tier user hierarchy
 - **Row-Level Security (RLS):** Database-enforced policies
@@ -271,7 +262,7 @@ Visitor-Management-System/
 - **HTTPS/TLS:** All communications encrypted
 - **Session Management:** Auto-refresh tokens
 
-## 🎨 UI/UX Components
+## UI/UX Components
 
 - **60+ UI Components:** Buttons, cards, dialogs, tables, forms, etc.
 - **Dark Mode:** Full theme switching support
@@ -279,7 +270,7 @@ Visitor-Management-System/
 - **Accessible:** WCAG 2.1 AA compliant
 - **Tailwind CSS:** Utility-first styling
 
-## 📱 Progressive Web App (PWA)
+## Progressive Web App (PWA)
 
 - **Offline Support:** Works without internet
 - **Installable:** Add to home screen
@@ -287,14 +278,14 @@ Visitor-Management-System/
 - **Fast:** Optimized caching strategies
 - **Responsive:** Works on all devices
 
-## 🌙 Theme Support
+## Theme Support
 
 - **System Detection:** Automatically detects OS theme preference
 - **Manual Toggle:** ThemeSwitcher component for user control
 - **Persistent:** Remembers user preference
 - **Dark Mode Classes:** Tailwind dark mode support
 
-## 🧪 Testing
+## Testing
 
 ```bash
 npm run test           # Run tests
@@ -302,7 +293,7 @@ npm run test:watch    # Watch mode
 npm run test:ui       # UI mode
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Supabase Connection Failed
 - Verify `.env` variables
@@ -324,14 +315,7 @@ npm run test:ui       # UI mode
 - Run `npm run clean`
 - Check `npm run type-check`
 
-## 📚 Documentation
-
-- [EmailJS Setup](docs/EMAILJS_SETUP.md)
-- [Supabase Docs](https://supabase.com/docs)
-- [React Docs](https://react.dev)
-- [shadcn/ui](https://ui.shadcn.com)
-
-## 👨‍💻 Author
+## Author
 
 **ram02krishna**
 - GitHub: [@ram02krishna](https://github.com/ram02krishna)
