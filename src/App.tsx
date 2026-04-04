@@ -73,7 +73,7 @@ function App() {
     <ErrorBoundary>
       <Router>
         <Routes>
-          {/* Public Routes */}
+
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -81,7 +81,6 @@ function App() {
           <Route path="/request-visit" element={<RequestVisit />} />
           <Route path="/users" element={<Navigate to="/app/users" replace />} />
 
-          {/* Private Routes */}
           <Route
             element={
               <PrivateRoute>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
-import { Eye, CheckCircle, Inbox, Search, CalendarCheck2, Hourglass, Trophy, ShieldX, Activity } from "lucide-react";
+import { Eye, CheckCircle, Inbox, Search, CalendarCheck2, Trophy, ShieldX, Activity } from "lucide-react";
 import { VisitDetails } from "./VisitDetails";
 import type { Visit as DbVisit } from "../lib/database.types";
 import log from "../lib/logger";
@@ -36,7 +36,6 @@ export function FilteredVisits() {
     const { status } = useParams<{ status: string }>();
     const { user } = useAuthStore();
 
-
     const [visits, setVisits] = useState<Visit[]>(() => {
         try { return JSON.parse(localStorage.getItem(`vms_filtered_visits_${status}`) ?? "null") ?? []; } catch { return []; }
     });
@@ -68,13 +67,12 @@ export function FilteredVisits() {
         if (!status || !user) return;
         
         if (!debouncedSearchTerm && visits.length > 0) {
-            // Background refresh - don't show loading spinner
+
         } else {
             setLoading(true);
         }
         let query = supabase.from("visits").select(`*, visitor:visitors(*)`);
 
-        // Status filtering
         if (status === "cancelled_denied") {
             query = query.in("status", ["cancelled", "denied"]);
         } else {
@@ -104,7 +102,6 @@ export function FilteredVisits() {
             query = query.gte("created_at", utcTodayStart).lt("created_at", utcTomorrowStart);
         }
 
-        // Ordering
         if (status === "checked-in") {
             query = query.order("check_in_time", { ascending: false });
         } else if (status === "approved") {
@@ -127,20 +124,24 @@ export function FilteredVisits() {
             }
         }
         setLoading(false);
-    }, [status, user, debouncedSearchTerm]);
+    }, [status, user, debouncedSearchTerm, visits.length]);
 
     // Force clear/rehydrate on status change so the page doesn't show previous status data for a split second
+
     useEffect(() => {
         try {
             const cached = JSON.parse(localStorage.getItem(`vms_filtered_visits_${status}`) ?? "null");
             if (cached) {
+
                 setVisits(cached);
                 setLoading(false);
             } else {
+
                 setVisits([]);
                 setLoading(true);
             }
         } catch {
+
             setVisits([]);
             setLoading(true);
         }

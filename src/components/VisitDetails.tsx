@@ -23,7 +23,7 @@ export function VisitDetails({ visit, onClose }: VisitDetailsProps) {
       />
 
       <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden transform transition-all animate-scaleIn">
-        {/* Header */}
+
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gradient-to-r from-sky-50 to-blue-50 dark:from-slate-800/50 dark:to-slate-900">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center justify-center p-2 bg-blue-100 dark:bg-blue-900/40 rounded-xl">
@@ -44,7 +44,6 @@ export function VisitDetails({ visit, onClose }: VisitDetailsProps) {
         <div className="px-6 py-5 overflow-y-auto">
           <div className="space-y-6">
 
-            {/* Visitor Info */}
             <div className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-800">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-inner">
                 {(visit.visitor?.name || "U")[0].toUpperCase()}
@@ -57,7 +56,6 @@ export function VisitDetails({ visit, onClose }: VisitDetailsProps) {
               </div>
             </div>
 
-            {/* Visit Details Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl border border-gray-100 dark:border-slate-800">
                 <div className="flex items-center gap-2 mb-2 text-gray-500 dark:text-slate-400">
@@ -87,7 +85,6 @@ export function VisitDetails({ visit, onClose }: VisitDetailsProps) {
               </div>
             </div>
 
-            {/* Timestamps */}
             <div className="bg-gray-50 dark:bg-slate-800/30 rounded-xl p-4 border border-gray-100 dark:border-slate-800">
               <div className="flex items-center gap-2 mb-3 text-gray-500 dark:text-slate-400">
                 <Clock className="w-4 h-4" />
@@ -124,7 +121,6 @@ export function VisitDetails({ visit, onClose }: VisitDetailsProps) {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-800 flex justify-end">
           <button
             onClick={onClose}

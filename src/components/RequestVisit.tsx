@@ -172,7 +172,6 @@ export function RequestVisit() {
         throw visitError;
       }
 
-      // Generate QR code with visit details
       const qrData = JSON.stringify({
         visitId: visitId,
         name: formData.name,
@@ -185,7 +184,6 @@ export function RequestVisit() {
       setQrCode(qrUrl);
       setVisitId(visitId);
 
-      // Send registration confirmation email with QR code to the visitor
       const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
       const visitorTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
       const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
@@ -217,7 +215,6 @@ export function RequestVisit() {
           console.error("Failed to send confirmation email with QR code to visitor:", emailError);
         }
       }
-
 
       setSuccess(true);
       setFormData({
@@ -286,7 +283,6 @@ export function RequestVisit() {
                       </div>
                     </div>
 
-                    {/* QR Code Display Section */}
                     {qrCode && (
                       <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-green-100 dark:border-green-900/50 flex flex-col items-center gap-4">
                         <div className="flex flex-col items-center gap-2">
@@ -333,7 +329,7 @@ export function RequestVisit() {
                 </div>
               </div>
             ) : (
-              // Form View
+
               <form onSubmit={handleSubmit}>
                 <div className="shadow-xl sm:rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-500">
                   <div className="px-4 py-5 glass space-y-6 sm:p-6">

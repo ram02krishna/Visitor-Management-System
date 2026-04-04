@@ -52,7 +52,6 @@ export function getISTTodayRange(): [string, string] {
   const istMidnight = new Date(nowInIST);
   istMidnight.setUTCHours(0, 0, 0, 0);
 
-  // Shift back to real UTC
   const todayStartUTC = new Date(istMidnight.getTime() - IST_OFFSET_MS);
   const todayEndUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
 

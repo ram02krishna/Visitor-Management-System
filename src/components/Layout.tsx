@@ -161,7 +161,6 @@ export function Layout() {
       {/* ── Desktop Sidebar ── */}
       <aside className="hidden lg:flex flex-col w-72 fixed inset-y-0 left-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 shadow-xl overflow-y-auto z-30 transition-colors duration-300">
 
-        {/* Brand */}
         <div className="h-20 flex items-center px-6 border-b border-gray-100 dark:border-slate-800 shrink-0">
           <Link to="/app/dashboard" className="flex items-center gap-3 group">
             <div className="p-2 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl shadow-md group-hover:shadow-sky-500/30 transition-all duration-300">
@@ -173,7 +172,6 @@ export function Layout() {
           </Link>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1.5">
           <p className="px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-4">
             Menu
@@ -195,7 +193,7 @@ export function Layout() {
                 {isActive && (
                   <div className="absolute inset-0 bg-gradient-to-r from-sky-100 to-blue-50 dark:from-sky-900/40 dark:to-blue-900/20 opacity-100 border border-sky-200/50 dark:border-sky-700/50 rounded-xl mix-blend-multiply dark:mix-blend-lighten" />
                 )}
-                {/* Active left bar indicator */}
+
                 {isActive && (
                   <div className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-sky-500 dark:bg-sky-400 rounded-r-md" />
                 )}
@@ -210,14 +208,13 @@ export function Layout() {
           })}
         </nav>
 
-        {/* Settings & User Profile */}
         <div className="p-4 border-t border-gray-100 dark:border-slate-800 mt-auto shrink-0 bg-gray-50/50 dark:bg-slate-800/20">
           {canApprove && (
             <button
               onClick={() => navigate("/app/approval")}
               className="w-full flex flex-col gap-2 px-3 py-2.5 mb-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-500 transition-all duration-200 group"
             >
-              {/* Pending row */}
+
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <div className="relative">
@@ -238,7 +235,7 @@ export function Layout() {
                   </span>
                 )}
               </div>
-              {/* Active visitors row */}
+
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-2 w-2 ml-1">

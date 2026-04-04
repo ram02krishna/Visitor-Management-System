@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import { TrendingUp, Users, Clock, CheckCircle, Calendar, AreaChart } from "lucide-react";
+import { Users, Clock, CheckCircle, Calendar, AreaChart } from "lucide-react";
 import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
 
@@ -133,9 +133,8 @@ export function AnalyticsDashboard() {
         }
       />
 
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {/* Total Visits */}
+
         <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 dark:border-slate-800 overflow-hidden group">
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-sky-400/10 blur-xl" />
           <div className="p-6 relative z-10">
@@ -151,7 +150,6 @@ export function AnalyticsDashboard() {
           <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-sky-500 to-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
         </div>
 
-        {/* Total Visitors */}
         <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 dark:border-slate-800 overflow-hidden group">
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-purple-400/10 blur-xl" />
           <div className="p-6 relative z-10">
@@ -167,7 +165,6 @@ export function AnalyticsDashboard() {
           <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-violet-500 to-purple-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
         </div>
 
-        {/* Approval Rate */}
         <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 dark:border-slate-800 overflow-hidden group">
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-emerald-400/10 blur-xl" />
           <div className="p-6 relative z-10">
@@ -183,7 +180,6 @@ export function AnalyticsDashboard() {
           <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-emerald-500 to-green-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
         </div>
 
-        {/* Avg Duration */}
         <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 dark:border-slate-800 overflow-hidden group">
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-orange-400/10 blur-xl" />
           <div className="p-6 relative z-10">
@@ -200,7 +196,6 @@ export function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* Daily Stats Chart */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-md p-6 mb-8 border border-gray-100 dark:border-slate-800">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Daily Visit Trends</h2>
@@ -210,7 +205,7 @@ export function AnalyticsDashboard() {
         </div>
         <div className="overflow-x-auto">
           <div className="relative flex items-end gap-2 h-52 min-w-0" style={{ minWidth: `${analytics.daily_stats.length * 40}px` }}>
-            {/* Horizontal gridlines */}
+
             {[0, 25, 50, 75, 100].map((pct) => (
               <div
                 key={pct}
@@ -251,7 +246,6 @@ export function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* Top Purposes */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-md p-6 border border-gray-100 dark:border-slate-800">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5">Top Visit Purposes</h2>
         <div className="space-y-3">
@@ -276,7 +270,7 @@ export function AnalyticsDashboard() {
                   </div>
                   <span className="text-sm font-bold text-sky-600 dark:text-sky-400">{item.count}</span>
                 </div>
-                {/* Progress bar */}
+
                 <div className="h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-sky-500 to-blue-500 rounded-full transition-all duration-700"

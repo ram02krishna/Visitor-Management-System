@@ -56,7 +56,7 @@ const Home = () => {
           : "bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg"
           }`}
       >
-        {/* Logo */}
+
         <div
           className="flex items-center gap-2.5 cursor-pointer group"
           onClick={() => navigate("/")}
@@ -72,7 +72,6 @@ const Home = () => {
           </span>
         </div>
 
-        {/* Desktop Buttons */}
         <div className="hidden md:flex gap-2.5 items-center">
           <ThemeSwitcher />
           <button
@@ -95,7 +94,6 @@ const Home = () => {
           </button>
         </div>
 
-        {/* Mobile menu button */}
         <div className="flex md:hidden items-center gap-2">
           <ThemeSwitcher />
           <button
@@ -108,7 +106,6 @@ const Home = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu Dropdown */}
       <div
         className={`md:hidden fixed top-[68px] left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-xl transition-all duration-300 ${mobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-3 pointer-events-none"
           }`}
@@ -139,7 +136,7 @@ const Home = () => {
         <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
 
         <div className="relative z-10 flex flex-col items-center gap-8 animate-scaleIn">
-          {/* Card */}
+
           <div className="bg-transparent p-5 sm:p-8 max-w-2xl w-full text-center transition-all duration-500">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white drop-shadow-md mb-5 animate-fadeInUp leading-tight">
               Welcome to Indian Institute Of Information Technology Nagpur
@@ -175,7 +172,7 @@ const Home = () => {
       {/* ── Features Section ── */}
       <section className="py-16 sm:py-20 bg-gray-50 dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          {/* Section header */}
+
           <div className="text-center mb-12 animate-fadeInUp">
             <span className="inline-block text-xs font-semibold tracking-widest uppercase text-sky-600 dark:text-sky-400 mb-3 bg-sky-50 dark:bg-sky-900/20 px-4 py-1.5 rounded-full border border-sky-200 dark:border-sky-800/50">
               Why Choose Us
@@ -188,7 +185,6 @@ const Home = () => {
             </p>
           </div>
 
-          {/* Feature cards */}
           <div className="grid gap-7 grid-cols-1 sm:grid-cols-3">
             {features.map(({ icon: Icon, title, description, gradient, shadow }, i) => (
               <div
@@ -241,7 +237,7 @@ const Home = () => {
       <footer className="bg-gray-900 dark:bg-slate-950 text-white py-10 border-t border-gray-800 dark:border-slate-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            {/* Brand */}
+
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg">
                 <img src="/visitor-management.png" alt="Logo" className="h-5 w-5" />
@@ -249,7 +245,6 @@ const Home = () => {
               <span className="font-bold text-white/90 text-sm">Visitor Management System</span>
             </div>
 
-            {/* Links */}
             <div className="flex items-center gap-6 text-sm">
               {[
                 { label: "Request Visit", path: "/request-visit" },
@@ -266,7 +261,6 @@ const Home = () => {
               ))}
             </div>
 
-            {/* Copyright */}
             <p className="text-gray-500 text-xs">
               © {new Date().getFullYear()} VMS. All rights reserved.
             </p>

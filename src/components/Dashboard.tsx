@@ -134,7 +134,7 @@ export function Dashboard() {
       setRecentVisits(visits);
       try { localStorage.setItem("vms_recent_visits", JSON.stringify(visits)); } catch { /* quota */ }
     } catch {
-      // silently ignore
+
     } finally {
       setRecentLoading(false);
     }
@@ -162,7 +162,7 @@ export function Dashboard() {
       setActiveVisitors(visitors);
       try { localStorage.setItem("vms_active_visitors", JSON.stringify(visitors)); } catch { /* quota */ }
     } catch {
-      // silently ignore
+
     } finally {
       setActiveLoading(false);
     }
@@ -260,7 +260,7 @@ export function Dashboard() {
                 Welcome back, <span className="text-[#3b82f6]">{user?.name?.split(" ")[0] || "Guest"}</span>
               </h1>
               <div className="flex flex-wrap items-center gap-3 mt-2">
-                {/* Live sync indicator */}
+
                 <div className="flex items-center gap-1.5">
                   <span className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -271,7 +271,7 @@ export function Dashboard() {
                   </p>
                 </div>
                 <span className="text-slate-300 dark:text-slate-700">|</span>
-                {/* Last sync */}
+
                 <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
                   <RefreshCw className="w-3.5 h-3.5" />
                   Last sync: {formatISTTime(lastRefresh)}

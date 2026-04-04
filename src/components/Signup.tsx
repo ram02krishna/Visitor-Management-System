@@ -135,7 +135,6 @@ export function Signup() {
       <div className="w-full lg:w-[55%] xl:w-1/2 flex flex-col justify-center py-10 px-4 sm:px-8 lg:px-12 xl:px-24 h-screen overflow-y-auto">
         <div className="w-full max-w-md mx-auto relative z-10 py-8">
 
-          {/* Back to Home */}
           <div className="mb-6 animate-fadeInUp">
             <button
               onClick={() => navigate("/")}
@@ -228,7 +227,6 @@ export function Signup() {
                     </button>
                   </div>
 
-                  {/* Password Strength Indicator */}
                   {password.length > 0 && (
                     <div className="mt-2.5 px-1 animate-fadeIn">
                       <div className="flex gap-1 h-1 w-full rounded-full overflow-hidden bg-gray-200 dark:bg-slate-800">

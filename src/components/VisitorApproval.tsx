@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
-import { CheckCircle, XCircle, Search, ShieldAlert, Calendar, FileText, X, History, CheckCircle2, Hourglass, LogIn, Inbox } from "lucide-react";
+import { CheckCircle, XCircle, Search, ShieldAlert, X, History, CheckCircle2, Hourglass, LogIn, Inbox } from "lucide-react";
 import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
 import emailjs from "@emailjs/browser";
@@ -59,14 +59,14 @@ function VisitorHistoryDrawer({ visitor, visitorId, onClose }: {
 
   return (
     <>
-      {/* Backdrop */}
+
       <div
         className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-40 animate-fadeIn"
         onClick={onClose}
       />
-      {/* Drawer */}
+
       <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[420px] bg-white dark:bg-slate-900 shadow-2xl z-50 flex flex-col animate-slideInRight border-l border-gray-200 dark:border-slate-700">
-        {/* Header */}
+
         <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 text-white flex items-center justify-center font-bold text-sm shadow-inner">
@@ -85,13 +85,11 @@ function VisitorHistoryDrawer({ visitor, visitorId, onClose }: {
           </button>
         </div>
 
-        {/* History Label */}
         <div className="px-5 py-3 border-b border-gray-100 dark:border-slate-800 shrink-0 flex items-center gap-2">
           <History className="w-4 h-4 text-gray-400" />
           <span className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Visit History</span>
         </div>
 
-        {/* History List */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="space-y-3 p-5">
@@ -153,7 +151,7 @@ export function VisitorApproval() {
 
   const loadVisits = useCallback(async () => {
     if (!debouncedSearchTerm && visits.length > 0) {
-      // Background refresh - don't show loading skeleton
+
     } else {
       setLoading(true);
     }
@@ -193,7 +191,7 @@ export function VisitorApproval() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, user?.role, debouncedSearchTerm]);
+  }, [user?.id, user?.role, debouncedSearchTerm, visits.length]);
 
   useEffect(() => {
     loadVisits();
@@ -228,7 +226,7 @@ export function VisitorApproval() {
       if (emailServiceId && emailPublicKey && updatedData.visitors.email) {
         try {
           if (approved) {
-            // Send APPROVAL email with QR code
+
             const qrData = JSON.stringify({
               visitId: updatedData.id,
               name: updatedData.visitors.name,
@@ -259,7 +257,7 @@ export function VisitorApproval() {
               toast.success("Approval email with QR code sent successfully!");
             }
           } else {
-            // Send DENIAL email
+
             const denialTemplateId = import.meta.env.VITE_EMAILJS_DENIAL_TEMPLATE_ID;
 
             if (denialTemplateId) {
@@ -401,7 +399,7 @@ export function VisitorApproval() {
                   ) : (
                     visits.map((visit) => (
                       <tr key={visit.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                        {/* Visitor column */}
+
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
                           <div
                             className="flex items-center gap-3 cursor-pointer group"
@@ -422,17 +420,14 @@ export function VisitorApproval() {
                           </div>
                         </td>
 
-                        {/* Purpose column */}
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
                           {visit.purpose}
                         </td>
 
-                        {/* Time column */}
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
                           {formatIST(visit.created_at)}
                         </td>
 
-                        {/* Actions column */}
                         <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                           {canApprove ? (
                             <div className="flex items-center justify-end gap-2">

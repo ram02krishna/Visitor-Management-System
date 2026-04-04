@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   Search,
   Download,
-  ClipboardList,
   User,
   Clock,
   CheckCircle2,
@@ -28,7 +27,6 @@ import { formatIST } from "../lib/dateIST";
 import { ScrollText } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 
-// A custom hook for debouncing a value
 const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -65,7 +63,7 @@ interface RawVisit {
   check_out_time: string | null;
   created_at: string;
 }
-// Format duration between two times
+
 const formatDuration = (start: string | null, end: string | null): string => {
   if (!start) return "—";
   const from = new Date(start).getTime();
@@ -80,7 +78,7 @@ const formatDuration = (start: string | null, end: string | null): string => {
 };
 
 const getDynamicStatus = (visit: VisitLog) => {
-  // Trust the database status for all definitive states
+
   if (visit.status === "completed") return "completed";
   if (visit.status === "denied") return "denied";
   if (visit.status === "cancelled") return "cancelled";
@@ -199,7 +197,7 @@ export function VisitLogs() {
 
   useEffect(() => {
     fetchVisits();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [currentPage, itemsPerPage, debouncedSearchTerm, dateFilter, statusFilter, user?.id, user?.role]);
 
   useEffect(() => {
@@ -213,13 +211,13 @@ export function VisitLogs() {
     return () => {
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   const handleExport = async () => {
     setExporting(true);
     try {
-      // Fetch ALL filtered records without pagination limit for export
+
       let q = supabase
         .from("visits")
         .select(`
@@ -259,7 +257,6 @@ export function VisitLogs() {
         return;
       }
 
-      // Resolve visitor & host names
       const visitorIds = [...new Set(rawVisits.map((v) => v.visitor_id).filter(Boolean))];
       const hostIds = [...new Set(rawVisits.map((v) => v.host_id).filter(Boolean))];
 
@@ -274,7 +271,6 @@ export function VisitLogs() {
       const hostMap: Record<string, string> = {};
       (hostsData || []).forEach((h) => { hostMap[h.id] = h.name; });
 
-      // Format for CSV
       const exportData = rawVisits.map((v) => ({
         "Visitor Name": visitorMap[v.visitor_id] ?? "Unknown",
         "Purpose": v.purpose ?? "",
@@ -313,7 +309,7 @@ export function VisitLogs() {
   };
 
   const handleComplete = async (visitId: string) => {
-    // Only guards can complete visits
+
     if (!isGuard) {
       toast.error("Only guards can complete visits.");
       return;
@@ -498,7 +494,7 @@ export function VisitLogs() {
                                 {log.check_out ? formatIST(log.check_out) : "—"}
                               </div>
                             </td>
-                            {/* Duration column */}
+
                             <td className="whitespace-nowrap px-3 py-4 text-sm">
                               {log.check_in ? (
                                 <span className={`inline-flex items-center gap-1.5 font-medium ${dynamicStatus === "ongoing"

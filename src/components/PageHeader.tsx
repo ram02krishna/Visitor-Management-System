@@ -47,7 +47,7 @@ export function PageHeader({
     >
       {/* ─── Left: icon + title block ─── */}
       <div className="flex items-center gap-3 min-w-0">
-        {/* Gradient icon badge */}
+
         <div
           className={`p-2.5 bg-gradient-to-br ${gradient} rounded-xl shadow-lg shrink-0 transition-transform duration-300 hover:scale-110 hover:rotate-3`}
         >

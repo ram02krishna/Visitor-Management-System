@@ -174,7 +174,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // Signup function
   signup: async (email: string, password: string, name: string, departmentId: string) => {
     log.info("[Auth] Signup attempt:", { email, name, departmentId });
     try {
@@ -211,8 +210,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       if (signUpError) {
         log.error("[Auth] Sign-up error:", signUpError.message);
-        
-        // Check if the error is about user already existing
+
         if (signUpError.message.includes("already registered") || 
             signUpError.message.includes("User already exists") ||
             signUpError.message.includes("already exists") ||
@@ -247,7 +245,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // Logout function
   logout: async () => {
     log.info("[Auth] Logout initiated");
     try {
@@ -263,7 +260,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // Sign in with Google
   signInWithGoogle: async () => {
     log.info("[Auth] Initiating Google Sign-In...");
     try {

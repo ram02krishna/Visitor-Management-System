@@ -37,7 +37,7 @@ export function PublicDisplay() {
 
   useEffect(() => {
     loadApprovedVisits();
-    // Refresh data every minute
+
     const interval = setInterval(loadApprovedVisits, 60000);
     return () => clearInterval(interval);
   }, []);

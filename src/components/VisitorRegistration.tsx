@@ -34,7 +34,6 @@ export function VisitorRegistration() {
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Get the current user session when component mounts
   useEffect(() => {
     async function getUserId() {
       log.info("[VisitorRegistration] Fetching user session...");
@@ -64,7 +63,7 @@ export function VisitorRegistration() {
     });
 
     try {
-      // Check if user is authenticated
+
       if (!userId) {
         log.error("[VisitorRegistration] User not authenticated");
         toast.error("You must be logged in to register visitors");
@@ -75,7 +74,6 @@ export function VisitorRegistration() {
 
       let photoUrl = null;
 
-      // Upload photo if provided
       if (formData.photo?.[0]) {
         log.info("[VisitorRegistration] Uploading visitor photo...");
         const file = formData.photo[0];
@@ -105,7 +103,6 @@ export function VisitorRegistration() {
         photoUrl = publicUrl;
       }
 
-      // Get host details if email is provided
       let hostId = null;
       let hostNameFound = "N/A";
       if (formData.hostEmail && formData.hostEmail.trim() !== "") {
@@ -299,7 +296,7 @@ export function VisitorRegistration() {
           }
         } catch (emailError) {
           log.error("[VisitorRegistration] Failed to send email:", emailError);
-          // Continue execution even if email fails
+
         }
       }
 
@@ -327,7 +324,7 @@ export function VisitorRegistration() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="shadow sm:rounded-md sm:overflow-hidden">
             <div className="px-4 py-5 bg-white dark:bg-slate-900 space-y-6 sm:p-6">
-              {/* Visitor Information Section */}
+
               <div>
                 <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4">
                   Visitor Information
@@ -433,7 +430,6 @@ export function VisitorRegistration() {
                 </div>
               </div>
 
-              {/* Visit Information Section */}
               <div>
                 <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4">
                   Visit Information
@@ -508,7 +504,6 @@ export function VisitorRegistration() {
                 </div>
               </div>
 
-              {/* QR Code Preview */}
               <div className="text-center">
                 {qrImageUrl && (
                   <div className="mt-6">

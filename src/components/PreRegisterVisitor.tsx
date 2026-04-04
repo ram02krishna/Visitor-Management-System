@@ -79,7 +79,6 @@ export function PreRegisterVisitor() {
         throw new Error(`No host, guard or admin found with email: ${formData.hostEmail}`);
       }
 
-      // Create or find the visitor
       const { data: visitor, error: visitorError } = await supabase
         .from("visitors")
         .select("id")
@@ -112,7 +111,6 @@ export function PreRegisterVisitor() {
         visitorId = visitor.id;
       }
 
-      // Upload photo if provided
       if (formData.photo && formData.photo.length > 0) {
         const file = formData.photo[0];
         const fileExt = file.name.split(".").pop();
@@ -239,7 +237,7 @@ export function PreRegisterVisitor() {
             )}
 
             <div className="space-y-6">
-              {/* Visitor Information Section */}
+
               <div className="border-b border-gray-200 dark:border-slate-700 pb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <User className="h-5 w-5 text-purple-600" />
@@ -321,7 +319,6 @@ export function PreRegisterVisitor() {
                 </div>
               </div>
 
-              {/* Visit Details Section */}
               <div className="border-b border-gray-200 dark:border-slate-700 pb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-purple-600" />
@@ -405,7 +402,6 @@ export function PreRegisterVisitor() {
                 </div>
               </div>
 
-              {/* Photo Upload Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2 flex items-center gap-1">
                   <Camera className="h-4 w-4" />

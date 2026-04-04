@@ -32,6 +32,7 @@ export function OngoingVisitsCard({ className, style, onClick }: OngoingVisitsCa
   }, [user]);
 
   useEffect(() => {
+
     fetchOngoingVisitsCount();
     const channel = supabase
       .channel("ongoing_visits_card")
@@ -52,10 +53,9 @@ export function OngoingVisitsCard({ className, style, onClick }: OngoingVisitsCa
       aria-label="View ongoing visits"
       tabIndex={0}
     >
-      {/* Decorative blob */}
+
       <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-sky-400/10 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-80" />
 
-      {/* Subtle gradient wash on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-sky-500 to-cyan-600 opacity-0 group-hover:opacity-[0.04] transition-opacity duration-500" />
 
       <div className="p-6 relative z-10">
@@ -66,7 +66,7 @@ export function OngoingVisitsCard({ className, style, onClick }: OngoingVisitsCa
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live pulse indicator */}
+
             {isLive && (
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-300 text-[11px] font-bold">
                 <span className="relative flex h-2 w-2">
@@ -96,13 +96,11 @@ export function OngoingVisitsCard({ className, style, onClick }: OngoingVisitsCa
         </div>
       </div>
 
-      {/* Footer */}
       <div className="px-6 py-3 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800/60 relative z-10 flex items-center gap-1.5">
         <Zap className="h-3.5 w-3.5 text-sky-500" />
         <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">Today&apos;s Metric</span>
       </div>
 
-      {/* Bottom accent bar */}
       <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-sky-500 to-cyan-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
     </div>
   );

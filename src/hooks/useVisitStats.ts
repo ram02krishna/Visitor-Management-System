@@ -21,7 +21,6 @@ const VISIT_STATUS = {
   DENIED: "denied",
 };
 
-// ─── Icon registry for localStorage serialisation ───────────────────────────
 // Icons are functions and can't be JSON-stringified, so we store a key instead.
 const ICON_MAP: Record<string, React.ElementType> = {
   UsersRound,
@@ -73,9 +72,8 @@ function writeCache(role: string, stats: StatItem[]) {
   }
 }
 
-// ─── Hook ────────────────────────────────────────────────────────────────────
 export const useVisitStats = (user: User | null) => {
-  // Immediately hydrate from cache so cards are visible on first render
+
   const [stats, setStats] = useState<StatItem[]>(() => {
     if (!user?.role) return [];
     return readCache(user.role) ?? [];
@@ -217,7 +215,6 @@ export const useVisitStats = (user: User | null) => {
               .lt("created_at", todayEnd),
           ];
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const roleFilter = (q: any) => {
             if (role === "host") return q.eq("host_id", user.id);
             return q;

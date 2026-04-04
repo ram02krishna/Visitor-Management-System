@@ -119,13 +119,11 @@ export const StatItem = React.memo(
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-3 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800/60 relative z-10 flex items-center gap-1.5">
           <Zap className={`h-3.5 w-3.5 ${color}`} />
           <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">Today&apos;s Metric</span>
         </div>
 
-        {/* Bottom gradient accent bar */}
         <div
           className={`absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r ${theme.accent} scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left`}
         />

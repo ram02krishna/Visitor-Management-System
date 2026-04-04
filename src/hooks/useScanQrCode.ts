@@ -70,7 +70,6 @@ export function useScanQrCode() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -106,7 +105,6 @@ export function useScanQrCode() {
 
     checkAuth();
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -124,7 +122,6 @@ export function useScanQrCode() {
     };
   }, []);
 
-  // Start scanner when authenticated
   useEffect(() => {
     if (!state.isAuthenticated || state.checkingAuth) {
       return;
@@ -174,7 +171,6 @@ export function useScanQrCode() {
     };
   }, [state.isAuthenticated, state.checkingAuth]);
 
-  // Fetch visit details when QR code is scanned
   useEffect(() => {
     if (!state.scanResult || !state.isAuthenticated) return;
 

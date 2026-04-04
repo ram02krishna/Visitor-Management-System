@@ -39,14 +39,12 @@ if (typeof window !== "undefined") {
   });
 }
 
-// Verify environment variables are loaded
 if (import.meta.env.DEV) {
   log.info("[Supabase] Environment check:");
   log.info("[Supabase] - URL:", supabaseUrl ? "✓ Loaded" : "✗ Missing");
   log.info("[Supabase] - Anon Key:", supabaseAnonKey ? "✓ Loaded" : "✗ Missing");
 }
 
-// Connection test in development mode only
 if (import.meta.env.DEV) {
   (async () => {
     try {

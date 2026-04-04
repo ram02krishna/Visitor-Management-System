@@ -6,7 +6,6 @@ import { supabase } from "../lib/supabase";
 import { toast } from "../../hooks/use-toast";
 import {
   CheckCircle,
-  Camera,
   ScanLine,
   Clock,
   User,
@@ -36,7 +35,6 @@ export function ScanQrCode() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [scannerReady, setScannerReady] = useState(false);
 
-  // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -69,7 +67,6 @@ export function ScanQrCode() {
 
     checkAuth();
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -87,7 +84,6 @@ export function ScanQrCode() {
     };
   }, []);
 
-  // Start scanner when authenticated
   useEffect(() => {
     if (!isAuthenticated || checkingAuth) {
       console.log("Not starting scanner - auth status:", { isAuthenticated, checkingAuth });
@@ -100,7 +96,7 @@ export function ScanQrCode() {
 
     const startScanner = async () => {
       try {
-        // Small delay to ensure DOM is ready
+
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         scanner = new Html5Qrcode(qrCodeDivId);
@@ -140,7 +136,6 @@ export function ScanQrCode() {
     };
   }, [isAuthenticated, checkingAuth]);
 
-  // Fetch visit details when QR code is scanned
   useEffect(() => {
     if (!scanResult || !isAuthenticated) return;
 
@@ -152,7 +147,6 @@ export function ScanQrCode() {
       try {
         console.log("Raw scanResult:", scanResult);
 
-        // Parse QR code
         let visitId: string;
         try {
           const parsed = JSON.parse(scanResult);
@@ -167,7 +161,6 @@ export function ScanQrCode() {
 
         console.log("Looking up visit ID:", visitId);
 
-        // Fetch visit with proper joins
         const { data: visitData, error: visitError } = await supabase
           .from("visits")
           .select(
@@ -191,7 +184,6 @@ export function ScanQrCode() {
 
         console.log("Visit data:", visitData);
 
-        // Check visit status
         if (visitData.status === "checked-in") {
           setError("This visitor is already checked in!");
           setVisit(visitData as Visit);
@@ -204,7 +196,6 @@ export function ScanQrCode() {
           );
         }
 
-        // Check if visit has expired
         if (visitData.valid_until) {
           const validUntil = new Date(visitData.valid_until);
           if (validUntil < new Date()) {
@@ -269,7 +260,7 @@ export function ScanQrCode() {
   };
 
   const handleScanAnother = async () => {
-    // Stop and clean up the current scanner first
+
     if (scannerRef.current) {
       try {
         if (scannerRef.current.isScanning) {
@@ -277,7 +268,7 @@ export function ScanQrCode() {
         }
         await scannerRef.current.clear();
       } catch {
-        // Ignore cleanup errors
+
       }
       scannerRef.current = null;
     }
@@ -301,7 +292,7 @@ export function ScanQrCode() {
         setError("Scanner container not found. Please refresh the page.");
         return;
       }
-      // Clear any residual Html5Qrcode DOM content inside the div
+
       el.innerHTML = "";
 
       try {
@@ -328,7 +319,6 @@ export function ScanQrCode() {
     }, 300); // 300ms gives React time to re-render the div
   };
 
-  // Show loading state while checking auth
   if (checkingAuth) {
     return (
       <div className="px-4 sm:px-6 lg:px-8">
@@ -342,7 +332,6 @@ export function ScanQrCode() {
     );
   }
 
-  // Show login required message
   if (!isAuthenticated) {
     return (
       <div className="px-4 sm:px-6 lg:px-8">

@@ -92,7 +92,7 @@ export function UserManagement() {
       }
     }
     setLoading(false);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, users.length]);
 
   useEffect(() => {
     fetchUsers();
