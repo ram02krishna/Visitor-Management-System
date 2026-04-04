@@ -364,9 +364,9 @@ export function VisitLogs() {
       />
 
       <div className="mt-8">
-        <div className="flex flex-1 items-center justify-between mb-4">
-          <div className="flex space-x-4 w-full max-w-2xl">
-            <div className="flex-1">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-4 gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-full lg:max-w-3xl xl:max-w-4xl shrink-0 flex-wrap md:flex-nowrap">
+            <div className="w-full sm:flex-1 min-w-[200px]">
               <label htmlFor="search" className="sr-only">Search</label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -382,7 +382,7 @@ export function VisitLogs() {
                 />
               </div>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48 shrink-0">
               <label htmlFor="dateFilter" className="sr-only">Filter by date</label>
               <input
                 id="dateFilter"
@@ -393,7 +393,7 @@ export function VisitLogs() {
                 title="Select a date to filter visits"
               />
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48 shrink-0">
               <label htmlFor="statusFilter" className="sr-only">Filter by status</label>
               <select
                 id="statusFilter"
@@ -414,7 +414,7 @@ export function VisitLogs() {
             <button
               onClick={handleExport}
               disabled={exporting || logs.length === 0}
-              className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-slate-700 dark:text-white dark:ring-slate-600 dark:hover:bg-slate-600 transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-slate-700 dark:text-white dark:ring-slate-600 dark:hover:bg-slate-600 transition-colors w-full sm:w-auto shrink-0"
             >
               {exporting ? (
                 <Circle className="h-4 w-4 animate-spin" />
@@ -427,20 +427,20 @@ export function VisitLogs() {
         </div>
 
         <div className="mt-4 flex flex-col">
-          <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300 dark:divide-slate-700">
+          <div className="-my-2 sm:-mx-6 lg:-mx-8">
+            <div className="inline-block w-full py-2 align-middle md:px-6 lg:px-8">
+              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg md:rounded-lg">
+                <table className="w-full divide-y divide-gray-300 dark:divide-slate-700">
                   <thead className="bg-gray-50 dark:bg-slate-800">
                     <tr>
                       <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">
                         Visitor
                       </th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Purpose</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Host</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Check In</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Check Out</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Duration</th>
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">Purpose</th>
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">Host</th>
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">Check In</th>
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">Check Out</th>
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">Duration</th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Status</th>
                       <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Actions</th>
                     </tr>
@@ -474,28 +474,42 @@ export function VisitLogs() {
                         const dynamicStatus = getDynamicStatus(log);
                         return (
                           <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                            <td className="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6 max-w-[200px]">
                               <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-gray-400" />
-                                {log.visitor_name}
+                                <User className="h-4 w-4 text-gray-400 shrink-0" />
+                                <span className="block truncate">{log.visitor_name}</span>
+                              </div>
+                              {/* Mobile only info */}
+                              <div className="block lg:hidden mt-2 space-y-1">
+                                <div className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                                  <span className="font-semibold">Host:</span> {log.host_name}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                                  <span className="font-semibold">Purpose:</span> {log.purpose}
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
+                                  <Clock className="h-3 w-3" />
+                                  {log.check_in ? formatIST(log.check_in) : "—"}
+                                  {log.check_out && ` - ${formatIST(log.check_out).split(' ')[1]}`}
+                                </div>
                               </div>
                             </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">{log.purpose}</td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">{log.host_name}</td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden lg:table-cell max-w-[150px] truncate">{log.purpose}</td>
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden lg:table-cell max-w-[150px] truncate">{log.host_name}</td>
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden lg:table-cell">
                               <div className="flex items-center gap-1.5">
                                 <Clock className="h-3.5 w-3.5 text-gray-400" />
                                 {log.check_in ? formatIST(log.check_in) : "—"}
                               </div>
                             </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden lg:table-cell">
                               <div className="flex items-center gap-1.5">
                                 <Clock className="h-3.5 w-3.5 text-gray-400" />
                                 {log.check_out ? formatIST(log.check_out) : "—"}
                               </div>
                             </td>
 
-                            <td className="whitespace-nowrap px-3 py-4 text-sm">
+                            <td className="whitespace-nowrap px-3 py-4 text-sm hidden lg:table-cell">
                               {log.check_in ? (
                                 <span className={`inline-flex items-center gap-1.5 font-medium ${dynamicStatus === "ongoing"
                                   ? "text-teal-600 dark:text-teal-400"
@@ -546,7 +560,7 @@ export function VisitLogs() {
                                 {dynamicStatus}
                               </span>
                             </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                            <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-300 whitespace-normal">
                               {/* Only guards can complete, and only after visitor has scanned QR (checked-in) */}
                               {isGuard && log.status === "checked-in" && (
                                 <button

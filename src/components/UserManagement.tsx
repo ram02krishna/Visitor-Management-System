@@ -185,10 +185,10 @@ export function UserManagement() {
         </div>
 
         <div className="mt-4 flex flex-col">
-          <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300 dark:divide-slate-700">
+          <div className="-my-2 sm:-mx-6 lg:-mx-8">
+            <div className="inline-block w-full py-2 align-middle md:px-6 lg:px-8">
+              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg md:rounded-lg">
+                <table className="w-full divide-y divide-gray-300 dark:divide-slate-700">
                   <thead className="bg-gray-50 dark:bg-slate-800">
                     <tr>
                       <th
@@ -197,13 +197,13 @@ export function UserManagement() {
                       >
                         Name
                       </th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">
                         Email
                       </th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">
                         Role
                       </th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">
                         Status
                       </th>
                       <th className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -235,16 +235,37 @@ export function UserManagement() {
                     ) : (
                       users.map((user) => (
                         <tr key={user.id}>
-                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
-                            {user.name}
-                          </td>
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-gray-400" />
-                              {user.email}
+                          <td className="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                            <span className="block truncate max-w-[200px]">{user.name}</span>
+                            {/* Mobile only info */}
+                            <div className="block lg:hidden mt-2 space-y-1.5">
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
+                                <Mail className="h-3 w-3" />
+                                <span className="truncate">{user.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 dark:from-purple-900/50 dark:to-indigo-900/50 dark:text-purple-200 border border-purple-200 dark:border-purple-800">
+                                  {user.role}
+                                </span>
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${user.active
+                                    ? "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 dark:from-emerald-900/50 dark:to-green-900/50 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800"
+                                    : "bg-gradient-to-r from-red-100 to-rose-100 text-red-800 dark:from-red-900/50 dark:to-rose-900/50 dark:text-red-200 border border-red-300 dark:border-red-800"
+                                    }`}
+                                >
+                                  <span className={`h-1 w-1 rounded-full ${user.active ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                                  {user.active ? "Active" : "Inactive"}
+                                </span>
+                              </div>
                             </div>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden lg:table-cell">
+                            <div className="flex items-center gap-2 max-w-[200px] overflow-hidden truncate">
+                              <Mail className="h-4 w-4 text-gray-400 shrink-0" />
+                              <span className="truncate">{user.email}</span>
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden lg:table-cell">
                             <div className="flex items-center gap-2">
                               <div className="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow-sm">
                                 <Shield className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
@@ -254,7 +275,7 @@ export function UserManagement() {
                               </span>
                             </div>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden lg:table-cell">
                             <span
                               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${user.active
                                 ? "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 dark:from-emerald-900/50 dark:to-green-900/50 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800"
@@ -268,7 +289,7 @@ export function UserManagement() {
                               {user.active ? "Active" : "Inactive"}
                             </span>
                           </td>
-                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 whitespace-normal">
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 className="group p-2 rounded-lg bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/30 dark:hover:bg-sky-900/50 transition-all duration-200"

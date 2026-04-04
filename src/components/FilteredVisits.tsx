@@ -39,7 +39,7 @@ export function FilteredVisits() {
     const [visits, setVisits] = useState<Visit[]>(() => {
         try { return JSON.parse(localStorage.getItem(`vms_filtered_visits_${status}`) ?? "null") ?? []; } catch { return []; }
     });
-    const [loading, setLoading] = useState(() => 
+    const [loading, setLoading] = useState(() =>
         localStorage.getItem(`vms_filtered_visits_${status}`) === null
     );
     const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
@@ -65,7 +65,7 @@ export function FilteredVisits() {
 
     const fetchVisits = useCallback(async () => {
         if (!status || !user) return;
-        
+
         if (!debouncedSearchTerm && visits.length > 0) {
 
         } else {
@@ -126,8 +126,6 @@ export function FilteredVisits() {
         setLoading(false);
     }, [status, user, debouncedSearchTerm, visits.length]);
 
-    // Force clear/rehydrate on status change so the page doesn't show previous status data for a split second
-
     useEffect(() => {
         try {
             const cached = JSON.parse(localStorage.getItem(`vms_filtered_visits_${status}`) ?? "null");
@@ -148,7 +146,7 @@ export function FilteredVisits() {
     }, [status]);
 
     useEffect(() => {
-        fetchVisits(); // eslint-disable-line react-hooks/set-state-in-effect
+        fetchVisits();
     }, [fetchVisits]);
 
     const handleCompleteVisit = useCallback(async (visitId: string) => {
@@ -197,19 +195,19 @@ export function FilteredVisits() {
                 }
             />
             <div className="mt-8 flex flex-col">
-                <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                    <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-2xl">
-                            <table className="min-w-full divide-y divide-gray-300 dark:divide-slate-700">
+                <div className="-my-2 sm:-mx-6 lg:-mx-8">
+                    <div className="inline-block w-full py-2 align-middle md:px-6 lg:px-8">
+                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg md:rounded-2xl">
+                            <table className="w-full divide-y divide-gray-300 dark:divide-slate-700">
                                 <thead className="bg-gray-50 dark:bg-slate-800">
                                     <tr>
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">
                                             Visitor
                                         </th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden md:table-cell">
                                             Purpose
                                         </th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden md:table-cell">
                                             Time
                                         </th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -244,24 +242,36 @@ export function FilteredVisits() {
                                     ) : (
                                         visits.map((visit) => (
                                             <tr key={visit.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                                                <td className="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6 max-w-[200px]">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xs">
+                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
                                                             {(visit.visitor?.name || "U")[0].toUpperCase()}
                                                         </div>
-                                                        {visit.visitor?.name || "Unknown"}
+                                                        <div className="min-w-0">
+                                                            <p className="truncate block">{visit.visitor?.name || "Unknown"}</p>
+                                                            {/* Mobile only info */}
+                                                            <div className="block md:hidden mt-0.5 text-xs text-gray-500 dark:text-slate-400 truncate">
+                                                                <span className="block truncate">{visit.purpose}</span>
+                                                                <span className="block mt-0.5 opacity-80">
+                                                                    {status === 'completed' && visit.check_out_time ? formatIST(visit.check_out_time) :
+                                                                    status === 'checked-in' && visit.check_in_time ? formatIST(visit.check_in_time) :
+                                                                    status === 'approved' && visit.approved_at ? formatIST(visit.approved_at) :
+                                                                    formatIST(visit.created_at)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden md:table-cell">
                                                     {visit.purpose}
                                                 </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300 hidden md:table-cell">
                                                     {status === 'completed' && visit.check_out_time ? formatIST(visit.check_out_time) :
                                                         status === 'checked-in' && visit.check_in_time ? formatIST(visit.check_in_time) :
                                                             status === 'approved' && visit.approved_at ? formatIST(visit.approved_at) :
                                                                 formatIST(visit.created_at)}
                                                 </td>
-                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <button
                                                         onClick={() => setSelectedVisit(visit)}
                                                         className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4 transition-colors"
