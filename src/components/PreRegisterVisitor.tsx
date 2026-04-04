@@ -8,8 +8,9 @@ import { toast } from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 import { v4 as uuidv4 } from "uuid";
-import { Camera, UserPlus, Calendar, Mail, Phone, Building2, FileText, User } from "lucide-react";
+import { Camera, UserPlus, CalendarPlus, Calendar, Mail, Phone, Building2, FileText, User } from "lucide-react";
 import { BackButton } from "./BackButton";
+import { PageHeader } from "./PageHeader";
 
 type PreRegisterFormData = {
   name: string;
@@ -186,20 +187,12 @@ export function PreRegisterVisitor() {
       <BackButton />
 
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
-              <UserPlus className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Pre-register Visitor
-            </h1>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-slate-400 ml-14">
-            Pre-register a visitor for approval. They'll receive a QR code once a guard or admin
-            approves their visit.
-          </p>
-        </div>
+        <PageHeader
+          icon={CalendarPlus}
+          gradient="from-purple-500 to-indigo-600"
+          title="Pre-register Visitor"
+          description="Pre-register a visitor for approval. They'll receive a QR code once a guard or admin approves their visit."
+        />
 
         <div className="bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800">
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 sm:p-8">

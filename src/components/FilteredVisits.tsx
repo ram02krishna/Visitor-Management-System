@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
-import { Eye, CheckCircle, Inbox, Search } from "lucide-react";
+import { Eye, CheckCircle, Inbox, Search, CalendarCheck2, Hourglass, Trophy, ShieldX, Activity } from "lucide-react";
 import { VisitDetails } from "./VisitDetails";
 import type { Visit as DbVisit } from "../lib/database.types";
 import log from "../lib/logger";
 import { useAuthStore } from "../store/auth";
 import { BackButton } from "./BackButton";
+import { PageHeader } from "./PageHeader";
+import { getISTTodayRange, formatIST } from "../lib/dateIST";
 
 type Visit = DbVisit & {
     created_at: string;
@@ -35,8 +37,12 @@ export function FilteredVisits() {
     const { user } = useAuthStore();
 
 
-    const [visits, setVisits] = useState<Visit[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [visits, setVisits] = useState<Visit[]>(() => {
+        try { return JSON.parse(localStorage.getItem(`vms_filtered_visits_${status}`) ?? "null") ?? []; } catch { return []; }
+    });
+    const [loading, setLoading] = useState(() => 
+        localStorage.getItem(`vms_filtered_visits_${status}`) === null
+    );
     const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -44,24 +50,28 @@ export function FilteredVisits() {
     const getStatusDetails = () => {
         switch (status) {
             case "checked-in":
-                return { title: "Ongoing Visits", desc: "A list of all visitors currently on the premises.", showComplete: true };
+                return { title: "Ongoing Visits", desc: "A list of all visitors currently on the premises.", showComplete: true, icon: Activity, gradient: "from-sky-500 to-cyan-600" };
             case "approved":
-                return { title: "Approved Visits", desc: "A list of visits approved for today.", showComplete: false };
+                return { title: "Approved Visits", desc: "A list of visits approved for today.", showComplete: false, icon: CalendarCheck2, gradient: "from-emerald-500 to-green-600" };
             case "completed":
-                return { title: "Completed Visits", desc: "A list of all completed visits for today.", showComplete: false };
+                return { title: "Completed Visits", desc: "A list of all completed visits for today.", showComplete: false, icon: Trophy, gradient: "from-violet-500 to-purple-600" };
             case "cancelled_denied":
-                return { title: "Cancelled/Denied Visits", desc: "A list of cancelled or denied visits.", showComplete: false };
+                return { title: "Cancelled/Denied Visits", desc: "A list of cancelled or denied visits.", showComplete: false, icon: ShieldX, gradient: "from-rose-500 to-red-600" };
             default:
-                return { title: `${status} Visits`, desc: "A list of visits.", showComplete: false };
+                return { title: `${status} Visits`, desc: "A list of visits.", showComplete: false, icon: Inbox, gradient: "from-sky-500 to-blue-600" };
         }
     };
 
-    const { title, desc, showComplete } = getStatusDetails();
+    const { title, desc, showComplete, icon: StatusIcon, gradient } = getStatusDetails();
 
     const fetchVisits = useCallback(async () => {
         if (!status || !user) return;
         
-        setLoading(true);
+        if (!debouncedSearchTerm && visits.length > 0) {
+            // Background refresh - don't show loading spinner
+        } else {
+            setLoading(true);
+        }
         let query = supabase.from("visits").select(`*, visitor:visitors(*)`);
 
         // Status filtering
@@ -82,20 +92,16 @@ export function FilteredVisits() {
             query = query.eq("host_id", user.id);
         }
 
-        // specific date filters to align with dashboard numbers
-        if (status !== "pending" && status !== "checked-in" && status !== "cancelled_denied") {
-            const localToday = new Date();
-            localToday.setHours(0, 0, 0, 0);
-            const utcTodayStart = new Date(localToday.getTime() - localToday.getTimezoneOffset() * 60000).toISOString();
-            const localTomorrow = new Date(localToday);
-            localTomorrow.setDate(localToday.getDate() + 1);
-            const utcTomorrowStart = new Date(localTomorrow.getTime() - localTomorrow.getTimezoneOffset() * 60000).toISOString();
+        // specific date filters to align with dashboard numbers — all statuses show today only
+        const [utcTodayStart, utcTomorrowStart] = getISTTodayRange();
 
-            if (status === "approved") {
-                query = query.gte("approved_at", utcTodayStart).lt("approved_at", utcTomorrowStart);
-            } else if (status === "completed") {
-                query = query.gte("check_out_time", utcTodayStart).lt("check_out_time", utcTomorrowStart);
-            }
+        if (status === "approved") {
+            query = query.gte("approved_at", utcTodayStart).lt("approved_at", utcTomorrowStart);
+        } else if (status === "completed") {
+            query = query.gte("check_out_time", utcTodayStart).lt("check_out_time", utcTomorrowStart);
+        } else if (status === "cancelled_denied") {
+            // filter cancelled/denied by when the visit was created (today)
+            query = query.gte("created_at", utcTodayStart).lt("created_at", utcTomorrowStart);
         }
 
         // Ordering
@@ -116,9 +122,29 @@ export function FilteredVisits() {
             toast.error("Failed to fetch visits.");
         } else {
             setVisits(data as Visit[]);
+            if (!debouncedSearchTerm) {
+                try { localStorage.setItem(`vms_filtered_visits_${status}`, JSON.stringify(data)); } catch { /* ignore quota */ }
+            }
         }
         setLoading(false);
     }, [status, user, debouncedSearchTerm]);
+
+    // Force clear/rehydrate on status change so the page doesn't show previous status data for a split second
+    useEffect(() => {
+        try {
+            const cached = JSON.parse(localStorage.getItem(`vms_filtered_visits_${status}`) ?? "null");
+            if (cached) {
+                setVisits(cached);
+                setLoading(false);
+            } else {
+                setVisits([]);
+                setLoading(true);
+            }
+        } catch {
+            setVisits([]);
+            setLoading(true);
+        }
+    }, [status]);
 
     useEffect(() => {
         fetchVisits(); // eslint-disable-line react-hooks/set-state-in-effect
@@ -149,15 +175,12 @@ export function FilteredVisits() {
         <div className="px-4 sm:px-6 lg:px-8 animate-fadeIn">
             <BackButton />
 
-            <div className="sm:flex sm:items-center justify-between">
-                <div className="sm:flex-auto">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{title}</h1>
-                    <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">
-                        {desc}
-                    </p>
-                </div>
-
-                <div className="mt-4 sm:mt-0 w-full sm:w-auto sm:ml-6 flex items-center">
+            <PageHeader
+                icon={StatusIcon}
+                gradient={gradient}
+                title={title}
+                description={desc}
+                right={
                     <div className="relative w-full sm:w-80">
                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <Search className="h-5 w-5 text-gray-400" />
@@ -170,8 +193,8 @@ export function FilteredVisits() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                </div>
-            </div>
+                }
+            />
             <div className="mt-8 flex flex-col">
                 <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
@@ -232,10 +255,10 @@ export function FilteredVisits() {
                                                     {visit.purpose}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
-                                                    {status === 'completed' && visit.check_out_time ? new Date(visit.check_out_time).toLocaleString() :
-                                                        status === 'checked-in' && visit.check_in_time ? new Date(visit.check_in_time).toLocaleString() :
-                                                            status === 'approved' && visit.approved_at ? new Date(visit.approved_at).toLocaleString() :
-                                                                new Date(visit.created_at).toLocaleString()}
+                                                    {status === 'completed' && visit.check_out_time ? formatIST(visit.check_out_time) :
+                                                        status === 'checked-in' && visit.check_in_time ? formatIST(visit.check_in_time) :
+                                                            status === 'approved' && visit.approved_at ? formatIST(visit.approved_at) :
+                                                                formatIST(visit.created_at)}
                                                 </td>
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <button

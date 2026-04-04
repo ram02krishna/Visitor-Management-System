@@ -24,6 +24,9 @@ import {
 } from "@/components/ui/pagination";
 import { toast } from "../../hooks/use-toast";
 import Papa from "papaparse";
+import { formatIST } from "../lib/dateIST";
+import { ScrollText } from "lucide-react";
+import { PageHeader } from "./PageHeader";
 
 // A custom hook for debouncing a value
 const useDebounce = <T,>(value: T, delay: number): T => {
@@ -276,10 +279,10 @@ export function VisitLogs() {
         "Visitor Name": visitorMap[v.visitor_id] ?? "Unknown",
         "Purpose": v.purpose ?? "",
         "Host Name": hostMap[v.host_id] ?? "—",
-        "Check In": v.check_in_time ? new Date(v.check_in_time).toLocaleString() : "—",
-        "Check Out": v.check_out_time ? new Date(v.check_out_time).toLocaleString() : "—",
+        "Check In": v.check_in_time ? formatIST(v.check_in_time) : "—",
+        "Check Out": v.check_out_time ? formatIST(v.check_out_time) : "—",
         "Status": v.status,
-        "Created At": new Date(v.created_at).toLocaleString(),
+        "Created At": formatIST(v.created_at),
       }));
 
       const csv = Papa.unparse(exportData);
@@ -357,19 +360,12 @@ export function VisitLogs() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 pb-12">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg">
-              <ClipboardList className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visit Logs</h1>
-          </div>
-          <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">
-            A complete list of all campus visits including check-in and check-out times.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={ScrollText}
+        gradient="from-emerald-500 to-green-600"
+        title="Visit Logs"
+        description="A complete list of all campus visits in the system."
+      />
 
       <div className="mt-8">
         <div className="flex flex-1 items-center justify-between mb-4">
@@ -493,13 +489,13 @@ export function VisitLogs() {
                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
                               <div className="flex items-center gap-1.5">
                                 <Clock className="h-3.5 w-3.5 text-gray-400" />
-                                {log.check_in ? new Date(log.check_in).toLocaleString() : "—"}
+                                {log.check_in ? formatIST(log.check_in) : "—"}
                               </div>
                             </td>
                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
                               <div className="flex items-center gap-1.5">
                                 <Clock className="h-3.5 w-3.5 text-gray-400" />
-                                {log.check_out ? new Date(log.check_out).toLocaleString() : "—"}
+                                {log.check_out ? formatIST(log.check_out) : "—"}
                               </div>
                             </td>
                             {/* Duration column */}

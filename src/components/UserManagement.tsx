@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { UserPlus, Edit3, Trash2, Search, Mail, Shield, Users as UsersIcon, Inbox } from "lucide-react";
+import { PageHeader } from "./PageHeader";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
 import type { Database } from "../lib/database.types";
@@ -35,9 +36,13 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState<Host[]>([]);
+  const [users, setUsers] = useState<Host[]>(() => {
+    try { return JSON.parse(localStorage.getItem("vms_users") ?? "null") ?? []; } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() => 
+    localStorage.getItem("vms_users") === null
+  );
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -64,7 +69,11 @@ export function UserManagement() {
   }
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
+    if (!debouncedSearchTerm && users.length > 0) {
+      // background refresh
+    } else {
+      setLoading(true);
+    }
     let query = supabase.from("hosts").select("*");
 
     if (debouncedSearchTerm) {
@@ -78,6 +87,9 @@ export function UserManagement() {
       console.error(error);
     } else {
       setUsers(data);
+      if (!debouncedSearchTerm) {
+        try { localStorage.setItem("vms_users", JSON.stringify(data)); } catch { /* ignore quota */ }
+      }
     }
     setLoading(false);
   }, [debouncedSearchTerm]);
@@ -133,19 +145,12 @@ export function UserManagement() {
     <div className="px-4 sm:px-6 lg:px-8 animate-fadeIn">
       <BackButton />
 
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl shadow-lg">
-              <UsersIcon className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Users</h1>
-          </div>
-          <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">
-            Manage system users and their roles
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+      <PageHeader
+        icon={UsersIcon}
+        gradient="from-sky-500 to-blue-600"
+        title="Users"
+        description="Manage system users and their roles."
+        right={
           <button
             type="button"
             onClick={handleToggleModal}
@@ -154,8 +159,8 @@ export function UserManagement() {
             <UserPlus className="h-4 w-4" strokeWidth={2.5} />
             Add User
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="mt-8">
         <div className="flex flex-1 items-center justify-between mb-4">

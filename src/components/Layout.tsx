@@ -127,7 +127,10 @@ export function Layout() {
             )}
 
             {accessibleNavLinks.map((link) => {
-              const isActive = location.pathname === link.href;
+              const isDashboard = link.href === "/app/dashboard";
+              const isDashboardChild = isDashboard && (location.pathname.startsWith("/app/visits") || location.pathname === "/app/approval" || location.pathname === "/app/users");
+              const isActive = location.pathname === link.href || isDashboardChild;
+
               return (
                 <Link
                   key={link.href}
@@ -176,7 +179,10 @@ export function Layout() {
             Menu
           </p>
           {accessibleNavLinks.map((link) => {
-            const isActive = location.pathname === link.href;
+            const isDashboard = link.href === "/app/dashboard";
+            const isDashboardChild = isDashboard && (location.pathname.startsWith("/app/visits") || location.pathname === "/app/approval" || location.pathname === "/app/users");
+            const isActive = location.pathname === link.href || isDashboardChild;
+
             return (
               <Link
                 key={link.href}

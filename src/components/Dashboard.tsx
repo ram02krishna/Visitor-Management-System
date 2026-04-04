@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
-import { AlertCircle, CheckCircle2, XCircle, Hourglass, LogIn, ArrowRight, Users } from "lucide-react";
+import { AlertCircle, CheckCircle2, XCircle, Hourglass, LogIn, ArrowRight, Users, CalendarDays, RefreshCw } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useVisitStats } from "../hooks/useVisitStats";
 import { StatsGrid } from "./StatsGrid";
 import { formatDistanceToNow } from "date-fns";
+import { formatISTTime } from "../lib/dateIST";
 
 function getInitials(name: string) {
   if (!name) return "US";
@@ -85,10 +86,22 @@ export function Dashboard() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const connectionTestedRef = useRef(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [recentVisits, setRecentVisits] = useState<RecentVisit[]>([]);
-  const [recentLoading, setRecentLoading] = useState(true);
-  const [activeVisitors, setActiveVisitors] = useState<ActiveVisitor[]>([]);
-  const [activeLoading, setActiveLoading] = useState(true);
+
+  // ── Stale-while-revalidate for recent visits ────────────────────────────
+  const [recentVisits, setRecentVisits] = useState<RecentVisit[]>(() => {
+    try { return JSON.parse(localStorage.getItem("vms_recent_visits") ?? "null") ?? []; } catch { return []; }
+  });
+  const [recentLoading, setRecentLoading] = useState(() =>
+    localStorage.getItem("vms_recent_visits") === null
+  );
+
+  // ── Stale-while-revalidate for active visitors ──────────────────────────
+  const [activeVisitors, setActiveVisitors] = useState<ActiveVisitor[]>(() => {
+    try { return JSON.parse(localStorage.getItem("vms_active_visitors") ?? "null") ?? []; } catch { return []; }
+  });
+  const [activeLoading, setActiveLoading] = useState(() =>
+    localStorage.getItem("vms_active_visitors") === null
+  );
 
   const isGuardOrAdmin = user?.role === "admin" || user?.role === "guard";
 
@@ -112,13 +125,14 @@ export function Dashboard() {
         .select("id, purpose, status, created_at, visitors(name, email)")
         .order("created_at", { ascending: false });
 
-      // Role-based filtering: hosts only see their own visits
       if (user?.role === "host") {
         query = query.eq("host_id", user.id);
       }
 
       const { data } = await query.limit(5);
-      setRecentVisits((data as unknown as RecentVisit[]) || []);
+      const visits = (data as unknown as RecentVisit[]) || [];
+      setRecentVisits(visits);
+      try { localStorage.setItem("vms_recent_visits", JSON.stringify(visits)); } catch { /* quota */ }
     } catch {
       // silently ignore
     } finally {
@@ -127,12 +141,11 @@ export function Dashboard() {
   }, [user?.role, user?.id]);
 
   const fetchActiveVisitors = useCallback(async () => {
-    // Allow guards, admins, and hosts to see active visitors
-    if (user?.role !== "admin" && user?.role !== "guard" && user?.role !== "host") { 
-      setActiveLoading(false); 
-      return; 
+    if (user?.role !== "admin" && user?.role !== "guard" && user?.role !== "host") {
+      setActiveLoading(false);
+      return;
     }
-    
+
     try {
       let query = supabase
         .from("visits")
@@ -140,13 +153,14 @@ export function Dashboard() {
         .eq("status", "checked-in")
         .order("check_in_time", { ascending: true });
 
-      // Role-based filtering: hosts only see their own ongoing visits
       if (user?.role === "host") {
         query = query.eq("host_id", user.id);
       }
 
       const { data } = await query;
-      setActiveVisitors((data as unknown as ActiveVisitor[]) || []);
+      const visitors = (data as unknown as ActiveVisitor[]) || [];
+      setActiveVisitors(visitors);
+      try { localStorage.setItem("vms_active_visitors", JSON.stringify(visitors)); } catch { /* quota */ }
     } catch {
       // silently ignore
     } finally {
@@ -241,20 +255,35 @@ export function Dashboard() {
           <div className="hidden sm:flex w-[72px] h-[72px] rounded-2xl bg-[#3b82f6] shadow-[0_8px_30px_rgb(59,130,246,0.3)] text-white items-center justify-center text-3xl font-extrabold border-[3px] border-white dark:border-slate-800 shrink-0">
             {getInitials(user?.name || "")}
           </div>
-          <div className="flex flex-col justify-center">
-            <h1 className="text-4xl sm:text-[42px] font-extrabold text-[#1e293b] dark:text-white tracking-tight leading-tight">
-              Welcome back, <span className="text-[#3b82f6]">{user?.name?.split(" ")[0] || "Guest"}</span>
-            </h1>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-white dark:border-slate-950"></span>
-              </span>
-              <p className="text-sm font-medium text-slate-500">
-                Live updates • Last sync: {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
+            <div className="flex flex-col justify-center">
+              <h1 className="text-4xl sm:text-[42px] font-extrabold text-[#1e293b] dark:text-white tracking-tight leading-tight">
+                Welcome back, <span className="text-[#3b82f6]">{user?.name?.split(" ")[0] || "Guest"}</span>
+              </h1>
+              <div className="flex flex-wrap items-center gap-3 mt-2">
+                {/* Live sync indicator */}
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border-2 border-white dark:border-slate-950"></span>
+                  </span>
+                  <p className="text-sm font-medium text-slate-500">
+                    Live updates
+                  </p>
+                </div>
+                <span className="text-slate-300 dark:text-slate-700">|</span>
+                {/* Last sync */}
+                <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Last sync: {formatISTTime(lastRefresh)}
+                </div>
+                <span className="text-slate-300 dark:text-slate-700">|</span>
+                {/* Today's date in IST */}
+                <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  {new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "long", year: "numeric" })}
+                </div>
+              </div>
             </div>
-          </div>
         </div>
       </div>
 

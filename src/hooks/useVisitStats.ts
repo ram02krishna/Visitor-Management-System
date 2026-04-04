@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import { Users, UserCheck, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { UsersRound, CalendarCheck2, Hourglass, Trophy, ShieldX } from "lucide-react";
 import { User } from "../store/auth";
+import { getISTTodayRange } from "../lib/dateIST";
 
 export type StatItem = {
   name: string;
@@ -20,20 +21,88 @@ const VISIT_STATUS = {
   DENIED: "denied",
 };
 
+// ─── Icon registry for localStorage serialisation ───────────────────────────
+// Icons are functions and can't be JSON-stringified, so we store a key instead.
+const ICON_MAP: Record<string, React.ElementType> = {
+  UsersRound,
+  CalendarCheck2,
+  Hourglass,
+  Trophy,
+  ShieldX,
+};
+const ICON_KEY_MAP = new Map<React.ElementType, string>(
+  Object.entries(ICON_MAP).map(([k, v]) => [v, k])
+);
+
+type SerializedStat = Omit<StatItem, "icon"> & { iconKey: string };
+
+function serializeStats(stats: StatItem[]): SerializedStat[] {
+  return stats.map(({ icon, ...rest }) => ({
+    ...rest,
+    iconKey: ICON_KEY_MAP.get(icon) ?? "Hourglass",
+  }));
+}
+
+function deserializeStats(raw: SerializedStat[]): StatItem[] {
+  return raw.map(({ iconKey, ...rest }) => ({
+    ...rest,
+    icon: ICON_MAP[iconKey] ?? Hourglass,
+  }));
+}
+
+function cacheKey(role: string) {
+  return `vms_stats_cache_${role}`;
+}
+
+function readCache(role: string): StatItem[] | null {
+  try {
+    const raw = localStorage.getItem(cacheKey(role));
+    if (!raw) return null;
+    const parsed: SerializedStat[] = JSON.parse(raw);
+    return deserializeStats(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(role: string, stats: StatItem[]) {
+  try {
+    localStorage.setItem(cacheKey(role), JSON.stringify(serializeStats(stats)));
+  } catch {
+    // localStorage quota exceeded or unavailable — silently ignore
+  }
+}
+
+// ─── Hook ────────────────────────────────────────────────────────────────────
 export const useVisitStats = (user: User | null) => {
-  const [stats, setStats] = useState<StatItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Immediately hydrate from cache so cards are visible on first render
+  const [stats, setStats] = useState<StatItem[]>(() => {
+    if (!user?.role) return [];
+    return readCache(user.role) ?? [];
+  });
+
+  // loading=true only when there is NO cached data yet (first-ever load)
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (!user?.role) return true;
+    return readCache(user.role) === null;
+  });
+
   const [error, setError] = useState<string | null>(null);
 
   const fetchStats = useCallback(async () => {
     if (!user?.role) return;
 
-    setLoading(true);
+    // ── Stale-while-revalidate ───────────────────────────────────────────
+    // If we already have cached data show it instantly (loading stays false).
+    // Only set loading=true when there is truly nothing to show.
+    const cached = readCache(user.role);
+    if (!cached) setLoading(true);
     setError(null);
 
     try {
       let statsData: StatItem[] = [];
       const role = user.role;
+      const [todayStart, todayEnd] = getISTTodayRange();
 
       switch (role) {
         case "admin": {
@@ -52,26 +121,34 @@ export const useVisitStats = (user: User | null) => {
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.APPROVED),
+              .eq("status", VISIT_STATUS.APPROVED)
+              .gte("approved_at", todayStart)
+              .lt("approved_at", todayEnd),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.PENDING),
+              .eq("status", VISIT_STATUS.PENDING)
+              .gte("created_at", todayStart)
+              .lt("created_at", todayEnd),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.COMPLETED),
+              .eq("status", VISIT_STATUS.COMPLETED)
+              .gte("check_out_time", todayStart)
+              .lt("check_out_time", todayEnd),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]),
+              .in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED])
+              .gte("created_at", todayStart)
+              .lt("created_at", todayEnd),
           ]);
 
           statsData = [
             {
               name: "Total Users",
               value: totalUsers ?? 0,
-              icon: Users,
+              icon: UsersRound,
               color: "text-blue-500",
               bgColor: "bg-blue-50",
               status: "total_users",
@@ -79,7 +156,7 @@ export const useVisitStats = (user: User | null) => {
             {
               name: "Approved Visits",
               value: approvedToday ?? 0,
-              icon: UserCheck,
+              icon: CalendarCheck2,
               color: "text-green-500",
               bgColor: "bg-green-50",
               status: VISIT_STATUS.APPROVED,
@@ -87,7 +164,7 @@ export const useVisitStats = (user: User | null) => {
             {
               name: "Pending Approvals",
               value: newRequestsToday ?? 0,
-              icon: AlertCircle,
+              icon: Hourglass,
               color: "text-yellow-500",
               bgColor: "bg-yellow-50",
               status: VISIT_STATUS.PENDING,
@@ -95,7 +172,7 @@ export const useVisitStats = (user: User | null) => {
             {
               name: "Completed Visits",
               value: completedToday ?? 0,
-              icon: CheckCircle,
+              icon: Trophy,
               color: "text-indigo-500",
               bgColor: "bg-indigo-50",
               status: VISIT_STATUS.COMPLETED,
@@ -103,7 +180,7 @@ export const useVisitStats = (user: User | null) => {
             {
               name: "Cancelled/Denied Visits",
               value: cancelledAndDenied ?? 0,
-              icon: XCircle,
+              icon: ShieldX,
               color: "text-red-500",
               bgColor: "bg-red-50",
               status: "cancelled_denied",
@@ -117,19 +194,27 @@ export const useVisitStats = (user: User | null) => {
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.APPROVED),
+              .eq("status", VISIT_STATUS.APPROVED)
+              .gte("approved_at", todayStart)
+              .lt("approved_at", todayEnd),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.PENDING),
+              .eq("status", VISIT_STATUS.PENDING)
+              .gte("created_at", todayStart)
+              .lt("created_at", todayEnd),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .eq("status", VISIT_STATUS.COMPLETED),
+              .eq("status", VISIT_STATUS.COMPLETED)
+              .gte("check_out_time", todayStart)
+              .lt("check_out_time", todayEnd),
             supabase
               .from("visits")
               .select("*", { count: "exact", head: true })
-              .in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED]),
+              .in("status", [VISIT_STATUS.CANCELLED, VISIT_STATUS.DENIED])
+              .gte("created_at", todayStart)
+              .lt("created_at", todayEnd),
           ];
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -149,7 +234,7 @@ export const useVisitStats = (user: User | null) => {
             {
               name: "Approved Visits",
               value: approvedToday ?? 0,
-              icon: UserCheck,
+              icon: CalendarCheck2,
               color: "text-green-500",
               bgColor: "bg-green-50",
               status: VISIT_STATUS.APPROVED,
@@ -157,7 +242,7 @@ export const useVisitStats = (user: User | null) => {
             {
               name: "Pending Approvals",
               value: newRequestsToday ?? 0,
-              icon: AlertCircle,
+              icon: Hourglass,
               color: "text-yellow-500",
               bgColor: "bg-yellow-50",
               status: VISIT_STATUS.PENDING,
@@ -165,7 +250,7 @@ export const useVisitStats = (user: User | null) => {
             {
               name: "Completed Visits",
               value: completedToday ?? 0,
-              icon: CheckCircle,
+              icon: Trophy,
               color: "text-indigo-500",
               bgColor: "bg-indigo-50",
               status: VISIT_STATUS.COMPLETED,
@@ -173,7 +258,7 @@ export const useVisitStats = (user: User | null) => {
             {
               name: "Cancelled/Denied Visits",
               value: cancelledAndDenied ?? 0,
-              icon: XCircle,
+              icon: ShieldX,
               color: "text-red-500",
               bgColor: "bg-red-50",
               status: "cancelled_denied",
@@ -185,7 +270,9 @@ export const useVisitStats = (user: User | null) => {
           statsData = [];
       }
 
+      // Update UI + persist to cache
       setStats(statsData);
+      writeCache(role, statsData);
     } catch (err: unknown) {
       let errorMessage = "An unknown error occurred while fetching stats.";
       if (err instanceof Error) {

@@ -1,46 +1,46 @@
-import { LayoutDashboard, ClipboardList, User, TrendingUp, Camera, Users, UserPlus } from "lucide-react";
+import { Home, ScrollText, UserRoundPlus, ScanLine, CalendarPlus, UploadCloud, AreaChart } from "lucide-react";
 
 export const navLinks = [
   {
     href: "/app/dashboard",
     label: "Dashboard",
-    icon: LayoutDashboard,
+    icon: Home,
     roles: ["admin", "host", "guard"],
   },
   {
     href: "/app/logs",
     label: "Logs",
-    icon: ClipboardList,
+    icon: ScrollText,
     roles: ["admin", "host", "guard"],
   },
   {
     href: "/app/register-visitor",
     label: "Register Visitor",
-    icon: UserPlus,
+    icon: UserRoundPlus,
     roles: ["admin", "guard"],
   },
   {
     href: "/app/scan",
     label: "Scan QR Code",
-    icon: Camera,
+    icon: ScanLine,
     roles: ["admin", "guard"],
   },
   {
     href: "/app/pre-register-visitor",
     label: "Pre-register",
-    icon: User,
+    icon: CalendarPlus,
     roles: ["admin", "host"],
   },
   {
     href: "/app/bulk-visitor-upload",
     label: "Bulk Upload",
-    icon: Users,
+    icon: UploadCloud,
     roles: ["admin", "host", "guard"],
   },
   {
     href: "/app/analytics",
     label: "Analytics",
-    icon: TrendingUp,
+    icon: AreaChart,
     roles: ["admin"],
   },
 ];

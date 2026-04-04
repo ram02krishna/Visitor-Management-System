@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Camera, UserCheck } from "lucide-react";
+import { Camera, UserRoundPlus } from "lucide-react";
+import { PageHeader } from "./PageHeader";
 import { toast } from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import QRCode from "qrcode";
@@ -315,21 +316,12 @@ export function VisitorRegistration() {
     <div className="px-4 sm:px-6 lg:px-8 animate-fadeIn">
       <BackButton />
 
-      <div className="sm:flex sm:items-center mb-8">
-        <div className="sm:flex-auto">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl shadow-lg">
-              <UserCheck className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Register New Visitor
-            </h1>
-          </div>
-          <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">
-            Please fill in the visitor's details and take their photo for security purposes.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={UserRoundPlus}
+        gradient="from-cyan-500 to-blue-600"
+        title="Register New Visitor"
+        description="Please fill in the visitor's details and take their photo for security purposes."
+      />
 
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -540,7 +532,7 @@ export function VisitorRegistration() {
                 disabled={isSubmitting || !userId}
                 className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:shadow-cyan-500/40 hover:from-cyan-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <UserCheck className="h-4 w-4" strokeWidth={2.5} />
+                <UserRoundPlus className="h-4 w-4" strokeWidth={2.5} />
                 {isSubmitting ? "Registering..." : "Register Visitor"}
               </button>
             </div>

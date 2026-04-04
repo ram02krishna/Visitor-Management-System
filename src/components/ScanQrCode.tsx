@@ -7,6 +7,7 @@ import { toast } from "../../hooks/use-toast";
 import {
   CheckCircle,
   Camera,
+  ScanLine,
   Clock,
   User,
   Printer,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BackButton } from "./BackButton";
+import { PageHeader } from "./PageHeader";
 import type { Database } from "../lib/database.types";
 
 type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
@@ -346,16 +348,11 @@ export function ScanQrCode() {
       <div className="px-4 sm:px-6 lg:px-8">
         <BackButton />
 
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl shadow-lg">
-                <Camera className="h-6 w-6 text-white" strokeWidth={2.5} />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scan QR Code</h1>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          icon={ScanLine}
+          gradient="from-sky-500 to-blue-600"
+          title="Scan QR Code"
+        />
 
         <div className="mt-8 max-w-2xl mx-auto">
           <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
@@ -383,19 +380,12 @@ export function ScanQrCode() {
     <div className="px-4 sm:px-6 lg:px-8">
       <BackButton />
 
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl shadow-lg">
-              <Camera className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Scan QR Code</h1>
-          </div>
-          <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">
-            Scan a visitor's QR code to check them in.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={ScanLine}
+        gradient="from-sky-500 to-blue-600"
+        title="Scan QR Code"
+        description="Scan a visitor's QR code to check them in."
+      />
 
       <div className="mt-8 max-w-2xl mx-auto">
         {!visit && (

@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { X, Calendar, Clock, User, CheckCircle2 } from "lucide-react";
 import { Visit } from "../lib/database.types";
+import { formatIST } from "../lib/dateIST";
 
 interface VisitDetailsProps {
   visit: Visit;
@@ -10,9 +11,7 @@ interface VisitDetailsProps {
 export function VisitDetails({ visit, onClose }: VisitDetailsProps) {
   // Safe date formatter that prevents the "1/1/1970" issue
   const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? "N/A" : date.toLocaleString();
+    return formatIST(dateString);
   };
 
   return createPortal(

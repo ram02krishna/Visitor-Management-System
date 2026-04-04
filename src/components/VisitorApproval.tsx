@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
-import { CheckCircle, XCircle, Search, ShieldAlert, Calendar, FileText, X, History, CheckCircle2, Hourglass, LogIn } from "lucide-react";
+import { CheckCircle, XCircle, Search, ShieldAlert, Calendar, FileText, X, History, CheckCircle2, Hourglass, LogIn, Inbox } from "lucide-react";
 import { BackButton } from "./BackButton";
+import { PageHeader } from "./PageHeader";
 import emailjs from "@emailjs/browser";
 import { toast } from "../../hooks/use-toast";
 import { supabase } from "../lib/supabase";
@@ -11,6 +12,7 @@ import { useAuthStore } from "../store/auth";
 import { useDebounce } from "../../hooks/use-debounce";
 import type { Database } from "../lib/database.types";
 import QRCode from "qrcode";
+import { formatIST } from "../lib/dateIST";
 
 type VisitorApprovalVisit = Database["public"]["Tables"]["visits"]["Row"] & {
   visitors: Database["public"]["Tables"]["visitors"]["Row"];
@@ -136,8 +138,12 @@ function VisitorHistoryDrawer({ visitor, visitorId, onClose }: {
 
 export function VisitorApproval() {
   const user = useAuthStore((state) => state.user);
-  const [visits, setVisits] = useState<VisitorApprovalVisit[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [visits, setVisits] = useState<VisitorApprovalVisit[]>(() => {
+    try { return JSON.parse(localStorage.getItem("vms_visitor_approval") ?? "null") ?? []; } catch { return []; }
+  });
+  const [loading, setLoading] = useState(() =>
+    localStorage.getItem("vms_visitor_approval") === null
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [drawerVisitor, setDrawerVisitor] = useState<{ visitor: Database["public"]["Tables"]["visitors"]["Row"]; visitorId: string } | null>(null);
@@ -146,7 +152,11 @@ export function VisitorApproval() {
   const canView = user?.role === "admin" || user?.role === "guard" || user?.role === "host";
 
   const loadVisits = useCallback(async () => {
-    setLoading(true);
+    if (!debouncedSearchTerm && visits.length > 0) {
+      // Background refresh - don't show loading skeleton
+    } else {
+      setLoading(true);
+    }
     try {
       let query = supabase
         .from("visits")
@@ -175,6 +185,9 @@ export function VisitorApproval() {
       }
 
       setVisits(data as VisitorApprovalVisit[]);
+      if (!debouncedSearchTerm) {
+        try { localStorage.setItem("vms_visitor_approval", JSON.stringify(data)); } catch { /* ignore quota */ }
+      }
     } catch {
       toast.error("Failed to load pending visits");
     } finally {
@@ -239,7 +252,7 @@ export function VisitorApproval() {
                   visit_id: updatedData.id,
                   visit_purpose: updatedData.purpose,
                   host_name: updatedData.host_id ? "Your Host" : "Not specified",
-                  valid_until: new Date(updatedData.valid_until).toLocaleString(),
+                  valid_until: formatIST(updatedData.valid_until),
                 },
                 emailPublicKey
               );
@@ -308,32 +321,23 @@ export function VisitorApproval() {
         />
       )}
 
-      {/* ── Header ── */}
-      <div className="sm:flex sm:items-center justify-between mb-8 animate-fadeInUp">
-        <div className="sm:flex-auto">
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {user?.role === "host" ? "My Pending Approvals" : "Pending Approvals"}
-                </h1>
-                {!loading && visits.length > 0 && (
-                  <span className="inline-flex items-center justify-center px-3 py-1 text-sm font-bold leading-none text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-400 rounded-full">
-                    {visits.length} {visits.length === 1 ? "request" : "requests"}
-                  </span>
-                )}
-              </div>
-              <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
-                {user?.role === "host"
-                  ? "Review and approve visitor requests assigned specifically to you."
-                  : "Review and manage incoming visitor requests needing approval."}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="mt-4 sm:mt-0 w-full sm:w-auto sm:ml-6">
+      <PageHeader
+        icon={Hourglass}
+        gradient="from-amber-500 to-orange-500"
+        title={user?.role === "host" ? "My Pending Approvals" : "Pending Approvals"}
+        description={
+          user?.role === "host"
+            ? "Review and approve visitor requests assigned specifically to you."
+            : "Review and manage incoming visitor requests needing approval."
+        }
+        badge={
+          !loading && visits.length > 0 ? (
+            <span className="inline-flex items-center justify-center px-3 py-1 text-sm font-bold leading-none text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-400 rounded-full">
+              {visits.length} {visits.length === 1 ? "request" : "requests"}
+            </span>
+          ) : undefined
+        }
+        right={
           <div className="relative w-full sm:w-80">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <Search className="h-5 w-5 text-gray-400" />
@@ -346,101 +350,119 @@ export function VisitorApproval() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="mt-6">
-        {loading ? (
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="skeleton h-32 w-full rounded-2xl"></div>
-            ))}
-          </div>
-        ) : visits.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4 mt-8 bg-white/50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-gray-300 dark:border-slate-700">
-            <div className="p-4 bg-sky-50 dark:bg-sky-900/20 text-sky-500 dark:text-sky-400 rounded-full mb-4">
-              <CheckCircle className="h-10 w-10" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">You're all caught up!</h3>
-            <p className="text-gray-500 dark:text-slate-400 text-center max-w-sm">
-              There are no pending visitor requests waiting for approval at this time.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* ── Mobile View: Cards ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {visits.map((visit, index) => (
-                <div
-                  key={visit.id}
-                  className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fadeInUp flex flex-col"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="p-5 flex-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div
-                        className="flex items-center gap-3 cursor-pointer group/avatar"
-                        onClick={() => setDrawerVisitor({ visitor: visit.visitors, visitorId: visit.visitors.id })}
-                        title="View visit history"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 text-white flex items-center justify-center font-bold shadow-inner group-hover/avatar:ring-2 group-hover/avatar:ring-sky-400 transition-all">
-                          {visit.visitors.name.charAt(0).toUpperCase()}
+        <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+          <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-2xl">
+              <table className="min-w-full divide-y divide-gray-300 dark:divide-slate-700">
+                <thead className="bg-gray-50 dark:bg-slate-800">
+                  <tr>
+                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">
+                      Visitor
+                    </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                      Purpose
+                    </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                      Time
+                    </th>
+                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-sm font-semibold text-gray-900 dark:text-white">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-8 text-center">
+                        <div className="flex justify-center flex-col items-center">
+                          <div className="w-8 h-8 border-4 border-amber-200 border-t-amber-500 rounded-full animate-spin" />
+                          <span className="mt-2 text-sm text-gray-500">Loading...</span>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 dark:text-white leading-tight group-hover/avatar:text-sky-600 dark:group-hover/avatar:text-sky-400 transition-colors">{visit.visitors.name}</h4>
-                          <span className="text-xs text-gray-500 dark:text-slate-400">{visit.visitors.email}</span>
+                      </td>
+                    </tr>
+                  ) : visits.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-16 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-full mb-4 ring-8 ring-gray-50/50 dark:ring-slate-800/20">
+                            <Inbox className="w-8 h-8 text-gray-400 dark:text-slate-500" />
+                          </div>
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">No pending approvals found</h3>
+                          <p className="text-sm text-gray-500 dark:text-slate-400 max-w-sm mx-auto">
+                            There are no pending visitor requests waiting for approval today.
+                          </p>
                         </div>
-                      </div>
-                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 uppercase tracking-wide">
-                        Pending
-                      </span>
-                    </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    visits.map((visit) => (
+                      <tr key={visit.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                        {/* Visitor column */}
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                          <div
+                            className="flex items-center gap-3 cursor-pointer group"
+                            onClick={() => setDrawerVisitor({ visitor: visit.visitors, visitorId: visit.visitors.id })}
+                            title="View visitor history"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center font-bold text-xs shrink-0 group-hover:ring-2 group-hover:ring-amber-400 transition-all">
+                              {visit.visitors.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="block group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors truncate">
+                                {visit.visitors.name}
+                              </span>
+                              <span className="block text-xs text-gray-400 dark:text-slate-500 truncate">
+                                {visit.visitors.email}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
 
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-slate-300">
-                        <FileText className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
-                        <div>
-                          <span className="block text-xs font-medium text-gray-400 dark:text-slate-500 uppercase">Purpose</span>
-                          <span className="font-medium">{visit.purpose}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-slate-300">
-                        <Calendar className="w-4 h-4 mt-0.5 text-gray-400 shrink-0" />
-                        <div>
-                          <span className="block text-xs font-medium text-gray-400 dark:text-slate-500 uppercase">Requested Date</span>
-                          <span className="font-medium">{visit.valid_until ? format(new Date(visit.valid_until), "PPP") : "N/A"}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                        {/* Purpose column */}
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                          {visit.purpose}
+                        </td>
 
-                  <div className="bg-gray-50 dark:bg-slate-800/50 p-3 flex gap-3 border-t border-gray-100 dark:border-slate-800 shrink-0">
-                    {canApprove ? (
-                      <>
-                        <button
-                          onClick={() => handleApproval(visit.id, false)}
-                          className="flex-1 inline-flex justify-center items-center py-2.5 px-4 rounded-xl border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold text-sm transition-colors duration-200"
-                        >
-                          <XCircle className="w-4 h-4 mr-1.5" /> Deny
-                        </button>
-                        <button
-                          onClick={() => handleApproval(visit.id, true)}
-                          className="flex-1 inline-flex justify-center items-center py-2.5 px-4 rounded-xl text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-md shadow-emerald-500/20 font-semibold text-sm transition-all duration-200 hover:scale-[1.02] active:scale-95"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1.5 align-text-bottom" /> Approve
-                        </button>
-                      </>
-                    ) : (
-                      <div className="w-full inline-flex justify-center items-center py-2.5 px-4 rounded-xl border border-amber-200 dark:border-amber-900/50 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 font-semibold text-sm">
-                        <Hourglass className="w-4 h-4 mr-1.5" /> Views Only - Awaiting Guard/Admin Decision
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                        {/* Time column */}
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-300">
+                          {formatIST(visit.created_at)}
+                        </td>
+
+                        {/* Actions column */}
+                        <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          {canApprove ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleApproval(visit.id, false)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 font-semibold text-xs transition-colors duration-200"
+                              >
+                                <XCircle className="w-3.5 h-3.5" /> Deny
+                              </button>
+                              <button
+                                onClick={() => handleApproval(visit.id, true)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 shadow-sm font-semibold text-xs transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" /> Approve
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-900/50 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 font-semibold text-xs">
+                              <Hourglass className="w-3.5 h-3.5" /> Awaiting Decision
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );

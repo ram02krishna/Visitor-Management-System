@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, FileSpreadsheet, Download, AlertCircle } from "lucide-react";
+import { Upload, FileSpreadsheet, Download, AlertCircle, UploadCloud } from "lucide-react";
 import { BackButton } from "./BackButton";
+import { PageHeader } from "./PageHeader";
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { supabase } from "../lib/supabase";
@@ -209,20 +210,12 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
       <BackButton />
 
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg">
-              <FileSpreadsheet className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Bulk Visitor Upload
-            </h1>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-slate-400 ml-14">
-            Upload multiple visitors at once using a CSV file. All visitors will be pending
-            approval.
-          </p>
-        </div>
+        <PageHeader
+          icon={UploadCloud}
+          gradient="from-orange-500 to-amber-600"
+          title="Bulk Visitor Upload"
+          description="Upload multiple visitors at once using a CSV file. All visitors will be pending approval."
+        />
 
         <div className="bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800">
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 sm:p-8 space-y-6">
