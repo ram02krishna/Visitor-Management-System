@@ -67,7 +67,10 @@ export function ScanQrCode() {
     const startScanner = async () => {
       try {
         await new Promise((resolve) => setTimeout(resolve, 50));
-        scanner = new Html5Qrcode(qrCodeDivId);
+        scanner = new Html5Qrcode(qrCodeDivId, {
+          formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+          verbose: false
+        });
         scannerRef.current = scanner;
 
         await scanner.start(
@@ -80,8 +83,7 @@ export function ScanQrCode() {
               const size = Math.floor(minEdge * 0.55);
               return { width: size, height: size };
             },
-            aspectRatio: 1.0,
-            formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] 
+            aspectRatio: 1.0
           },
           (decodedText) => {
             setScanResult(decodedText);
