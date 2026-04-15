@@ -144,6 +144,33 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
     }
   };
 
+  const handleCompleteVisit = async () => {
+    setLoading(true);
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from("visits")
+        .update({
+          status: "completed",
+          check_out_time: now,
+          updated_at: now,
+          exit_gate: "Manual Checkout" // Default for manual completion from details
+        })
+        .eq("id", visit.id);
+
+      if (error) throw error;
+
+      toast.success("Visit marked as Completed");
+      if (onUpdate) onUpdate();
+      onClose();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Update failed";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fadeIn" onClick={onClose} aria-hidden="true" />
@@ -235,6 +262,16 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
                 Deny
               </button>
             </div>
+          )}
+
+          {visit.status === 'checked-in' && isGuardOrAdmin && (
+            <button
+              onClick={handleCompleteVisit}
+              disabled={loading}
+              className="w-full py-3.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+            >
+              <CheckCircle2 className="w-4 h-4" /> Complete Visit (Check-out)
+            </button>
           )}
 
           {isGuardOrAdmin && (
