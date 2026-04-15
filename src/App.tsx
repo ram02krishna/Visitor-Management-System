@@ -1,35 +1,46 @@
 import type React from "react";
 
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "../components/ui/toaster";
 import { Toaster as HotToaster } from "react-hot-toast";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
-import { Login } from "./components/Login";
-import { Signup } from "./components/Signup";
-import { Dashboard } from "./components/Dashboard";
-import { VisitorApproval } from "./components/VisitorApproval";
-import { PublicDisplay } from "./components/PublicDisplay";
-import { UserManagement } from "./components/UserManagement";
-import { VisitLogs } from "./components/VisitLogs";
-import { VisitorRegistration } from "./components/VisitorRegistration";
-import { PreRegisterVisitor } from "./components/PreRegisterVisitor";
 import { useAuthStore } from "./store/auth";
-import Home from "./components/Home";
-import { RequestVisit } from "./components/RequestVisit";
-
-import { BulkVisitorUpload } from "./components/BulkVisitorUpload";
-import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
-import { ScanQrCode } from "./components/ScanQrCode";
-import { FilteredVisits } from "./components/FilteredVisits";
 import log from "./lib/logger";
+
+// Create sleek loading fallback for chunk loading
+function PageSuspenseFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh] w-full animate-fadeIn">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin dark:border-slate-700 dark:border-t-sky-500"></div>
+        <p className="text-sm font-medium text-gray-500 dark:text-slate-400 animate-pulse">Loading interface...</p>
+      </div>
+    </div>
+  );
+}
+
+// Lazy Load Heavy Components for massive bundle parsing reduction
+const Home = lazy(() => import("./components/Home"));
+const Login = lazy(() => import("./components/Login").then(m => ({ default: m.Login })));
+const Signup = lazy(() => import("./components/Signup").then(m => ({ default: m.Signup })));
+const Dashboard = lazy(() => import("./components/Dashboard").then(m => ({ default: m.Dashboard })));
+const VisitLogs = lazy(() => import("./components/VisitLogs").then(m => ({ default: m.VisitLogs })));
+const PublicDisplay = lazy(() => import("./components/PublicDisplay").then(m => ({ default: m.PublicDisplay })));
+const UserManagement = lazy(() => import("./components/UserManagement").then(m => ({ default: m.UserManagement })));
+const UnifiedVisitRegistration = lazy(() => import("./components/UnifiedVisitRegistration").then(m => ({ default: m.UnifiedVisitRegistration })));
+const ChangePassword = lazy(() => import("./components/ChangePassword").then(m => ({ default: m.ChangePassword })));
+const RequestVisit = lazy(() => import("./components/RequestVisit").then(m => ({ default: m.RequestVisit })));
+const BulkVisitorUpload = lazy(() => import("./components/BulkVisitorUpload").then(m => ({ default: m.BulkVisitorUpload })));
+const ScanQrCode = lazy(() => import("./components/ScanQrCode").then(m => ({ default: m.ScanQrCode })));
+const FilteredVisits = lazy(() => import("./components/FilteredVisits").then(m => ({ default: m.FilteredVisits })));
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
 
-  log.info("[PrivateRoute] Auth status:", { isAuthenticated, isLoading });
+  log.info(`[PrivateRoute] Auth status: isAuthenticated=${isAuthenticated}, isLoading=${isLoading}`);
 
   if (isLoading) {
     log.info("[PrivateRoute] Still loading authentication...");
@@ -72,34 +83,35 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <Routes>
+        <Suspense fallback={<PageSuspenseFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/display" element={<PublicDisplay />} />
+            <Route path="/request-visit" element={<RequestVisit />} />
+            <Route path="/users" element={<Navigate to="/app/users" replace />} />
 
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/display" element={<PublicDisplay />} />
-          <Route path="/request-visit" element={<RequestVisit />} />
-          <Route path="/users" element={<Navigate to="/app/users" replace />} />
-
-          <Route
-            element={
-              <PrivateRoute>
-                <Layout />
-              </PrivateRoute>
-            }
-          >
-            <Route path="/app/dashboard" element={<Dashboard />} />
-            <Route path="/app/approval" element={<VisitorApproval />} />
-            <Route path="/app/users" element={<UserManagement />} />
-            <Route path="/app/logs" element={<VisitLogs />} />
-            <Route path="/app/scan" element={<ScanQrCode />} />
-            <Route path="/app/register-visitor" element={<VisitorRegistration />} />
-            <Route path="/app/pre-register-visitor" element={<PreRegisterVisitor />} />
-            <Route path="/app/bulk-visitor-upload" element={<BulkVisitorUpload />} />
-            <Route path="/app/analytics" element={<AnalyticsDashboard />} />
-            <Route path="/app/visits/:status" element={<FilteredVisits />} />
-          </Route>
-        </Routes>
+            <Route
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route path="/app/dashboard" element={<Dashboard />} />
+              <Route path="/app/logs" element={<VisitLogs />} />
+              <Route path="/app/users" element={<UserManagement />} />
+              <Route path="/app/scan" element={<ScanQrCode />} />
+              <Route path="/app/register-visit" element={<UnifiedVisitRegistration />} />
+              <Route path="/app/register-visitor" element={<Navigate to="/app/register-visit" replace />} />
+              <Route path="/app/pre-register-visitor" element={<Navigate to="/app/register-visit" replace />} />
+              <Route path="/app/bulk-visitor-upload" element={<BulkVisitorUpload />} />
+              <Route path="/app/visits/:status" element={<FilteredVisits />} />
+              <Route path="/app/change-password" element={<ChangePassword />} />
+            </Route>
+          </Routes>
+        </Suspense>
         <Toaster />
         <HotToaster
           position="top-center"

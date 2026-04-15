@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Visitor Management System',
-        short_name: 'Visitor Management System',
-        description: 'A modern, real-time Visitor Management System.',
+        name: 'IIIT Nagpur VMS',
+        short_name: 'IIITN VMS',
+        description: 'Official IIIT Nagpur VMS. Experience a seamless and secure visitor management process.',
         theme_color: '#ffffff',
         icons: [
           {
@@ -48,6 +48,19 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['lucide-react'],
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-slot', 'embla-carousel-react'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'utils-vendor': ['date-fns', 'zod', 'react-hook-form', 'zustand']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
   },
   envDir: './',
 });

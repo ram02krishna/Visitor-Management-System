@@ -4,12 +4,11 @@ export const VisitorRegistrationSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters long" }),
   email: z.string().email({ message: "Invalid email address" }),
   phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number" }),
-  company: z.string().optional(),
   photo: z.instanceof(FileList).optional(),
   purpose: z.string().min(3, { message: "Purpose must be at least 3 characters long" }),
   hostEmail: z
     .string()
-    .email({ message: "Invalid host email address" })
+    .email({ message: "Invalid faculty/staff email address" })
     .optional()
     .or(z.literal("")),
   entityEmail: z

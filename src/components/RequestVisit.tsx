@@ -1,554 +1,568 @@
 "use client";
 
-import React from "react";
-import { Camera, Download } from "lucide-react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { 
+  Camera, 
+  Download, 
+  User, 
+  Mail, 
+  Calendar, 
+  FileText, 
+  ShieldCheck, 
+  QrCode, 
+  Users, 
+  Car, 
+  AlertTriangle,
+  FileUp,
+  CalendarPlus,
+  Printer
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import emailjs from "@emailjs/browser";
 import { supabase } from "../lib/supabase";
 import { BackButton } from "./BackButton";
+import { PageHeader } from "./PageHeader";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import QRCode from "qrcode";
+import { toast } from "react-hot-toast";
 
-interface VisitorFormData {
+type RequestVisitFormData = {
   name: string;
   email: string;
   phone: string;
-  company: string;
   purpose: string;
-  entityEmail: string;
   visitDate: string;
-  notes: string;
+  validUntil?: string;
+  hostEmail: string;
+  notes?: string;
+  vehicleNumber?: string;
+  vehicleType?: string;
+  additionalGuests?: number;
   photo?: FileList;
-}
+  idProof?: FileList;
+  passType: "single_day" | "multi_day";
+};
 
 export function RequestVisit() {
-  const [formData, setFormData] = React.useState<VisitorFormData>({
-    name: "",
-    email: "",
-    phone: "",
-    company: "",
-    purpose: "",
-    entityEmail: "",
-    visitDate: "",
-    notes: "",
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<RequestVisitFormData>({
+    defaultValues: {
+      visitDate: new Date().toISOString().split("T")[0],
+      additionalGuests: 0,
+      passType: "single_day",
+      hostEmail: ""
+    }
   });
-  const [loading, setLoading] = React.useState(false);
-  const [success, setSuccess] = React.useState(false);
-  const [error, setError] = React.useState("");
-  const [qrCode, setQrCode] = React.useState<string | null>(null);
-  const [visitId, setVisitId] = React.useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    if (type === "file" && (e.target as HTMLInputElement).files) {
-      setFormData((prev) => ({ ...prev, photo: (e.target as HTMLInputElement).files! }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [visitId, setVisitId] = useState<string | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const passType = watch("passType");
+
+  const handleFilePreview = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string | null) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setter(reader.result as string);
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const uploadFile = async (file: File, bucket: string) => {
+    const fileName = `${uuidv4()}.${file.name.split(".").pop()}`;
+    const { error } = await supabase.storage.from(bucket).upload(fileName, file);
+    if (error) throw new Error(`${bucket} upload failed.`);
+    return supabase.storage.from(bucket).getPublicUrl(fileName).data.publicUrl;
+  };
+
+  const onSubmit = async (formData: RequestVisitFormData) => {
     setLoading(true);
-    setError("");
-    setSuccess(false);
+    setErrorMessage("");
 
     try {
       let photoUrl = null;
+      if (formData.photo?.[0]) photoUrl = await uploadFile(formData.photo[0], "identification-images");
+      
+      let idProofUrl = null;
+      if (formData.idProof?.[0]) idProofUrl = await uploadFile(formData.idProof[0], "visitor-documents");
 
-      if (formData.photo?.[0]) {
-        const file = formData.photo[0];
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${uuidv4()}.${fileExt}`;
-        const filePath = fileName;
+      const { data: existing } = await supabase.from("visitors").select("id, is_blacklisted").eq("email", formData.email).maybeSingle();
+      if (existing?.is_blacklisted) throw new Error("Campus access restricted. Contact security.");
 
-        const { error: uploadError } = await supabase.storage
-          .from("identification-images")
-          .upload(filePath, file, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw new Error(`Photo upload failed: ${uploadError.message}`);
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("identification-images").getPublicUrl(filePath);
-
-        photoUrl = publicUrl;
-      }
-
-      let entityId = null;
-      let hostName = null;
-      if (formData.entityEmail && formData.entityEmail.trim() !== "") {
-        // Normalize email for case-insensitive matching
-        const normalizedEmail = formData.entityEmail.trim().toLowerCase();
-        
-        console.log("🔍 Looking up host with email:", normalizedEmail);
-        
-        // Find matching host (case-insensitive) in the hosts table
-        const { data: matchingHost, error: hostError } = await supabase
-          .from("hosts")
-          .select("id, name, email")
-          .ilike("email", normalizedEmail)
-          .maybeSingle();
-
-        if (hostError) {
-          console.error("❌ Host lookup error:", hostError);
-        } else if (matchingHost) {
-          entityId = matchingHost.id;
-          hostName = matchingHost.name;
-          console.log("✅ Host found:", { entityId, hostName, email: matchingHost.email });
-        } else {
-          console.warn("❌ Host not found for email:", normalizedEmail);
-        }
-      }
+      const payload = { 
+        name: formData.name, 
+        email: formData.email, 
+        phone: formData.phone, 
+        photo_url: photoUrl || undefined,
+        id_proof_url: idProofUrl || undefined
+      };
 
       let visitorId;
-      const { data: existingVisitor, error: visitorLookupError } = await supabase
-        .from("visitors")
-        .select("id")
-        .eq("email", formData.email)
-        .maybeSingle();
-
-      if (visitorLookupError && visitorLookupError.code !== "PGRST116") {
-        throw visitorLookupError;
-      }
-
-      if (existingVisitor) {
-        visitorId = existingVisitor.id;
-        const { error: updateError } = await supabase
-          .from("visitors")
-          .update({
-            name: formData.name,
-            phone: formData.phone,
-            company: formData.company || null,
-            photo_url: photoUrl,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", visitorId);
-
-        if (updateError) {
-          throw updateError;
-        }
+      if (existing) {
+        visitorId = existing.id;
+        await supabase.from("visitors").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", visitorId);
       } else {
-        const { data: newVisitor, error: createError } = await supabase
-          .from("visitors")
-          .insert({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            company: formData.company || null,
-            photo_url: photoUrl,
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          throw createError;
-        }
-
-        visitorId = newVisitor.id;
+        const { data: created, error: cErr } = await supabase.from("visitors").insert(payload).select().single();
+        if (cErr) throw cErr;
+        visitorId = created.id;
       }
 
+      const vId = uuidv4();
       const visitDate = new Date(formData.visitDate);
-      visitDate.setHours(23, 59, 59, 999);
+      const validUntil = formData.validUntil ? new Date(formData.validUntil) : new Date(visitDate);
+      if (formData.passType === 'single_day') validUntil.setHours(23, 59, 59);
 
-      const visitId = uuidv4();
-      const { error: visitError } = await supabase.from("visits").insert({
-        id: visitId,
+      let hostId = null;
+      if (formData.hostEmail && formData.hostEmail.trim() !== "") {
+        const { data: host } = await supabase.from("hosts").select("id").ilike("email", formData.hostEmail.trim()).maybeSingle();
+        hostId = host?.id || null;
+      }
+
+      const { error: vErr } = await supabase.from("visits").insert({
+        id: vId,
         visitor_id: visitorId,
-        host_id: entityId, // This must be the host's ID from the hosts table
+        host_id: hostId,
         purpose: formData.purpose,
         status: "pending",
-        check_in_time: null,
-        check_out_time: null,
-        valid_until: visitDate.toISOString(),
+        scheduled_time: visitDate.toISOString(),
+        valid_from: visitDate.toISOString(),
+        valid_until: validUntil.toISOString(),
         notes: formData.notes || null,
+        vehicle_number: formData.vehicleNumber || null,
+        vehicle_type: formData.vehicleType || null,
+        additional_guests: Number(formData.additionalGuests) || 0,
+        pass_type: formData.passType,
       });
+      if (vErr) throw vErr;
 
-      if (visitError) {
-        throw visitError;
-      }
-
-      const qrData = JSON.stringify({
-        visitId: visitId,
-        name: formData.name,
-        email: formData.email,
-        purpose: formData.purpose,
-        validUntil: visitDate,
+      // Enrich QR Data with more details as requested - Shortened keys for better scannability
+      const qrData = JSON.stringify({ 
+        vId: vId,
+        n: formData.name,
+        e: formData.email,
+        p: formData.purpose,
+        t: formData.passType,
+        d: visitDate.toISOString().split('T')[0],
+        u: validUntil.toISOString().split('T')[0],
+        v: formData.vehicleNumber || 'None'
       });
-
-      const qrUrl = await QRCode.toDataURL(qrData);
+      const qrUrl = await QRCode.toDataURL(qrData, {
+        errorCorrectionLevel: 'M',
+        margin: 3,
+        scale: 10
+      });
       setQrCode(qrUrl);
-      setVisitId(visitId);
+      setVisitId(vId);
 
-      const emailServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const visitorTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-      const emailPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
-      if (emailServiceId && visitorTemplateId && emailPublicKey && formData.email) {
-        try {
-          await emailjs.send(
-            emailServiceId,
-            visitorTemplateId,
-            {
-              to_name: formData.name,
-              email: formData.email,
-              visitor_email: formData.email,
-              visit_id: visitId,
-              visit_purpose: formData.purpose,
-              host_name: hostName || "Not specified",
-              qr_code: qrUrl,
-              valid_until: visitDate.toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              }),
-            },
-            emailPublicKey
-          );
-        } catch (emailError) {
-          // Non-fatal: visit was created, just log the email failure
-          console.error("Failed to send confirmation email with QR code to visitor:", emailError);
-        }
+      const svc = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const tmp = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const key = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      if (svc && tmp && key) {
+        await emailjs.send(svc, tmp, {
+          to_name: formData.name,
+          email: formData.email,
+          to_email: formData.email,
+          qr_code: qrUrl,
+          visit_id: vId,
+          visit_purpose: formData.purpose,
+          host_email: formData.hostEmail || "Campus Admin",
+          pass_type: formData.passType.replace('_', ' ')
+        }, key);
       }
 
       setSuccess(true);
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        company: "",
-        purpose: "",
-        entityEmail: "",
-        visitDate: "",
-        notes: "",
-      });
+      toast.success("Visit Request successfully Submitted");
+      
+      // Scroll to pass after short delay
+      setTimeout(() => {
+        document.getElementById('entry-pass-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
     } catch (err: unknown) {
-      setError((err as Error).message || "Failed to request visit. Please try again.");
+      const msg = err instanceof Error ? err.message : "Submission failed.";
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
-      <div className="max-w-3xl mx-auto px-4">
-        <div className="mb-6">
-          <BackButton />
-        </div>
+    <div className="px-4 sm:px-6 lg:px-8 pb-12 animate-fadeIn relative">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeSwitcher />
+      </div>
 
-        <div className="md:grid md:grid-cols-3 md:gap-6">
-          <div className="md:col-span-1 animate-fadeIn">
-            <div className="px-4 sm:px-0">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                Request a Visit
-              </h3>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                Please fill in the details for your visit request.
-              </p>
-            </div>
-          </div>
+      <div className="absolute top-6 left-6 z-50">
+        <BackButton to="/" className="flex items-center gap-3 max-sm:bg-white/80 max-sm:dark:bg-slate-900/80 max-sm:p-1 max-sm:rounded-full max-sm:backdrop-blur-md" />
+      </div>
 
-          <div
-            className="mt-5 md:mt-0 md:col-span-2 animate-fadeInUp"
-            style={{ animationDelay: "0.1s" }}
-          >
-            {success ? (
-              // Success View - Show QR Code
-              <div className="shadow-xl sm:rounded-2xl overflow-hidden">
-                <div className="px-4 py-5 glass space-y-6 sm:p-6">
-                  <div className="rounded-lg bg-green-50 dark:bg-green-900/30 p-6 border border-green-200 dark:border-green-700 animate-fadeIn space-y-4">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg
-                          className="h-5 w-5 text-green-400 dark:text-green-300"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                      <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                          Visit request submitted successfully! Your QR code has been generated and sent to your email. A security guard or administrator will review your visit. You can use this QR code at the entrance when your visit is approved.
-                        </p>
-                      </div>
-                    </div>
+      <div className="max-w-4xl mx-auto mt-12 sm:mt-8">
 
-                    {qrCode && (
-                      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-green-100 dark:border-green-900/50 flex flex-col items-center gap-4">
-                        <div className="flex flex-col items-center gap-2">
-                          <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Your Visit QR Code</p>
-                          <img 
-                            src={qrCode} 
-                            alt="Visit QR Code" 
-                            className="w-40 h-40 border-4 border-green-500 dark:border-green-600 rounded-lg p-2 bg-white"
-                          />
-                        </div>
-                        <p className="text-xs text-gray-600 dark:text-slate-400 text-center max-w-xs">
-                          Save or screenshot this QR code. Present it at the entrance when you arrive for your visit.
-                        </p>
-                        <button
-                          onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = qrCode;
-                            link.download = `visit-qr-${visitId}.png`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                          }}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium text-sm transition-colors"
-                        >
-                          <Download className="w-4 h-4" />
-                          Download QR Code
-                        </button>
-                      </div>
-                    )}
+        <PageHeader
+          icon={CalendarPlus}
+          gradient="from-blue-600 to-indigo-600"
+          title="Public Visit Request Registration"
+          description="Official campus entry application for guests, vendors, and contractors."
+        />
 
-                    <div className="pt-4 border-t border-green-200 dark:border-green-900/50">
-                      <button
-                        onClick={() => {
-                          setSuccess(false);
-                          setQrCode(null);
-                          setVisitId(null);
-                        }}
-                        className="w-full inline-flex justify-center py-2 px-4 rounded-lg text-sm font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                      >
-                        Submit Another Request
-                      </button>
+        <div className="bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800">
+          <form onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-5">
+            {errorMessage && (
+              <div className="mb-6 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 flex items-center gap-3 text-red-800 dark:text-red-300">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <p className="text-sm font-medium">{errorMessage}</p>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {/* Visitor Information Section */}
+              <section>
+                <div className="flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-slate-800 pb-2">
+                  <User className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Identity Details</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Full Legal Name *</label>
+                    <input
+                      type="text"
+                      {...register("name", { 
+                        required: "Name is required",
+                        onChange: (e) => {
+                          const val = e.target.value;
+                          if (val.length > 0) {
+                            e.target.value = val.charAt(0).toUpperCase() + val.slice(1);
+                          }
+                        }
+                      })}
+                      className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white font-bold"
+                      placeholder="John Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Email Address *</label>
+                    <input
+                      type="email"
+                      {...register("email", { required: "Email is required" })}
+                      className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                      placeholder="john@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Phone Number *</label>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      {...register("phone", { 
+                        required: "Phone is required", 
+                        pattern: { value: /^\d{10}$/, message: "Exactly 10 digits required" },
+                        onChange: (e) => {
+                          e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        }
+                      })}
+                      className={`block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white font-bold ${errors.phone ? 'border-red-500 ring-1 ring-red-500' : ''}`}
+                      placeholder="1234567890"
+                    />
+                    {errors.phone && <span className="text-[10px] text-red-500 font-bold block mt-1">{errors.phone.message}</span>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Additional Guests</label>
+                    <div className="relative">
+                      <Users className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                      <input
+                        type="number"
+                        {...register("additionalGuests", { min: 0, max: 10 })}
+                        className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white font-bold"
+                        placeholder="0"
+                      />
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
+              </section>
 
-              <form onSubmit={handleSubmit}>
-                <div className="shadow-xl sm:rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-500">
-                  <div className="px-4 py-5 glass space-y-6 sm:p-6">
-                    {error && (
-                      <div className="rounded-lg bg-red-50 dark:bg-red-900/30 p-4 mb-4 border border-red-200 dark:border-red-700 animate-fadeIn">
-                        <div className="flex">
-                          <div className="flex-shrink-0">
-                            <svg
-                              className="h-5 w-5 text-red-400 dark:text-red-300"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 001.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </div>
-                          <div className="ml-3">
-                            <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                              {error}
-                            </p>
-                          </div>
+              {/* Documents & Vehicle Section */}
+              <section>
+                <div className="flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-slate-800 pb-2">
+                  <FileUp className="h-5 w-5 text-indigo-600" />
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Documents & Vehicle</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Photo & ID Row */}
+                  <div className="space-y-4">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">Verification Photos</label>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="group relative flex flex-col items-center justify-center h-32 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer overflow-hidden bg-gray-50/30 dark:bg-slate-800/20">
+                          {previewPhoto ? (
+                            <img src={previewPhoto} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-center">
+                              <Camera className="mx-auto h-6 w-6 text-gray-400 group-hover:text-blue-500" />
+                              <span className="mt-2 block text-[10px] font-bold text-gray-400 uppercase">Live Photo</span>
+                            </div>
+                          )}
+                          <input type="file" accept="image/*" className="sr-only" {...register("photo")} onChange={(e) => handleFilePreview(e, setPreviewPhoto)} />
+                        </label>
+                      </div>
+                      <div className="flex-1">
+                        <label className="group relative flex flex-col items-center justify-center h-32 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 transition-all cursor-pointer overflow-hidden bg-gray-50/30 dark:bg-slate-800/20">
+                          {previewId ? (
+                            <img src={previewId} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-center">
+                              <FileText className="mx-auto h-6 w-6 text-gray-400 group-hover:text-indigo-500" />
+                              <span className="mt-2 block text-[10px] font-bold text-gray-400 uppercase">Govt ID Proof</span>
+                            </div>
+                          )}
+                          <input type="file" accept="image/*" className="sr-only" {...register("idProof")} onChange={(e) => handleFilePreview(e, setPreviewId)} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vehicle Tracking */}
+                  <div className="space-y-4">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">Vehicle Information</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <div className="relative">
+                          <Car className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                          <input
+                            type="text"
+                            {...register("vehicleNumber")}
+                            className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white font-bold uppercase"
+                            placeholder="Vehicle Number (e.g. MH-31...)"
+                          />
                         </div>
                       </div>
-                    )}
+                      <select
+                        {...register("vehicleType")}
+                        className="col-span-2 block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white font-bold"
+                      >
+                        <option value="">No Vehicle</option>
+                        <option value="2-wheeler">2-Wheeler</option>
+                        <option value="4-wheeler">4-Wheeler</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
-                    <div className="grid grid-cols-6 gap-6">
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="name"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                      >
-                        Full name
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        id="name"
-                        required
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
-                      />
+              {/* Visit Logistics Section */}
+              <section>
+                <div className="flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-slate-800 pb-2">
+                  <Calendar className="h-5 w-5 text-purple-600" />
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-tight">Visit Logistics</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Pass Type</label>
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-gray-50 dark:bg-slate-800 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setValue("passType", "single_day")}
+                        className={`py-2 text-[10px] font-bold uppercase rounded-lg transition-all ${passType === "single_day" ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-gray-400"}`}
+                      >Single Day</button>
+                      <button
+                        type="button"
+                        onClick={() => setValue("passType", "multi_day")}
+                        className={`py-2 text-[10px] font-bold uppercase rounded-lg transition-all ${passType === "multi_day" ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-gray-400"}`}
+                      >Multi-Day</button>
                     </div>
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="email"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                      >
-                        Email address
-                      </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Approver Email (Optional)</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
                       <input
                         type="email"
-                        name="email"
-                        id="email"
-                        required
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
-                      />
-                    </div>
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="phone"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                      >
-                        Phone number
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        id="phone"
-                        required
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
-                      />
-                    </div>
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="company"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                      >
-                        Company
-                      </label>
-                      <input
-                        type="text"
-                        name="company"
-                        id="company"
-                        value={formData.company}
-                        onChange={handleChange}
-                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
-                      />
-                    </div>
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="purpose"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                      >
-                        Purpose of visit
-                      </label>
-                      <input
-                        type="text"
-                        name="purpose"
-                        id="purpose"
-                        required
-                        value={formData.purpose}
-                        onChange={handleChange}
-                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
-                      />
-                    </div>
-                    <div className="col-span-6">
-                      <label
-                        htmlFor="entityEmail"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                      >
-                        Host email (optional)
-                      </label>
-                      <input
-                        type="email"
-                        name="entityEmail"
-                        id="entityEmail"
-                        value={formData.entityEmail}
-                        onChange={handleChange}
-                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
-                      />
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Enter the email of the host associated with this visit
-                      </p>
-                    </div>{" "}
-                    <div className="col-span-6 sm:col-span-3">
-                      <label
-                        htmlFor="visitDate"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                      >
-                        Date of visit
-                      </label>
-                      <input
-                        type="date"
-                        name="visitDate"
-                        id="visitDate"
-                        required
-                        value={formData.visitDate}
-                        onChange={handleChange}
-                        min={new Date().toISOString().split("T")[0]}
-                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
-                      />
-                    </div>
-                    <div className="col-span-6">
-                      <label
-                        htmlFor="notes"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-200"
-                      >
-                        Notes (optional)
-                      </label>
-                      <textarea
-                        name="notes"
-                        id="notes"
-                        rows={3}
-                        value={formData.notes}
-                        onChange={handleChange}
-                        className="mt-1 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white transition-all duration-300 hover:border-sky-400"
+                        {...register("hostEmail")}
+                        placeholder="host@iiitn.ac.in"
+                        className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Visitor Photo (Optional)
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">
+                      {passType === "multi_day" ? "Valid From *" : "Visit Date *"}
                     </label>
-                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg dark:border-gray-600 hover:border-sky-400 dark:hover:border-sky-500 transition-all duration-300">
-                      <div className="space-y-1 text-center">
-                        <Camera className="mx-auto h-12 w-12 text-gray-400" />
-                        <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                          <label
-                            htmlFor="photo"
-                            className="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-sky-600 hover:text-sky-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500 px-2"
-                          >
-                            <span>Upload a photo</span>
-                            <input
-                              id="photo"
-                              name="photo"
-                              type="file"
-                              accept="image/*"
-                              className="sr-only"
-                              onChange={handleChange}
-                            />
-                          </label>
-                          <p className="pl-1">or drag and drop</p>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          PNG, JPG, GIF up to 10MB
-                        </p>
-                        {formData.photo && formData.photo.length > 0 && (
-                          <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                            Selected: {formData.photo[0].name}
-                          </p>
-                        )}
-                      </div>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                      <input
+                        type="date"
+                        {...register("visitDate", { required: "Date is required" })}
+                        min={new Date().toISOString().split("T")[0]}
+                        className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all dark:text-white"
+                      />
                     </div>
                   </div>
+
+                  {passType === "multi_day" && (
+                    <div className="animate-fadeIn">
+                      <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Valid Until *</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                        <input
+                          type="date"
+                          {...register("validUntil", { required: "End date is required" })}
+                          min={watch("visitDate")}
+                          className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">Purpose of Access *</label>
+                    <textarea
+                      required
+                      {...register("purpose", { required: "Purpose is required" })}
+                      rows={2}
+                      className="w-full bg-gray-50/50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white font-medium resize-none"
+                      placeholder="E.g. Meeting with Head of Dept, System Maintenance..."
+                    />
+                  </div>
                 </div>
-                <div className="px-4 py-3 text-right sm:px-6">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="inline-flex justify-center py-3 px-6 border border-transparent shadow-lg text-sm font-medium rounded-lg text-white bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95"
-                  >
-                    {loading ? "Submitting..." : "Submit Request"}
-                  </button>
+              </section>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3">
+              <button
+                type="submit"
+                disabled={isSubmitting || loading}
+                className="btn-primary flex-1 flex items-center justify-center gap-2 py-3.5"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>Submit Application <QrCode size={18} /></>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => { reset(); setPreviewPhoto(null); setPreviewId(null); setSuccess(false); setQrCode(null); }}
+                className="px-8 py-3.5 border-2 border-gray-200 dark:border-slate-700 rounded-2xl text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 transition-all active:scale-[0.98]"
+              >
+                Reset Application
+              </button>
+            </div>
+          </form>
+
+          {success && qrCode && (
+            <div id="entry-pass-section" className="p-8 bg-slate-50 dark:bg-slate-900/50 border-t border-gray-100 dark:border-slate-800 animate-fadeIn">
+              <div className="flex flex-col items-center">
+                <div className="relative w-full max-w-[320px] bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-slate-800 flex flex-col items-center animate-scaleIn">
+                  
+                  {/* Decorative Header */}
+                  <div className="w-full bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-500 p-8 text-white relative text-center">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+                    <div className="relative z-10 space-y-1">
+                      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-2 backdrop-blur-md border border-white/30 shadow-xl">
+                        <ShieldCheck className="w-6 h-6 text-white" />
+                      </div>
+                      <p className="text-[8px] font-black uppercase tracking-[0.4em] text-emerald-100/80">Authorized Request</p>
+                      <h4 className="text-xl font-black tracking-tighter leading-none italic">IIIT NAGPUR</h4>
+                    </div>
+                  </div>
+
+                  {/* Pass Body */}
+                  <div className="w-full p-8 flex flex-col items-center space-y-6 relative">
+                    
+                    {/* Status Badge */}
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                      <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[8px] font-black tracking-[0.2em] border-4 border-white dark:border-slate-900 shadow-xl bg-amber-500 text-white uppercase">
+                        Pending Approval
+                      </span>
+                    </div>
+
+                    {/* QR Section */}
+                    <div className="pt-2">
+                      <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-[2rem] shadow-inner border border-gray-100 dark:border-slate-800 relative group transition-all hover:scale-105">
+                        <div className="absolute inset-0 bg-emerald-500/5 blur-2xl group-hover:bg-emerald-500/10 transition-all rounded-full" />
+                        <div className="relative bg-white p-3 rounded-[1.5rem] shadow-sm">
+                           <img src={qrCode} alt="Entry Pass QR" className="w-36 h-36" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Details Grid */}
+                    <div className="w-full space-y-4">
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                        <div className="col-span-2 pb-1 border-b border-gray-100 dark:border-slate-800/50">
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Visitor Identity</p>
+                          <p className="text-xs font-black text-slate-900 dark:text-white truncate uppercase">{watch("name")}</p>
+                        </div>
+                        <div>
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Visit Date</p>
+                          <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                            {watch("visitDate") ? new Date(watch("visitDate")).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '---'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pass Type</p>
+                          <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">
+                            {watch("passType")?.replace('_', ' ')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="w-full grid grid-cols-2 gap-3 pt-1">
+                      <a 
+                        href={qrCode} 
+                        download={`iiitn-pass-${visitId?.substring(0,8)}.png`}
+                        className="flex items-center justify-center gap-2 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase tracking-widest text-[8px] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-slate-900/10"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Save
+                      </a>
+                      <button 
+                        type="button"
+                        onClick={() => window.print()}
+                        className="flex items-center justify-center gap-2 py-3 border border-gray-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-black uppercase tracking-widest text-[8px] hover:bg-gray-50 dark:hover:bg-slate-900 transition-all"
+                      >
+                        <Printer className="w-3.5 h-3.5" /> Print
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Security Footer */}
+                  <div className="w-full bg-slate-50 dark:bg-slate-800/50 py-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-center gap-2">
+                     <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                     <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">SECURED BY IIIT NAGPUR VMS</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 text-center">
+                  <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed uppercase tracking-wide">
+                    Digital backup transmitted to <span className="text-emerald-600 font-black underline decoration-2 underline-offset-4">{watch("email")}</span>
+                  </p>
                 </div>
               </div>
-              </form>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
+
+
     </div>
   );
 }

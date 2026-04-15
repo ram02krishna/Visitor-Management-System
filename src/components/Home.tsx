@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, ClipboardList, BarChart2, Menu, X, ArrowRight } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { useAuthStore } from "../store/auth";
+import { SEOMeta } from "./SEOMeta";
 
 const features = [
   {
@@ -48,10 +49,12 @@ const Home = () => {
 
   return (
     <div className="min-h-screen flex flex-col scroll-smooth bg-gray-50 dark:bg-slate-950">
+      <SEOMeta title="IIIT Nagpur VMS Home" />
+
 
       {/* ── Navbar ── */}
       <nav
-        className={`w-full flex items-center justify-between px-4 sm:px-6 lg:px-10 py-4 fixed top-0 z-50 transition-all duration-500 ${scrolled
+        className={`w-full flex items-center justify-between px-4 sm:px-6 lg:px-10 py-3 fixed top-0 z-50 transition-all duration-500 ${scrolled
           ? "bg-white/95 dark:bg-slate-950/95 shadow-lg dark:shadow-slate-800/50 backdrop-blur-md border-b border-gray-200/60 dark:border-slate-800/60"
           : "bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg"
           }`}
@@ -65,7 +68,7 @@ const Home = () => {
             <img src="/visitor-management.png" alt="Logo" className="h-6 w-6" />
           </div>
           <span className="hidden sm:block text-lg font-bold bg-gradient-to-r from-sky-600 to-blue-600 dark:from-sky-400 dark:to-blue-400 bg-clip-text text-transparent">
-            Visitor Management System
+            IIIT Nagpur VMS
           </span>
           <span className="sm:hidden text-base font-bold bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">
             VMS
@@ -129,7 +132,7 @@ const Home = () => {
 
       {/* ── Hero Section (background image preserved) ── */}
       <div
-        className="min-h-[88vh] flex items-center justify-center bg-cover bg-center px-4 sm:px-6 pt-24 pb-14 relative"
+        className="min-h-[85vh] flex items-center justify-center bg-cover bg-center px-4 sm:px-6 pt-20 pb-10 relative"
         style={{ backgroundImage: "url('/c8331ead-7366-4dc7-88a9-36ade9571557.jpg')" }}
       >
         {/* subtle dark overlay for better contrast only */}
@@ -145,7 +148,7 @@ const Home = () => {
               className="text-white/90 font-medium text-base sm:text-lg mb-8 animate-fadeInUp leading-relaxed drop-shadow-sm max-w-xl mx-auto"
               style={{ animationDelay: "0.15s" }}
             >
-              The official visitor management system for Indian Institute Of Information Technology Nagpur. Enhance campus security and visitor efficiency seamlessly.
+              The official Visitor Management System for Indian Institute Of Information Technology Nagpur. Enhance campus security and visitor efficiency seamlessly.
             </p>
             <div
               className="flex flex-col sm:flex-row gap-3 justify-center animate-fadeInUp"
@@ -170,7 +173,7 @@ const Home = () => {
       </div>
 
       {/* ── Features Section ── */}
-      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-slate-950">
+      <section className="py-12 sm:py-16 bg-gray-50 dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
           <div className="text-center mb-12 animate-fadeInUp">
@@ -185,7 +188,7 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid gap-7 grid-cols-1 sm:grid-cols-3">
+          <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
             {features.map(({ icon: Icon, title, description, gradient, shadow }, i) => (
               <div
                 key={title}
@@ -212,7 +215,7 @@ const Home = () => {
       </section>
 
       {/* ── Extra CTA strip ── */}
-      <section className="bg-gradient-to-r from-sky-600 to-blue-700 py-12 px-4">
+      <section className="bg-gradient-to-r from-sky-600 to-blue-700 py-10 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Welcome to Indian Institute Of Information Technology Nagpur</h3>
           <p className="text-sky-100 mb-7 text-base">Experience a seamless and secure visitor management process.</p>
@@ -234,7 +237,7 @@ const Home = () => {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="bg-gray-900 dark:bg-slate-950 text-white py-10 border-t border-gray-800 dark:border-slate-900">
+      <footer className="bg-gray-900 dark:bg-slate-950 text-white py-8 border-t border-gray-800 dark:border-slate-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
 
@@ -242,7 +245,7 @@ const Home = () => {
               <div className="p-1.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg">
                 <img src="/visitor-management.png" alt="Logo" className="h-5 w-5" />
               </div>
-              <span className="font-bold text-white/90 text-sm">Visitor Management System</span>
+              <span className="font-bold text-white/90 text-sm">IIIT Nagpur VMS</span>
             </div>
 
             <div className="flex items-center gap-6 text-sm">

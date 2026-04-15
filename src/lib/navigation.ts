@@ -1,23 +1,23 @@
-import { Home, ScrollText, UserRoundPlus, ScanLine, CalendarPlus, UploadCloud, AreaChart } from "lucide-react";
+import { Home, UserRoundPlus, ScanLine, UploadCloud, Lock, ScrollText } from "lucide-react";
 
 export const navLinks = [
   {
     href: "/app/dashboard",
     label: "Dashboard",
     icon: Home,
-    roles: ["admin", "host", "guard"],
+    roles: ["admin", "host", "guard", "visitor"],
   },
   {
     href: "/app/logs",
-    label: "Logs",
+    label: "Visit Logs",
     icon: ScrollText,
-    roles: ["admin", "host", "guard"],
+    roles: ["admin", "host", "guard", "visitor"],
   },
   {
-    href: "/app/register-visitor",
-    label: "Register Visitor",
+    href: "/app/register-visit",
+    label: "Register Visit",
     icon: UserRoundPlus,
-    roles: ["admin", "guard"],
+    roles: ["admin", "host", "guard", "visitor"],
   },
   {
     href: "/app/scan",
@@ -26,22 +26,16 @@ export const navLinks = [
     roles: ["admin", "guard"],
   },
   {
-    href: "/app/pre-register-visitor",
-    label: "Pre-register",
-    icon: CalendarPlus,
-    roles: ["admin", "host"],
-  },
-  {
     href: "/app/bulk-visitor-upload",
     label: "Bulk Upload",
     icon: UploadCloud,
     roles: ["admin", "host", "guard"],
   },
   {
-    href: "/app/analytics",
-    label: "Analytics",
-    icon: AreaChart,
-    roles: ["admin"],
+    href: "/app/change-password",
+    label: "Change Password",
+    icon: Lock,
+    roles: ["admin", "host", "guard", "visitor"],
   },
 ];
 

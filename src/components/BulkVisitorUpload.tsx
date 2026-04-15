@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, FileSpreadsheet, Download, AlertCircle, UploadCloud } from "lucide-react";
 import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
@@ -26,16 +26,16 @@ export function BulkVisitorUpload() {
   } = useForm<BulkUploadFormData>();
   const [uploading, setUploading] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     if (user?.email && ["admin", "guard", "host"].includes(user.role || "")) {
       setValue("approverEmail", user.email);
     }
-  });
+  }, [user?.email, user?.role, setValue]);
 
   const downloadSampleCsv = () => {
-    const csvContent = `name,email,phone,company,purpose,visit_date
-John Doe,john@example.com,+1234567890,Acme Inc.,Business Meeting,2024-03-15
-Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
+    const csvContent = `name,email,phone,purpose,visit_date
+John Doe,john@example.com,+1234567890,Business Meeting,2024-03-15
+Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -72,7 +72,7 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
       }
 
       if (!formData.approverEmail) {
-        throw new Error("Host email is required.");
+        throw new Error("Faculty/Staff email is required.");
       }
 
       const { data: approver, error: approverError } = await supabase
@@ -82,7 +82,7 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
         .maybeSingle();
 
       if (approverError || !approver) {
-        throw new Error(`No host/admin found with email: ${formData.approverEmail}`);
+        throw new Error(`No faculty/staff/admin found with email: ${formData.approverEmail}`);
       }
 
       const visitors = await processCsv(file);
@@ -93,7 +93,7 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
         return;
       }
 
-      const newVisitorsData: { name: string; email: string; phone: string; company: string }[] = [];
+      const newVisitorsData: { name: string; email: string; phone: string }[] = [];
       const existingVisitorEmails: string[] = [];
 
       visitors.forEach((visitor: { [key: string]: string }) => {
@@ -130,7 +130,6 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
             name: visitorData.name,
             email: visitorData.email,
             phone: visitorData.phone || "N/A",
-            company: visitorData.company || "N/A",
           });
         }
 
@@ -176,7 +175,7 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
       }
 
       toast.success(
-        `${visitors.length} visitors uploaded successfully! They will receive QR codes once approved.`
+        `${visitors.length} Visitors successfully Uploaded! They will receive QR codes once approved.`
       );
     } catch (error: unknown) {
       toast.error((error as Error).message || "Failed to upload visitors.");
@@ -206,17 +205,19 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6">
-      <BackButton />
+    <div className="px-4 sm:px-6 lg:px-8 pb-12 animate-fadeIn">
+      <div className="max-w-7xl mx-auto">
+        <BackButton />
 
-      <div className="max-w-4xl mx-auto">
         <PageHeader
           icon={UploadCloud}
           gradient="from-orange-500 to-amber-600"
-          title="Bulk Visitor Upload"
+          title="Bulk Upload"
           description="Upload multiple visitors at once using a CSV file. All visitors will be pending approval."
         />
+      </div>
 
+      <div className="max-w-7xl mx-auto">
         <div className="bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800">
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 sm:p-8 space-y-6">
             <div>
@@ -224,15 +225,15 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
                 htmlFor="approverEmail"
                 className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
               >
-                Host Email (Admin/Guard/Host) *
+                Faculty/Staff Email (Admin/Guard/Faculty/Staff) *
               </label>
               <input
                 type="email"
                 id="approverEmail"
-                {...register("approverEmail", { required: "Host email is required" })}
+                {...register("approverEmail", { required: "Faculty/Staff email is required" })}
                 disabled={user?.role === "host"}
                 className="block w-full rounded-lg border-gray-300 dark:border-slate-600 shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-slate-800 dark:text-white disabled:bg-gray-100 dark:disabled:bg-slate-700"
-                placeholder="host@example.com"
+                placeholder="staff@example.com"
               />
               {errors.approverEmail && (
                 <p className="mt-1 text-sm text-red-600">{errors.approverEmail.message}</p>
@@ -306,10 +307,6 @@ Jane Smith,jane@example.com,+1987654321,Tech Corp,Interview,2024-03-16`;
               </div>
               <div>
                 <span className="text-gray-600 dark:text-slate-400 font-semibold">phone</span>{" "}
-                (optional)
-              </div>
-              <div>
-                <span className="text-gray-600 dark:text-slate-400 font-semibold">company</span>{" "}
                 (optional)
               </div>
               <div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
-import { LogOut, Menu, X, Bell } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { navLinks } from "../lib/navigation";
 import { supabase } from "../lib/supabase";
@@ -22,8 +22,6 @@ export function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [activeCount, setActiveCount] = useState(0);
 
   const canApprove = user?.role === "admin" || user?.role === "guard" || user?.role === "host";
 
@@ -46,11 +44,8 @@ export function Layout() {
         activeQuery = activeQuery.eq("host_id", user.id);
       }
 
-      const { count: pending } = await pendingQuery;
-      setPendingCount(pending ?? 0);
-      
-      const { count: active } = await activeQuery;
-      setActiveCount(active ?? 0);
+      await pendingQuery;
+      await activeQuery;
     };
 
     fetchPending();
@@ -85,20 +80,6 @@ export function Layout() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {canApprove && (
-              <button
-                onClick={() => navigate("/app/approval")}
-                className="relative p-2 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                title="Pending Approvals"
-              >
-                <Bell className="w-5 h-5" />
-                {pendingCount > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white leading-none">
-                    {pendingCount > 9 ? "9+" : pendingCount}
-                  </span>
-                )}
-              </button>
-            )}
             <ThemeSwitcher />
             <button
               className="p-2 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -112,7 +93,7 @@ export function Layout() {
 
       {/* ── Mobile Menu Overlay ── */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-gray-50 dark:bg-slate-950 pt-16 overflow-y-auto animate-fadeIn">
+        <div className="lg:hidden fixed inset-0 z-40 bg-gray-50/95 dark:bg-slate-950/95 backdrop-blur-xl pt-16 overflow-y-auto animate-fadeIn">
           <div className="p-4 space-y-1">
             {user && (
               <div className="mb-6 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl flex items-center gap-3">
@@ -128,7 +109,7 @@ export function Layout() {
 
             {accessibleNavLinks.map((link) => {
               const isDashboard = link.href === "/app/dashboard";
-              const isDashboardChild = isDashboard && (location.pathname.startsWith("/app/visits") || location.pathname === "/app/approval" || location.pathname === "/app/users");
+              const isDashboardChild = isDashboard && (location.pathname.startsWith("/app/visits") || location.pathname === "/app/users");
               const isActive = location.pathname === link.href || isDashboardChild;
 
               return (
@@ -159,7 +140,7 @@ export function Layout() {
       )}
 
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden lg:flex flex-col w-72 fixed inset-y-0 left-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 shadow-xl overflow-y-auto z-30 transition-colors duration-300">
+      <aside className="hidden lg:flex flex-col w-72 fixed inset-y-0 left-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-r border-white/50 dark:border-slate-700/50 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)] overflow-y-auto z-30 transition-colors duration-300">
 
         <div className="h-20 flex items-center px-6 border-b border-gray-100 dark:border-slate-800 shrink-0">
           <Link to="/app/dashboard" className="flex items-center gap-3 group">
@@ -167,7 +148,7 @@ export function Layout() {
               <img src="/visitor-management.png" alt="Logo" className="w-6 h-6" />
             </div>
             <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-sky-600 to-blue-600 dark:from-sky-400 dark:to-blue-400 bg-clip-text text-transparent group-hover:from-sky-500 group-hover:to-blue-500 transition-colors">
-              Visitor MS
+              IIIT Nagpur VMS
             </span>
           </Link>
         </div>
@@ -178,7 +159,7 @@ export function Layout() {
           </p>
           {accessibleNavLinks.map((link) => {
             const isDashboard = link.href === "/app/dashboard";
-            const isDashboardChild = isDashboard && (location.pathname.startsWith("/app/visits") || location.pathname === "/app/approval" || location.pathname === "/app/users");
+            const isDashboardChild = isDashboard && (location.pathname.startsWith("/app/visits") || location.pathname === "/app/users");
             const isActive = location.pathname === link.href || isDashboardChild;
 
             return (
@@ -209,58 +190,6 @@ export function Layout() {
         </nav>
 
         <div className="p-4 border-t border-gray-100 dark:border-slate-800 mt-auto shrink-0 bg-gray-50/50 dark:bg-slate-800/20">
-          {canApprove && (
-            <button
-              onClick={() => navigate("/app/approval")}
-              className="w-full flex flex-col gap-2 px-3 py-2.5 mb-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-500 transition-all duration-200 group"
-            >
-
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Bell className="w-4 h-4 text-gray-500 dark:text-slate-400 group-hover:text-amber-500 transition-colors" />
-                    {pendingCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none animate-pulse">
-                        {pendingCount > 9 ? "9+" : pendingCount}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs font-semibold text-gray-600 dark:text-slate-300 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                    {pendingCount > 0 ? `${pendingCount} Pending Approval${pendingCount > 1 ? "s" : ""}` : "Approvals"}
-                  </span>
-                </div>
-                {pendingCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[10px] font-bold">
-                    {pendingCount}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2 ml-1">
-                    {activeCount > 0 ? (
-                      <>
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                      </>
-                    ) : (
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-300 dark:bg-slate-600"></span>
-                    )}
-                  </span>
-                  <span className="text-xs font-medium text-gray-500 dark:text-slate-400">
-                    {activeCount > 0 ? `${activeCount} Active Visitor${activeCount > 1 ? "s" : ""}` : "No active visitors"}
-                  </span>
-                </div>
-                {activeCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-400 text-[10px] font-bold">
-                    {activeCount}
-                  </span>
-                )}
-              </div>
-            </button>
-          )}
-
           <div className="flex items-center justify-between px-2 mb-4">
             <span className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Appearance</span>
             <ThemeSwitcher />
@@ -290,7 +219,7 @@ export function Layout() {
 
       {/* ── Main Content Area ── */}
       <main className="flex-1 lg:ml-72 flex flex-col min-h-screen transition-all duration-300 relative">
-        <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-8 mt-4 lg:mt-0">
+        <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 pt-20 pb-8 lg:pt-8 lg:pb-6">
           <Outlet />
         </div>
       </main>

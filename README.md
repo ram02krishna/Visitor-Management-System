@@ -1,6 +1,6 @@
-# Visitor Management System
+# IIIT Nagpur Visitor Management System
 
-A modern, real-time Visitor Management System designed to streamline the process of managing visitors in a corporate or campus environment. It provides a secure, efficient, and user-friendly way to track and manage visitor information, ensuring a smooth experience for both visitors and hosts.
+The official modern, real-time Visitor Management System of Indian Institute of Information Technology, Nagpur (IIITN). Designed to streamline the process of managing visitors in a campus environment. It provides a secure, efficient, and user-friendly way to track and manage visitor information, ensuring a smooth experience for both visitors and staff.
 
 ## Overview
 
@@ -14,19 +14,17 @@ This project is a full-stack web application that helps organizations manage vis
   - **Host:** Register visitors, create visit requests, view visit logs, manage own visitors
   - **Guard:** Approve/deny visit requests, manage QR code check-ins, scan visitor credentials
   - **Admin:** Full system access, user management, analytics, bulk operations
-- **Visitor Registration:** Hosts can pre-register visitors with detailed information (name, email, phone, company)
+- **Visitor Registration:** Hosts can pre-register visitors with detailed information (name, email, phone)
 - **Public Visit Request:** Anonymous users can request visits without authentication via public form
 - **Visit Approval Workflow:** Multi-stage approval process (pending → approved/denied → checked-in → completed)
 - **QR Code Generation:** Automatic QR codes for approved visits with email delivery
 - **Email Notifications:** Automated emails via EmailJS with customizable templates and QR code attachments
 
 ### Administrative Features
-- **Dashboard Analytics:** Real-time statistics on visits, users, and trends with visual charts
 - **User Management:** Create, edit, delete users with role assignment and department management
 - **Bulk Visitor Upload:** CSV import for batch visitor registrations with validation
 - **Visit Logs:** Comprehensive filtering, search, and sorting capabilities with role-based view
 - **Public Display:** Real-time visitor status display for lobby screens (check-in/check-out updates)
-- **Analytics Dashboard:** Detailed visit trends, visitor statistics, and departmental insights
 
 ### Technical Features
 - **QR Code Scanning:** Built-in HTML5 QR code scanner for check-in/check-out
@@ -55,7 +53,6 @@ This project is a full-stack web application that helps organizations manage vis
 | **Email Service** | EmailJS | Email delivery with custom templates |
 | **QR Code** | qrcode + react-qr-code | QR code generation and display |
 | **QR Scanning** | html5-qrcode | Browser-based QR code scanning |
-| **Charts & Graphs** | Recharts | Interactive data visualization |
 | **CSV Processing** | PapaParse | Parse and process CSV files |
 | **Date Utilities** | date-fns | Date manipulation and formatting |
 | **UI Notifications** | Sonner + react-hot-toast + react-toastify | Toast notifications system |
@@ -90,14 +87,11 @@ Visitor-Management-System/
 │   │   ├── Login.tsx                     # User login with email/password
 │   │   ├── Signup.tsx                    # New user registration
 │   │   ├── Dashboard.tsx                 # Role-based dashboard (Admin/Guard/Host)
-│   │   ├── AnalyticsDashboard.tsx        # Visitor statistics and trend charts
-│   │   ├── VisitsChart.tsx               # Chart component for visit trends
 │   │   ├── StatsGrid.tsx & StatItem.tsx  # Statistics display components
 │   │   ├── VisitorRegistration.tsx       # Register new visitors (Host feature)
 │   │   ├── PreRegisterVisitor.tsx        # Pre-registration form
 │   │   ├── BulkVisitorUpload.tsx         # CSV bulk import for multiple visitors
-│   │   ├── VisitorApproval.tsx           # Queue for pending visit approvals
-│   │   ├── VisitLogs.tsx & VisitDetails.tsx  # Visit history and details
+│   │   ├── VisitLogs.tsx                 # Complete visit history and records
 │   │   ├── FilteredVisits.tsx            # Advanced filtering component
 │   │   ├── OngoingVisitsCard.tsx         # Display currently active visits
 │   │   ├── ScanQrCode.tsx                # QR code scanner for check-in/out
@@ -112,9 +106,6 @@ Visitor-Management-System/
 │   │
 │   ├── hooks/                            # Custom React hooks
 │   │   ├── useVisitStats.ts              # Fetch and manage visit statistics
-│   │   ├── useHostStats.ts               # Host-specific statistics hook
-│   │   ├── useGuardStats.ts              # Guard-specific statistics hook
-│   │   ├── useScanQrCode.ts              # QR code scanning logic
 │   │   ├── use-debounce.ts               # Debounce utility for inputs
 │   │   ├── use-mobile.ts                 # Mobile device detection
 │   │   └── use-toast.ts                  # Toast notification hook
@@ -154,7 +145,7 @@ Visitor-Management-System/
 - **hosts** - User accounts (Admin, Guard, Host)
   - id, auth_id, name, email, department_id, role, active, created_at, updated_at
 - **visitors** - Visitor information
-  - id, name, email, phone, company, photo_url, created_at, updated_at
+  - id, name, email, phone, photo_url, created_at, updated_at
 - **visits** - Visit records and tracking
   - id, visitor_id, host_id, purpose, status, check_in_time, check_out_time, valid_until, notes, created_at, updated_at
 - **departments** - Organization departments

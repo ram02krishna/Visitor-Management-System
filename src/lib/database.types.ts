@@ -44,7 +44,7 @@ export type Database = {
           name: string;
           email: string;
           department_id: string;
-          role: "admin" | "guard" | "host";
+          role: "admin" | "guard" | "host" | "visitor";
           active: boolean;
           created_at: string;
           updated_at: string;
@@ -55,7 +55,7 @@ export type Database = {
           name: string;
           email: string;
           department_id: string;
-          role?: "admin" | "guard" | "host";
+          role?: "admin" | "guard" | "host" | "visitor";
           active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -66,7 +66,7 @@ export type Database = {
           name?: string;
           email?: string;
           department_id?: string;
-          role?: "admin" | "guard" | "host";
+          role?: "admin" | "guard" | "host" | "visitor";
           active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -78,8 +78,10 @@ export type Database = {
           name: string;
           email: string;
           phone: string;
-          company: string | null;
           photo_url: string | null;
+          id_proof_url: string | null;
+          is_blacklisted: boolean;
+          blacklist_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -88,8 +90,10 @@ export type Database = {
           name: string;
           email: string;
           phone: string;
-          company?: string | null;
           photo_url?: string | null;
+          id_proof_url?: string | null;
+          is_blacklisted?: boolean;
+          blacklist_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -98,8 +102,10 @@ export type Database = {
           name?: string;
           email?: string;
           phone?: string;
-          company?: string | null;
           photo_url?: string | null;
+          id_proof_url?: string | null;
+          is_blacklisted?: boolean;
+          blacklist_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -115,6 +121,14 @@ export type Database = {
           check_out_time: string | null;
           valid_until: string | null;
           notes: string | null;
+          vehicle_number: string | null;
+          vehicle_type: string | null;
+          entry_gate: string | null;
+          exit_gate: string | null;
+          expected_out_time: string | null;
+          additional_guests: number;
+          pass_type: "single_day" | "multi_day";
+          valid_from: string;
           created_at: string;
           updated_at: string;
         };
@@ -128,6 +142,14 @@ export type Database = {
           check_out_time?: string | null;
           valid_until?: string | null;
           notes?: string | null;
+          vehicle_number?: string | null;
+          vehicle_type?: string | null;
+          entry_gate?: string | null;
+          exit_gate?: string | null;
+          expected_out_time?: string | null;
+          additional_guests?: number;
+          pass_type?: "single_day" | "multi_day";
+          valid_from?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -141,6 +163,14 @@ export type Database = {
           check_out_time?: string | null;
           valid_until?: string | null;
           notes?: string | null;
+          vehicle_number?: string | null;
+          vehicle_type?: string | null;
+          entry_gate?: string | null;
+          exit_gate?: string | null;
+          expected_out_time?: string | null;
+          additional_guests?: number;
+          pass_type?: "single_day" | "multi_day";
+          valid_from?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -153,8 +183,9 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      user_role: "admin" | "guard" | "host";
+      user_role: "admin" | "guard" | "host" | "visitor";
       visit_status: "pending" | "approved" | "denied" | "completed" | "cancelled" | "checked-in";
+      pass_type: "single_day" | "multi_day";
     };
   };
 };

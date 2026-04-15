@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Shield, Eye, EyeOff, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "../store/auth";
 import log from "../lib/logger";
+import { SEOMeta } from "./SEOMeta";
 
 export function Login() {
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ export function Login() {
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950">
+      <SEOMeta title="Log In" />
 
       {/* ── Left Panel (Branding) ── */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-sky-600 to-indigo-900 border-r border-sky-800">
@@ -69,7 +71,7 @@ export function Login() {
             </h1>
 
             <p className="text-lg text-sky-100/80 mb-10 leading-relaxed font-light">
-              Welcome to the Indian Institute Of Information Technology Nagpur visitor portal. Designed for uncompromising security and ease of use.
+              Welcome to the Indian Institute Of Information Technology Nagpur Visitor Management System. Designed for uncompromising security and ease of use.
             </p>
 
             <div className="space-y-4">

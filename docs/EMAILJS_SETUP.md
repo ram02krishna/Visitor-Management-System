@@ -157,7 +157,7 @@ This guide will walk you through setting up EmailJS for automated visitor email 
                       font-size:13px;
                       color:rgba(255,255,255,0.78);
                     ">
-                      Campus Visitor Management System
+                      IIIT Nagpur Visitor Management System
                     </div>
 
                   </td>
@@ -484,7 +484,7 @@ This guide will walk you through setting up EmailJS for automated visitor email 
                 <td align="center" style="background:linear-gradient(135deg, #065f46 0%, #059669 55%, #10b981 100%); padding:36px 28px 32px;">
                   <div style="font-size:48px; line-height:1; margin-bottom:14px;">&#9989;</div>
                   <h1 style="margin:0 0 6px 0; font-size:23px; font-weight:700; color:#ffffff; letter-spacing:-0.3px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Your Visit is Approved!</h1>
-                  <p style="margin:0; font-size:13px; color:rgba(255,255,255,0.75); font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Campus Visitor Management System</p>
+                  <p style="margin:0; font-size:13px; color:rgba(255,255,255,0.75); font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">IIIT Nagpur Visitor Management System</p>
                 </td>
               </tr>
             </table>
@@ -682,7 +682,7 @@ This guide will walk you through setting up EmailJS for automated visitor email 
               <tr>
                 <td align="center" style="padding:22px 28px;">
                   <p style="margin:0; font-size:12.5px; color:#94a3b8; line-height:1.7; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;"><strong style="color:#64748b;">Need help?</strong> Contact the reception desk upon arrival.</p>
-                  <p style="margin:10px 0 0 0; font-size:12.5px; color:#94a3b8; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Automated message from <strong style="color:#64748b;">Campus Visitor Management System</strong></p>
+                  <p style="margin:10px 0 0 0; font-size:12.5px; color:#94a3b8; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Automated message from <strong style="color:#64748b;">IIIT Nagpur Visitor Management System</strong></p>
                   <p style="margin:6px 0 0 0; font-size:11.5px; color:#94a3b8; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Do not reply to this email &middot; Ref: {{visit_id}}</p>
                 </td>
               </tr>
@@ -758,7 +758,7 @@ This guide will walk you through setting up EmailJS for automated visitor email 
                 <td align="center" style="background:linear-gradient(135deg, #7f1d1d 0%, #b91c1c 55%, #ef4444 100%); padding:36px 28px 32px;">
                   <div style="font-size:48px; line-height:1; margin-bottom:14px;">&#10060;</div>
                   <h1 style="margin:0 0 6px 0; font-size:23px; font-weight:700; color:#ffffff; letter-spacing:-0.3px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Visit Request Declined</h1>
-                  <p style="margin:0; font-size:13px; color:rgba(255,255,255,0.75); font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Campus Visitor Management System</p>
+                  <p style="margin:0; font-size:13px; color:rgba(255,255,255,0.75); font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">IIIT Nagpur Visitor Management System</p>
                 </td>
               </tr>
             </table>
@@ -949,7 +949,7 @@ This guide will walk you through setting up EmailJS for automated visitor email 
               <tr>
                 <td align="center" style="padding:22px 28px;">
                   <p style="margin:0; font-size:12.5px; color:#94a3b8; line-height:1.7; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;"><strong style="color:#64748b;">Need help?</strong> Contact the reception desk for further assistance.</p>
-                  <p style="margin:10px 0 0 0; font-size:12.5px; color:#94a3b8; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Automated message from <strong style="color:#64748b;">Campus Visitor Management System</strong></p>
+                  <p style="margin:10px 0 0 0; font-size:12.5px; color:#94a3b8; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Automated message from <strong style="color:#64748b;">IIIT Nagpur Visitor Management System</strong></p>
                   <p style="margin:6px 0 0 0; font-size:11.5px; color:#94a3b8; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">Do not reply to this email &middot; Ref: {{visit_id}}</p>
                 </td>
               </tr>

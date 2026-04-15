@@ -155,7 +155,7 @@ export function Signup() {
               Create account
             </h2>
             <p className="mt-2 text-base text-gray-600 dark:text-slate-400">
-              Sign up to access the Visitor Management System
+              Sign up to access the IIIT Nagpur VMS
             </p>
           </div>
 

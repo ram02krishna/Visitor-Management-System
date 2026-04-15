@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       if (session?.user) {
         log.info("[Auth] Session found for user:", session.user.id);
-        log.info("[Auth] Fetching host data from database...");
+        log.info("[Auth] Fetching profile data from database...");
 
         const { data: hostData, error: hostError } = await supabase
           .from("hosts")
@@ -59,22 +59,17 @@ export const useAuthStore = create<AuthState>((set) => ({
           .single();
 
         if (hostError && hostError.code !== "PGRST116") {
-          log.error("[Auth] Host data fetch error:", hostError);
+          log.error("[Auth] Profile data fetch error:", hostError);
           throw hostError;
         }
 
         if (hostData) {
-          log.info("[Auth] Host data retrieved:", {
+          log.info("[Auth] Profile data retrieved:", {
             id: hostData.id,
             name: hostData.name,
             role: hostData.role,
             email: hostData.email,
           });
-
-          if (hostData.role === "visitor") {
-            log.warn("[Auth] Visitor role blocked");
-            throw new Error("Visitor role is no longer supported");
-          }
 
           log.info("[Auth] Authentication successful");
           set({
@@ -84,8 +79,8 @@ export const useAuthStore = create<AuthState>((set) => ({
             error: null,
           });
         } else {
-          log.warn("[Auth] Auth session exists but no host record found - account may be incomplete");
-          // Sign out the user since their host record doesn't exist
+          log.warn("[Auth] Auth session exists but no profile record found - account may be incomplete");
+          // Sign out the user since their profile record doesn't exist
           await supabase.auth.signOut();
           set({ isAuthenticated: false, isLoading: false, user: null, error: null });
         }
@@ -120,7 +115,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       if (data?.user) {
         log.info("[Auth] Sign-in successful, user ID:", data.user.id);
-        log.info("[Auth] Fetching host data...");
+        log.info("[Auth] Fetching profile data...");
 
         const { data: hostData, error: hostError } = await supabase
           .from("hosts")
@@ -129,10 +124,10 @@ export const useAuthStore = create<AuthState>((set) => ({
           .single();
 
         if (hostError) {
-          log.error("[Auth] Host data fetch error:", hostError);
+          log.error("[Auth] Profile data fetch error:", hostError);
           // If the error is "no rows" (PGRST116), provide a helpful message
           if (hostError.code === "PGRST116") {
-            log.warn("[Auth] Auth user exists but no host record found - account setup may be incomplete");
+            log.warn("[Auth] Auth user exists but no profile record found - account setup may be incomplete");
             // Sign out the user since their host record doesn't exist
             await supabase.auth.signOut();
             throw new Error("Your account setup is incomplete. Please contact support or try signing up again.");
@@ -140,18 +135,12 @@ export const useAuthStore = create<AuthState>((set) => ({
           throw hostError;
         }
 
-        log.info("[Auth] Host data retrieved:", {
+        log.info("[Auth] Profile data retrieved:", {
           id: hostData.id,
           name: hostData.name,
           role: hostData.role,
           email: hostData.email,
         });
-
-        //  Block visitor role
-        if (hostData.role === "visitor") {
-          log.warn("[Auth] Login blocked: visitor role");
-          throw new Error("Visitor role is no longer supported");
-        }
 
         log.info("[Auth] Login successful");
         set({
@@ -179,8 +168,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // First, check if a host record already exists with this email
-      log.info("[Auth] Checking for existing host with email:", email);
+      // First, check if a profile record already exists with this email
+      log.info("[Auth] Checking for existing profile with email:", email);
       const { data: existingHost, error: checkError } = await supabase
         .from("hosts")
         .select("id, email, auth_id")
@@ -188,11 +177,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         .single();
 
       if (checkError && checkError.code !== "PGRST116") {
-        log.error("[Auth] Error checking for existing host:", checkError.message);
+        log.error("[Auth] Error checking for existing profile:", checkError.message);
       }
 
       if (existingHost) {
-        log.warn("[Auth] Host with this email already exists");
+        log.warn("[Auth] Profile with this email already exists");
         throw new Error("An account with this email already exists. Please sign in instead.");
       }
 
@@ -229,9 +218,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       log.info("[Auth] Auth user created:", authData.user.id);
 
-      // Host record will be created by a database trigger.
+      // Profile record will be created by a database trigger.
       // Now, simply set loading to false and clear error.
-      log.info("[Auth] Signup successful; host record handled by trigger.");
+      log.info("[Auth] Signup successful; profile record handled by trigger.");
       set({ isLoading: false, error: null });
     } catch (error: unknown) {
       const errorMessage = (error as Error).message || "Failed to create account";

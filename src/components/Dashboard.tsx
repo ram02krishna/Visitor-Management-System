@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
-import { AlertCircle, CheckCircle2, XCircle, Hourglass, LogIn, ArrowRight, Users, CalendarDays, RefreshCw } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { AlertCircle, CheckCircle2, XCircle, Hourglass, LogIn, Users, CalendarDays, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useVisitStats } from "../hooks/useVisitStats";
 import { StatsGrid } from "./StatsGrid";
 import { formatDistanceToNow } from "date-fns";
 import { formatISTTime } from "../lib/dateIST";
+import { SEOMeta } from "./SEOMeta";
 
 function getInitials(name: string) {
   if (!name) return "US";
@@ -109,8 +110,6 @@ export function Dashboard() {
     (status: string) => {
       if (status === "total_users") {
         navigate("/app/users");
-      } else if (status === "pending") {
-        navigate("/app/approval");
       } else {
         navigate(`/app/visits/${status}`);
       }
@@ -132,9 +131,9 @@ export function Dashboard() {
       const { data } = await query.limit(5);
       const visits = (data as unknown as RecentVisit[]) || [];
       setRecentVisits(visits);
-      try { localStorage.setItem("vms_recent_visits", JSON.stringify(visits)); } catch { /* quota */ }
+      try { localStorage.setItem("vms_recent_visits", JSON.stringify(visits)); } catch { /* Ignore quota errors */ }
     } catch {
-
+      // Silence fetch errors for stale-while-revalidate pattern
     } finally {
       setRecentLoading(false);
     }
@@ -160,9 +159,9 @@ export function Dashboard() {
       const { data } = await query;
       const visitors = (data as unknown as ActiveVisitor[]) || [];
       setActiveVisitors(visitors);
-      try { localStorage.setItem("vms_active_visitors", JSON.stringify(visitors)); } catch { /* quota */ }
+      try { localStorage.setItem("vms_active_visitors", JSON.stringify(visitors)); } catch { /* Ignore quota errors */ }
     } catch {
-
+      // Silence fetch errors for stale-while-revalidate pattern
     } finally {
       setActiveLoading(false);
     }
@@ -248,9 +247,10 @@ export function Dashboard() {
   }, [user?.role, user?.id, fetchStats, fetchRecentVisits, fetchActiveVisitors]);
 
   return (
-    <div className="animate-fadeIn pb-12">
+    <div className="animate-fadeIn pb-8">
+      <SEOMeta title="Dashboard" />
       {/* ── Welcome Header ── */}
-      <div className="mb-10 animate-fadeInUp flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-6 animate-fadeInUp flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-5">
           <div className="hidden sm:flex w-[72px] h-[72px] rounded-2xl bg-[#3b82f6] shadow-[0_8px_30px_rgb(59,130,246,0.3)] text-white items-center justify-center text-3xl font-extrabold border-[3px] border-white dark:border-slate-800 shrink-0">
             {getInitials(user?.name || "")}
@@ -295,7 +295,7 @@ export function Dashboard() {
       )}
 
       {/* ── Statistics Overview ── */}
-      <div className="animate-fadeInUp mb-10" style={{ animationDelay: '0.2s' }}>
+      <div className="animate-fadeInUp mb-8" style={{ animationDelay: '0.2s' }}>
         <h2 className="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest mb-4">Overview</h2>
         {loading ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -310,7 +310,7 @@ export function Dashboard() {
 
       {/* ── Active Visitors (guard/admin/host) ── */}
       {(isGuardOrAdmin || user?.role === "host") && (
-        <div className="animate-fadeInUp mb-10" style={{ animationDelay: '0.25s' }}>
+        <div className="animate-fadeInUp mb-8" style={{ animationDelay: '0.25s' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Active Visitors</h2>
@@ -328,7 +328,7 @@ export function Dashboard() {
               Live
             </span>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] border border-white/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl overflow-hidden transition-all duration-300">
             {activeLoading ? (
               <div className="divide-y divide-gray-100 dark:divide-slate-800">
                 {[...Array(2)].map((_, i) => (
@@ -358,14 +358,11 @@ export function Dashboard() {
 
       {/* ── Recent Visits Feed ── */}
       <div className="animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
           <h2 className="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">Recent Visits</h2>
-          <Link to="/app/logs" className="flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors">
-            View all <ArrowRight className="w-3 h-3" />
-          </Link>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] border border-white/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl overflow-hidden transition-all duration-300">
           {recentLoading ? (
             <div className="divide-y divide-gray-100 dark:divide-slate-800">
               {[...Array(4)].map((_, i) => (
@@ -394,9 +391,8 @@ export function Dashboard() {
                 return (
                   <div
                     key={visit.id}
-                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors duration-150 cursor-pointer animate-fadeInUp"
+                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors duration-150 animate-fadeInUp"
                     style={{ animationDelay: `${i * 0.05}s` }}
-                    onClick={() => navigate("/app/logs")}
                   >
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 text-white flex items-center justify-center font-bold text-sm shadow-inner shrink-0">
                       {initials}

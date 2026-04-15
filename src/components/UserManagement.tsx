@@ -1,19 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { UserPlus, Edit3, Trash2, Search, Mail, Shield, Users as UsersIcon, Inbox } from "lucide-react";
+import { UserPlus, Edit3, Trash2, Search, Mail, Shield, Users as UsersIcon, Inbox, X } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
 import type { Database } from "../lib/database.types";
 import { BackButton } from "./BackButton";
 
-type Host = Database["public"]["Tables"]["hosts"]["Row"];
+type Profile = Database["public"]["Tables"]["hosts"]["Row"];
 type Department = Database["public"]["Tables"]["departments"]["Row"];
 type AddUserFormData = {
   name: string;
   email: string;
   department_id: string;
-  role: "admin" | "guard" | "host";
+  role: "admin" | "guard" | "host" | "visitor";
   password_confirm: string;
   password: string;
 };
@@ -36,7 +36,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 
 export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState<Host[]>(() => {
+  const [users, setUsers] = useState<Profile[]>(() => {
     try { return JSON.parse(localStorage.getItem("vms_users") ?? "null") ?? []; } catch { return []; }
   });
   const [loading, setLoading] = useState(() => 
@@ -46,6 +46,16 @@ export function UserManagement() {
   const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case "admin": return "Admin";
+      case "guard": return "Guard";
+      case "host": return "Host";
+      case "visitor": return "Visitor";
+      default: return role;
+    }
+  };
 
   const handleToggleModal = () => {
     setIsUserManagementModalOpen(!isUserManagementModalOpen);
@@ -131,7 +141,7 @@ export function UserManagement() {
         throw dbError;
       }
 
-      toast.success("User created successfully!");
+      toast.success("User successfully Created");
       fetchUsers(); // Refetch users
       handleToggleModal();
       reset();
@@ -142,28 +152,30 @@ export function UserManagement() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 animate-fadeIn">
-      <BackButton />
+    <div className="px-4 sm:px-6 lg:px-8 pb-8 animate-fadeIn">
+      <div className="max-w-7xl mx-auto">
+        <BackButton />
 
-      <PageHeader
-        icon={UsersIcon}
-        gradient="from-sky-500 to-blue-600"
-        title="Users"
-        description="Manage system users and their roles."
-        right={
-          <button
-            type="button"
-            onClick={handleToggleModal}
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-sky-600 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/30 hover:shadow-xl hover:shadow-sky-500/40 hover:from-sky-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <UserPlus className="h-4 w-4" strokeWidth={2.5} />
-            Add User
-          </button>
-        }
-      />
+        <PageHeader
+          icon={UsersIcon}
+          gradient="from-sky-500 to-blue-600"
+          title="Users"
+          description="Manage system users and their roles."
+          right={
+            <button
+              type="button"
+              onClick={handleToggleModal}
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-sky-600 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-500/30 hover:shadow-xl hover:shadow-sky-500/40 hover:from-sky-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <UserPlus className="h-4 w-4" strokeWidth={2.5} />
+              Add User
+            </button>
+          }
+        />
+      </div>
 
-      <div className="mt-8">
-        <div className="flex flex-1 items-center justify-between mb-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="mt-6">        <div className="flex flex-1 items-center justify-between mb-4">
           <div className="w-full max-w-lg lg:max-w-xs">
             <label htmlFor="search" className="sr-only">
               Search
@@ -245,7 +257,7 @@ export function UserManagement() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 dark:from-purple-900/50 dark:to-indigo-900/50 dark:text-purple-200 border border-purple-200 dark:border-purple-800">
-                                  {user.role}
+                                  {getRoleLabel(user.role)}
                                 </span>
                                 <span
                                   className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${user.active
@@ -271,7 +283,7 @@ export function UserManagement() {
                                 <Shield className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
                               </div>
                               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 dark:from-purple-900/50 dark:to-indigo-900/50 dark:text-purple-200 border border-purple-200 dark:border-purple-800">
-                                {user.role}
+                                {getRoleLabel(user.role)}
                               </span>
                             </div>
                           </td>
@@ -321,145 +333,167 @@ export function UserManagement() {
           </div>
         </div>
       </div>
+      </div>
 
       {isUserManagementModalOpen && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
-              &#8203;
-            </span>
-            <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-              <div className="sm:flex sm:items-start">
-                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                  <h3
-                    className="text-lg leading-6 font-medium text-gray-900 dark:text-slate-100"
-                    id="modal-title"
-                  >
+        <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 overflow-y-auto pt-20 sm:pt-0">
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-fadeIn" 
+            onClick={handleToggleModal} 
+            aria-hidden="true" 
+          />
+
+          <div className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-4rem)] overflow-hidden animate-scaleIn border border-gray-100 dark:border-slate-800 flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-8 border-b border-gray-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-lg">
+                  <UserPlus className="h-6 w-6" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
                     Add New User
                   </h3>
-                  <div className="mt-2">
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                          Name
-                        </label>
-                        <input
-                          type="text"
-                          {...register("name", { required: "Name is required" })}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                        />
-                        {errors.name && (
-                          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          {...register("email", { required: "Email is required" })}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                        />
-                        {errors.email && (
-                          <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                          Password
-                        </label>
-                        <input
-                          type="password"
-                          {...register("password", { required: "Password is required" })}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                        />
-                        {errors.password && (
-                          <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                          Confirm Password
-                        </label>
-                        <input
-                          type="password"
-                          {...register("password_confirm", {
-                            required: "You must confirm your password",
-                          })}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                        />
-                        {errors.password_confirm && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.password_confirm.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                          Role
-                        </label>
-                        <select
-                          {...register("role", { required: "Role is required" })}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                        >
-                          <option value="host">Host</option>
-                          <option value="guard">Guard</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                        {errors.role && (
-                          <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                          Department
-                        </label>
-                        <select
-                          {...register("department_id", { required: "Department is required" })}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                        >
-                          {departments.map((dep) => (
-                            <option key={dep.id} value={dep.id}>
-                              {dep.name}
-                            </option>
-                          ))}
-                        </select>
-                        {errors.department_id && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.department_id.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="pt-4">
-                        <button
-                          type="submit"
-                          disabled={isSubmitting}
-                          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-gray-400"
-                        >
-                          Create User
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleToggleModal}
-                          className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm dark:bg-slate-700 dark:text-slate-100 dark:border-slate-600 dark:hover:bg-slate-600"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-                  </div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Create a new system account</p>
                 </div>
               </div>
+              <button 
+                onClick={handleToggleModal} 
+                className="p-2.5 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-gray-200 dark:hover:border-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto flex-1">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      {...register("name", { required: "Name is required" })}
+                      className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                      placeholder="John Doe"
+                    />
+                    {errors.name && (
+                      <p className="mt-1 text-xs font-medium text-red-500">{errors.name.message}</p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      {...register("email", { required: "Email is required" })}
+                      className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                      placeholder="john@example.com"
+                    />
+                    {errors.email && (
+                      <p className="mt-1 text-xs font-medium text-red-500">{errors.email.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">
+                      Password *
+                    </label>
+                    <input
+                      type="password"
+                      {...register("password", { required: "Password is required" })}
+                      className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                      placeholder="••••••••"
+                    />
+                    {errors.password && (
+                      <p className="mt-1 text-xs font-medium text-red-500">{errors.password.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">
+                      Confirm Password *
+                    </label>
+                    <input
+                      type="password"
+                      {...register("password_confirm", {
+                        required: "You must confirm your password",
+                      })}
+                      className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                      placeholder="••••••••"
+                    />
+                    {errors.password_confirm && (
+                      <p className="mt-1 text-xs font-medium text-red-500">
+                        {errors.password_confirm.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">
+                      Role *
+                    </label>
+                    <select
+                      {...register("role", { required: "Role is required" })}
+                      className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white font-bold"
+                    >
+                      <option value="host">Host</option>
+                      <option value="guard">Guard</option>
+                      <option value="admin">Admin</option>
+                      <option value="visitor">Visitor</option>
+                    </select>
+                    {errors.role && (
+                      <p className="mt-1 text-xs font-medium text-red-500">{errors.role.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">
+                      Department *
+                    </label>
+                    <select
+                      {...register("department_id", { required: "Department is required" })}
+                      className="block w-full rounded-xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white font-bold"
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((dep) => (
+                        <option key={dep.id} value={dep.id}>
+                          {dep.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.department_id && (
+                      <p className="mt-1 text-xs font-medium text-red-500">
+                        {errors.department_id.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl py-3.5 px-6 text-sm font-bold uppercase tracking-widest text-white shadow-lg bg-gradient-to-r from-sky-600 to-blue-600 hover:shadow-sky-500/25 transition-all active:scale-[0.98] hover:-translate-y-0.5 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>Create User account</>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleToggleModal}
+                    className="px-8 py-3.5 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600 transition-all active:scale-[0.98]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

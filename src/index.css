@@ -270,11 +270,15 @@ html {
 
   /* ── Glassmorphism ── */
   .glass {
-    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl;
+    @apply bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)];
   }
 
   .glass-dark {
-    @apply bg-slate-950/80 backdrop-blur-xl;
+    @apply bg-slate-950/60 backdrop-blur-2xl border border-slate-800/50 shadow-[0_8px_30px_rgb(0,0,0,0.2)];
+  }
+  
+  .glass-panel {
+    @apply bg-gradient-to-br from-white/80 to-white/50 dark:from-slate-900/80 dark:to-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl;
   }
 
   /* ── Gradients ── */
@@ -292,20 +296,20 @@ html {
 
   /* ── Buttons ── */
   .btn-primary {
-    @apply bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/30 hover:scale-105 active:scale-95;
+    @apply bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black tracking-widest text-[10px] uppercase py-3 px-6 rounded-2xl transition-all duration-300 hover:shadow-[0_8px_20px_rgb(14,165,233,0.3)] hover:-translate-y-0.5 active:scale-95 border border-white/20;
   }
 
   .btn-secondary {
-    @apply bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-105 active:scale-95;
+    @apply bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black tracking-widest text-[10px] uppercase py-3 px-6 rounded-2xl transition-all duration-300 hover:shadow-[0_8px_20px_rgb(16,185,129,0.3)] hover:-translate-y-0.5 active:scale-95 border border-white/20;
   }
 
   /* ── Cards ── */
   .card {
-    @apply bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 dark:border-slate-800;
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 p-6 border border-white/60 dark:border-slate-700/50;
   }
 
   .card-hover {
-    @apply card hover:-translate-y-1;
+    @apply card hover:-translate-y-1.5;
   }
 
   /* ── Loading spinner ── */
@@ -316,6 +320,6 @@ html {
 
   /* ── Active nav link ── */
   .nav-link-active {
-    @apply bg-gradient-to-r from-sky-500/15 to-blue-500/15 text-sky-600 dark:text-sky-400 font-semibold;
+    @apply bg-white/90 dark:bg-slate-800/90 shadow-sm border border-gray-200/50 dark:border-slate-700/50 text-sky-600 dark:text-sky-400 font-bold backdrop-blur-md;
   }
 }
