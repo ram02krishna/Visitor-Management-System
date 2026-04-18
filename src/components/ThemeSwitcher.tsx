@@ -23,19 +23,27 @@ export const ThemeSwitcher = () => {
   }, [isDarkMode]);
 
   const toggleTheme = () => {
+    // @ts-expect-error - View Transition API
     if (!document.startViewTransition) {
       setIsDarkMode(!isDarkMode);
       return;
     }
 
-    // Capture precise dimensions
-    const startX = window.innerWidth;
-    const startY = window.innerHeight;
+    // Use current viewport dimensions for responsive calculation
+    const vWidth = window.innerWidth;
+    const vHeight = window.innerHeight;
+    
+    // Position the circle at the bottom-right corner as requested
+    const startX = vWidth;
+    const startY = vHeight;
+    
+    // Calculate the distance to the farthest corner (top-left: 0,0)
     const endRadius = Math.hypot(startX, startY);
 
     // Store state before change
     const isCurrentlyDark = document.documentElement.classList.contains("dark");
 
+    // @ts-expect-error - View Transition API
     const transition = document.startViewTransition(() => {
       flushSync(() => {
         setIsDarkMode(!isCurrentlyDark);
@@ -48,9 +56,6 @@ export const ThemeSwitcher = () => {
         `circle(${endRadius}px at ${startX}px ${startY}px)`,
       ];
 
-      // We always animate the DARK layer.
-      // If we are currently Dark, the Dark layer is the 'old' one (we are switching to light).
-      // If we are currently Light, the Dark layer is the 'new' one (we are switching to dark).
       const pseudoElement = isCurrentlyDark 
         ? "::view-transition-old(root)" 
         : "::view-transition-new(root)";
