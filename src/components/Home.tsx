@@ -11,21 +11,24 @@ const features = [
   {
     icon: ShieldCheck,
     title: "Secure Check-ins",
-    description: "Ensure only authorized visitors access the campus with QR-code verification, roll-based approvals, and real-time gate alerts.",
+    description:
+      "Ensure only authorized visitors access the campus with QR-code verification, roll-based approvals, and real-time gate alerts.",
     gradient: "from-emerald-500 to-green-600",
     shadow: "shadow-emerald-500/20",
   },
   {
     icon: ClipboardList,
     title: "Easy Registration",
-    description: "Quick and intuitive visitor registration for everyone — walk-ins at the main gate, self-service kiosks, or pre-registered campus events.",
+    description:
+      "Quick and intuitive visitor registration for everyone — walk-ins at the main gate, self-service kiosks, or pre-registered campus events.",
     gradient: "from-sky-500 to-blue-600",
     shadow: "shadow-sky-500/20",
   },
   {
     icon: BarChart2,
     title: "Real-Time Monitoring",
-    description: "Track visitor activity across campus with live dashboards, automated logs, and instant status updates for every entry and exit.",
+    description:
+      "Track visitor activity across campus with live dashboards, automated logs, and instant status updates for every entry and exit.",
     gradient: "from-purple-500 to-indigo-600",
     shadow: "shadow-purple-500/20",
   },
@@ -51,15 +54,13 @@ const Home = () => {
     <div className="min-h-screen flex flex-col scroll-smooth bg-gray-50 dark:bg-slate-950">
       <SEOMeta title="IIIT Nagpur VMS Home" />
 
-
       {/* ── Navbar ── */}
       <nav
         className={`w-full flex items-center justify-between px-4 sm:px-6 lg:px-10 py-3 fixed top-0 z-50 transition-all duration-500 ${scrolled
-          ? "bg-white/95 dark:bg-slate-950/95 shadow-lg dark:shadow-slate-800/50 backdrop-blur-md border-b border-gray-200/60 dark:border-slate-800/60"
-          : "bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg"
+            ? "bg-white/95 dark:bg-slate-950/95 shadow-lg dark:shadow-slate-800/50 backdrop-blur-md border-b border-gray-200/60 dark:border-slate-800/60"
+            : "bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg"
           }`}
       >
-
         <div
           className="flex items-center gap-2.5 cursor-pointer group"
           onClick={() => navigate("/")}
@@ -110,7 +111,9 @@ const Home = () => {
       </nav>
 
       <div
-        className={`md:hidden fixed top-[68px] left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-xl transition-all duration-300 ${mobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-3 pointer-events-none"
+        className={`md:hidden fixed top-[68px] left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-xl transition-all duration-300 ${mobileMenuOpen
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-3 pointer-events-none"
           }`}
       >
         <div className="px-4 py-3 space-y-1.5">
@@ -121,7 +124,10 @@ const Home = () => {
           ].map(({ label, path }) => (
             <button
               key={label}
-              onClick={() => { navigate(path); setMobileMenuOpen(false); }}
+              onClick={() => {
+                navigate(path);
+                setMobileMenuOpen(false);
+              }}
               className="w-full text-left px-4 py-3 text-gray-700 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 rounded-xl transition-all duration-200 font-medium text-sm"
             >
               {label}
@@ -139,7 +145,6 @@ const Home = () => {
         <div className="absolute inset-0 bg-black/20 dark:bg-black/40" />
 
         <div className="relative z-10 flex flex-col items-center gap-8 animate-scaleIn">
-
           <div className="bg-transparent p-5 sm:p-8 max-w-2xl w-full text-center transition-all duration-500">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white drop-shadow-md mb-5 animate-fadeInUp leading-tight">
               Welcome to Indian Institute Of Information Technology Nagpur
@@ -148,7 +153,8 @@ const Home = () => {
               className="text-white/90 font-medium text-base sm:text-lg mb-8 animate-fadeInUp leading-relaxed drop-shadow-sm max-w-xl mx-auto"
               style={{ animationDelay: "0.15s" }}
             >
-              The official Visitor Management System for Indian Institute Of Information Technology Nagpur. Enhance campus security and visitor efficiency seamlessly.
+              The official Visitor Management System of Indian Institute Of Information Technology
+              Nagpur. Enhance campus security and visitor efficiency seamlessly.
             </p>
             <div
               className="flex flex-col sm:flex-row gap-3 justify-center animate-fadeInUp"
@@ -175,7 +181,6 @@ const Home = () => {
       {/* ── Features Section ── */}
       <section className="py-12 sm:py-16 bg-gray-50 dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-
           <div className="text-center mb-12 animate-fadeInUp">
             <span className="inline-block text-xs font-semibold tracking-widest uppercase text-sky-600 dark:text-sky-400 mb-3 bg-sky-50 dark:bg-sky-900/20 px-4 py-1.5 rounded-full border border-sky-200 dark:border-sky-800/50">
               Why Choose Us
@@ -184,7 +189,8 @@ const Home = () => {
               Everything you need to secure IIIT Nagpur
             </h2>
             <p className="mt-4 text-gray-500 dark:text-slate-400 max-w-2xl mx-auto text-base sm:text-lg">
-              Our system is designed to keep the campus secure, your faculty and staff informed, and your visitors happy.
+              Our system is designed to keep the campus secure, your faculty and staff informed, and
+              your visitors happy.
             </p>
           </div>
 
@@ -196,18 +202,28 @@ const Home = () => {
                 style={{ animationDelay: `${i * 0.12}s` }}
               >
                 {/* hover glow bg */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`} />
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`}
+                />
 
                 <div className="relative">
-                  <div className={`inline-flex p-4 bg-gradient-to-br ${gradient} rounded-2xl shadow-lg ${shadow} mb-5 transition-transform duration-300 group-hover:scale-110`}>
+                  <div
+                    className={`inline-flex p-4 bg-gradient-to-br ${gradient} rounded-2xl shadow-lg ${shadow} mb-5 transition-transform duration-300 group-hover:scale-110`}
+                  >
                     <Icon size={36} className="text-white" strokeWidth={2} />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-3">{title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{description}</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-3">
+                    {title}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">
+                    {description}
+                  </p>
                 </div>
 
                 {/* bottom accent bar */}
-                <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient} scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left rounded-b-3xl`} />
+                <div
+                  className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient} scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left rounded-b-3xl`}
+                />
               </div>
             ))}
           </div>
@@ -217,8 +233,12 @@ const Home = () => {
       {/* ── Extra CTA strip ── */}
       <section className="bg-gradient-to-r from-sky-600 to-blue-700 py-10 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Welcome to Indian Institute Of Information Technology Nagpur</h3>
-          <p className="text-sky-100 mb-7 text-base">Experience a seamless and secure visitor management process.</p>
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+            Welcome to Indian Institute Of Information Technology Nagpur
+          </h3>
+          <p className="text-sky-100 mb-7 text-base">
+            Experience a seamless and secure visitor management process.
+          </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => navigate("/signup")}
@@ -240,7 +260,6 @@ const Home = () => {
       <footer className="bg-gray-900 dark:bg-slate-950 text-white py-8 border-t border-gray-800 dark:border-slate-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg">
                 <img src="/visitor-management.png" alt="Logo" className="h-5 w-5" />

@@ -38,4 +38,3 @@ export const navLinks = [
     roles: ["admin", "host", "guard", "visitor"],
   },
 ];
-

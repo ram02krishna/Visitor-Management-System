@@ -74,7 +74,6 @@ function writeCache(role: string, stats: StatItem[]) {
 }
 
 export const useVisitStats = (user: User | null) => {
-
   const [stats, setStats] = useState<StatItem[]>(() => {
     if (!user?.role) return [];
     return readCache(user.role) ?? [];
@@ -125,12 +124,52 @@ export const useVisitStats = (user: User | null) => {
         { count: cancelledCount },
         { count: deniedCount },
       ] = await Promise.all([
-        (await applyRoleFilter(supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", "checked-in"))),
-        (await applyRoleFilter(supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.APPROVED).gte("approved_at", todayStart).lt("approved_at", todayEnd))),
-        (await applyRoleFilter(supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.PENDING).gte("created_at", todayStart).lt("created_at", todayEnd))),
-        (await applyRoleFilter(supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.COMPLETED).gte("check_out_time", todayStart).lt("check_out_time", todayEnd))),
-        (await applyRoleFilter(supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.CANCELLED).gte("updated_at", todayStart).lt("updated_at", todayEnd))),
-        (await applyRoleFilter(supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", VISIT_STATUS.DENIED).gte("updated_at", todayStart).lt("updated_at", todayEnd))),
+        await applyRoleFilter(
+          supabase
+            .from("visits")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "checked-in")
+        ),
+        await applyRoleFilter(
+          supabase
+            .from("visits")
+            .select("*", { count: "exact", head: true })
+            .eq("status", VISIT_STATUS.APPROVED)
+            .gte("approved_at", todayStart)
+            .lt("approved_at", todayEnd)
+        ),
+        await applyRoleFilter(
+          supabase
+            .from("visits")
+            .select("*", { count: "exact", head: true })
+            .eq("status", VISIT_STATUS.PENDING)
+            .gte("created_at", todayStart)
+            .lt("created_at", todayEnd)
+        ),
+        await applyRoleFilter(
+          supabase
+            .from("visits")
+            .select("*", { count: "exact", head: true })
+            .eq("status", VISIT_STATUS.COMPLETED)
+            .gte("check_out_time", todayStart)
+            .lt("check_out_time", todayEnd)
+        ),
+        await applyRoleFilter(
+          supabase
+            .from("visits")
+            .select("*", { count: "exact", head: true })
+            .eq("status", VISIT_STATUS.CANCELLED)
+            .gte("updated_at", todayStart)
+            .lt("updated_at", todayEnd)
+        ),
+        await applyRoleFilter(
+          supabase
+            .from("visits")
+            .select("*", { count: "exact", head: true })
+            .eq("status", VISIT_STATUS.DENIED)
+            .gte("updated_at", todayStart)
+            .lt("updated_at", todayEnd)
+        ),
       ]);
 
       // 2. Extra Queries based on Role

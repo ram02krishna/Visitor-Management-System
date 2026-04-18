@@ -54,9 +54,9 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-slot', 'embla-carousel-react'],
+          'ui-vendor': ['lucide-react', '@radix-ui/react-toast'],
           'supabase-vendor': ['@supabase/supabase-js'],
-          'utils-vendor': ['date-fns', 'zod', 'react-hook-form', 'zustand']
+          'utils-vendor': ['date-fns', 'react-hook-form', 'zustand']
         }
       }
     },

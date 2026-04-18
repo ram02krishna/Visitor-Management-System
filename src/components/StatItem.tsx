@@ -13,13 +13,16 @@ export type StatItemProps = {
 };
 
 // Rich per-card theme: gradient, glow, blob, border accent
-const CARD_THEMES: Record<string, {
-  gradient: string;
-  glow: string;
-  blob: string;
-  accent: string;
-  badge: string;
-}> = {
+const CARD_THEMES: Record<
+  string,
+  {
+    gradient: string;
+    glow: string;
+    blob: string;
+    accent: string;
+    badge: string;
+  }
+> = {
   "text-blue-500": {
     gradient: "from-blue-500 to-indigo-600",
     glow: "shadow-blue-500/30",
@@ -71,7 +74,7 @@ export const StatItem = React.memo(
 
     return (
       <div
-        className={`relative bg-white dark:bg-slate-900 rounded-3xl shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group animate-fadeInUp overflow-hidden border border-gray-100/80 dark:border-slate-800 ${
+        className={`relative flex flex-col bg-white dark:bg-slate-900 rounded-[2rem] shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group animate-fadeInUp overflow-hidden border border-gray-100/80 dark:border-slate-800 ${
           status ? "cursor-pointer" : ""
         } ${className || ""}`}
         style={style}
@@ -89,7 +92,7 @@ export const StatItem = React.memo(
           className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} opacity-0 group-hover:opacity-[0.04] transition-opacity duration-500`}
         />
 
-        <div className="p-6 relative z-10">
+        <div className="p-6 relative z-10 flex-1 flex flex-col">
           {/* Top row: icon + arrow */}
           <div className="flex items-start justify-between">
             <div
@@ -109,11 +112,11 @@ export const StatItem = React.memo(
           </div>
 
           {/* Value + label */}
-          <div className="mt-5">
-            <p className="text-[2.4rem] font-black tracking-tight text-gray-900 dark:text-white leading-none tabular-nums">
+          <div className="mt-auto pt-5">
+            <p className="text-3xl xs:text-4xl sm:text-[2.4rem] font-extrabold tracking-tighter text-gray-900 dark:text-white leading-none tabular-nums">
               {value}
             </p>
-            <h3 className="mt-1.5 text-sm font-semibold text-gray-500 dark:text-slate-400 tracking-wide uppercase">
+            <h3 className="mt-1.5 text-xs sm:text-sm font-bold text-gray-400 dark:text-slate-500 tracking-widest uppercase">
               {name}
             </h3>
           </div>
@@ -121,7 +124,9 @@ export const StatItem = React.memo(
 
         <div className="px-6 py-3 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800/60 relative z-10 flex items-center gap-1.5">
           <Zap className={`h-3.5 w-3.5 ${color}`} />
-          <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">Today&apos;s Metric</span>
+          <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">
+            Today&apos;s Metric
+          </span>
         </div>
 
         <div

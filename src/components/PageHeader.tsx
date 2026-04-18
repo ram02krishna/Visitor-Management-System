@@ -47,9 +47,8 @@ export function PageHeader({
     >
       {/* ─── Left: icon + title block ─── */}
       <div className="flex items-center gap-3 min-w-0">
-
         <div
-          className={`p-2.5 bg-gradient-to-br ${gradient} rounded-xl shadow-lg shrink-0 transition-transform duration-300 hover:scale-110 hover:rotate-3`}
+          className={`p-2.5 bg-gradient-to-br ${gradient} rounded-2xl shadow-lg shrink-0 transition-transform duration-300 hover:scale-110 hover:rotate-3`}
         >
           <Icon className="h-6 w-6 text-white" strokeWidth={2.5} aria-hidden="true" />
         </div>
@@ -57,13 +56,13 @@ export function PageHeader({
         {/* Title + optional badge + description */}
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight">
               {title}
             </h1>
             {badge}
           </div>
           {description && (
-            <p className="mt-1 text-sm text-gray-600 dark:text-slate-400 leading-relaxed">
+            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-slate-400 leading-relaxed tracking-normal">
               {description}
             </p>
           )}
@@ -71,9 +70,7 @@ export function PageHeader({
       </div>
 
       {/* ─── Right slot ─── */}
-      {right && (
-        <div className="shrink-0 w-full sm:w-auto sm:ml-4">{right}</div>
-      )}
+      {right && <div className="shrink-0 w-full sm:w-auto sm:ml-4">{right}</div>}
     </div>
   );
 }

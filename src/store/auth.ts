@@ -79,7 +79,9 @@ export const useAuthStore = create<AuthState>((set) => ({
             error: null,
           });
         } else {
-          log.warn("[Auth] Auth session exists but no profile record found - account may be incomplete");
+          log.warn(
+            "[Auth] Auth session exists but no profile record found - account may be incomplete"
+          );
           // Sign out the user since their profile record doesn't exist
           await supabase.auth.signOut();
           set({ isAuthenticated: false, isLoading: false, user: null, error: null });
@@ -127,10 +129,14 @@ export const useAuthStore = create<AuthState>((set) => ({
           log.error("[Auth] Profile data fetch error:", hostError);
           // If the error is "no rows" (PGRST116), provide a helpful message
           if (hostError.code === "PGRST116") {
-            log.warn("[Auth] Auth user exists but no profile record found - account setup may be incomplete");
+            log.warn(
+              "[Auth] Auth user exists but no profile record found - account setup may be incomplete"
+            );
             // Sign out the user since their host record doesn't exist
             await supabase.auth.signOut();
-            throw new Error("Your account setup is incomplete. Please contact support or try signing up again.");
+            throw new Error(
+              "Your account setup is incomplete. Please contact support or try signing up again."
+            );
           }
           throw hostError;
         }
@@ -200,13 +206,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (signUpError) {
         log.error("[Auth] Sign-up error:", signUpError.message);
 
-        if (signUpError.message.includes("already registered") || 
-            signUpError.message.includes("User already exists") ||
-            signUpError.message.includes("already exists") ||
-            signUpError.status === 422) {
+        if (
+          signUpError.message.includes("already registered") ||
+          signUpError.message.includes("User already exists") ||
+          signUpError.message.includes("already exists") ||
+          signUpError.status === 422
+        ) {
           log.warn("[Auth] Email already exists in auth system");
           // Try to fetch existing auth user's role to provide helpful message
-          throw new Error("This email is already registered. Please sign in with your existing account, or reset your password if you forgot it.");
+          throw new Error(
+            "This email is already registered. Please sign in with your existing account, or reset your password if you forgot it."
+          );
         }
         throw signUpError;
       }

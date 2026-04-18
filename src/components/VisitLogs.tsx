@@ -4,21 +4,21 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
 import { useAuthStore } from "../store/auth";
-import { 
-  Search, 
-  Inbox, 
-  Calendar, 
-  CheckCircle2, 
-  Hourglass, 
-  Filter, 
-  Download, 
-  Circle, 
-  XCircle, 
-  LogIn, 
-  ScrollText, 
-  Users, 
+import {
+  Search,
+  Inbox,
+  Calendar,
+  CheckCircle2,
+  Hourglass,
+  Filter,
+  Download,
+  Circle,
+  XCircle,
+  LogIn,
+  ScrollText,
+  Users,
   X,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 import type { Database } from "../lib/database.types";
 import logger from "../lib/logger";
@@ -34,14 +34,39 @@ type VisitLog = Database["public"]["Tables"]["visits"]["Row"] & {
   host: Database["public"]["Tables"]["hosts"]["Row"] | null;
 };
 
-const statusConfig: Record<string, { label: string; icon: React.ElementType; className: string }> = {
-  pending: { label: "Pending", icon: Hourglass, className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  approved: { label: "Approved", icon: CheckCircle2, className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
-  denied: { label: "Denied", icon: XCircle, className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-  completed: { label: "Completed", icon: CheckCircle2, className: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400" },
-  "checked-in": { label: "Active", icon: LogIn, className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
-  cancelled: { label: "Cancelled", icon: XCircle, className: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400" },
-};
+const statusConfig: Record<string, { label: string; icon: React.ElementType; className: string }> =
+  {
+    pending: {
+      label: "Pending",
+      icon: Hourglass,
+      className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    },
+    approved: {
+      label: "Approved",
+      icon: CheckCircle2,
+      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    },
+    denied: {
+      label: "Denied",
+      icon: XCircle,
+      className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    },
+    completed: {
+      label: "Completed",
+      icon: CheckCircle2,
+      className: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+    },
+    "checked-in": {
+      label: "Active",
+      icon: LogIn,
+      className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
+    },
+    cancelled: {
+      label: "Cancelled",
+      icon: XCircle,
+      className: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400",
+    },
+  };
 
 const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -74,9 +99,11 @@ export function VisitLogs() {
       `);
 
       if (debouncedSearchTerm) {
-        query = query.or(`purpose.ilike.%${debouncedSearchTerm}%,visitor:visitors(name.ilike.%${debouncedSearchTerm}%)`);
+        query = query.or(
+          `purpose.ilike.%${debouncedSearchTerm}%,visitor:visitors(name.ilike.%${debouncedSearchTerm}%)`
+        );
       }
-      
+
       if (statusFilter) {
         query = query.eq("status", statusFilter);
       }
@@ -86,9 +113,10 @@ export function VisitLogs() {
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(dateFilter);
         endOfDay.setHours(23, 59, 59, 999);
-        
-        query = query.gte("created_at", startOfDay.toISOString())
-                     .lte("created_at", endOfDay.toISOString());
+
+        query = query
+          .gte("created_at", startOfDay.toISOString())
+          .lte("created_at", endOfDay.toISOString());
       } else {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -100,14 +128,14 @@ export function VisitLogs() {
       }
 
       const { data, error } = await query.order("created_at", { ascending: false });
-      
+
       if (error) {
         logger.error("[VisitLogs] Primary fetch failed, trying fallback:", error);
         const fallbackQuery = supabase.from("visits").select(`*, visitor:visitors(*)`);
         const { data: fallbackData, error: fallbackError } = await fallbackQuery
           .order("created_at", { ascending: false })
           .limit(100);
-          
+
         if (fallbackError) throw fallbackError;
         setLogs(fallbackData as VisitLog[]);
       } else {
@@ -134,15 +162,15 @@ export function VisitLogs() {
     try {
       const csvData = logs.map((logItem) => ({
         "Visitor Name": logItem.visitor?.name || "Unknown",
-        "Host": logItem.host?.name || "Unknown",
-        "Purpose": logItem.purpose,
-        "Guests": logItem.additional_guests || 0,
-        "Vehicle": logItem.vehicle_number || "-",
-        "Phone": logItem.visitor?.phone || "-",
-        "Status": statusConfig[logItem.status]?.label || logItem.status,
+        Host: logItem.host?.name || "Unknown",
+        Purpose: logItem.purpose,
+        Guests: logItem.additional_guests || 0,
+        Vehicle: logItem.vehicle_number || "-",
+        Phone: logItem.visitor?.phone || "-",
+        Status: statusConfig[logItem.status]?.label || logItem.status,
         "Check-in": logItem.check_in_time ? formatIST(new Date(logItem.check_in_time)) : "-",
         "Check-out": logItem.check_out_time ? formatIST(new Date(logItem.check_out_time)) : "-",
-        "Created": logItem.created_at ? formatIST(new Date(logItem.created_at)) : "-",
+        Created: logItem.created_at ? formatIST(new Date(logItem.created_at)) : "-",
       }));
       const csv = Papa.unparse(csvData);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -166,31 +194,35 @@ export function VisitLogs() {
       <SEOMeta title="Visit Logs" />
       <div className="max-w-7xl mx-auto">
         <BackButton />
-        <PageHeader 
-          icon={ScrollText} 
-          gradient="from-emerald-500 to-teal-600" 
-          title="Visit Logs" 
-          description="Complete history of all visitor records and activities" 
+        <PageHeader
+          icon={ScrollText}
+          gradient="from-emerald-500 to-teal-600"
+          title="Visit Logs"
+          description="Complete history of all visitor records and activities"
           right={
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                   <Search className="w-4 h-4 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                 </div>
-                <input 
-                  type="text" 
-                  className="w-full sm:w-64 py-2.5 pl-10 pr-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white text-xs" 
-                  placeholder="Quick search..." 
-                  value={searchTerm} 
-                  onChange={(e) => setSearchTerm(e.target.value)} 
+                <input
+                  type="text"
+                  className="w-full sm:w-64 py-2.5 pl-10 pr-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white text-xs"
+                  placeholder="Quick search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <button 
-                onClick={handleExport} 
-                disabled={exporting} 
+              <button
+                onClick={handleExport}
+                disabled={exporting}
                 className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl py-2.5 px-4 font-black uppercase tracking-widest text-[9px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg disabled:opacity-50 shrink-0"
               >
-                {exporting ? <Circle className="animate-spin w-3 h-3" /> : <Download className="w-3 h-3" />}
+                {exporting ? (
+                  <Circle className="animate-spin w-3 h-3" />
+                ) : (
+                  <Download className="w-3 h-3" />
+                )}
                 Export CSV
               </button>
             </div>
@@ -204,14 +236,14 @@ export function VisitLogs() {
             <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
               <Calendar className="w-4 h-4 text-gray-400 group-focus-within:text-emerald-500" />
             </div>
-            <input 
-              type="date" 
-              className="py-2.5 pl-10 pr-10 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white text-xs" 
-              value={dateFilter} 
-              onChange={e => setDateFilter(e.target.value)} 
+            <input
+              type="date"
+              className="py-2.5 pl-10 pr-10 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white text-xs"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
             />
             {dateFilter && (
-              <button 
+              <button
                 onClick={() => setDateFilter("")}
                 className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-white"
               >
@@ -223,10 +255,10 @@ export function VisitLogs() {
             <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
               <Filter className="w-4 h-4 text-gray-400" />
             </div>
-            <select 
-              className="py-2.5 pl-10 pr-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white text-xs font-bold" 
-              value={statusFilter} 
-              onChange={e => setStatusFilter(e.target.value)}
+            <select
+              className="py-2.5 pl-10 pr-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white text-xs font-bold"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
@@ -243,125 +275,180 @@ export function VisitLogs() {
           <div className="-my-2 sm:-mx-6 lg:-mx-8 flex-1">
             <div className="inline-block w-full py-2 align-middle md:px-6 lg:px-8 h-full">
               <div className="glass-panel rounded-[2rem] overflow-hidden transition-all duration-300 h-full flex flex-col">
-                <table className="w-full divide-y divide-gray-300 dark:divide-slate-700/50 flex-1">
-                      <thead className="bg-gray-50 dark:bg-slate-800">
-                    <tr>
-                      <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6 bg-gray-50 dark:bg-slate-800 sticky top-0">Visitor</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-slate-800 sticky top-0">Guests</th>
-
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden xl:table-cell bg-gray-50 dark:bg-slate-800 sticky top-0">Vehicle</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell bg-gray-50 dark:bg-slate-800 sticky top-0">Phone</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden xl:table-cell bg-gray-50 dark:bg-slate-800 sticky top-0">Entry Time</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden xl:table-cell bg-gray-50 dark:bg-slate-800 sticky top-0">Exit Time</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden xl:table-cell bg-gray-50 dark:bg-slate-800 sticky top-0">Entry Gate</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white hidden xl:table-cell bg-gray-50 dark:bg-slate-800 sticky top-0">Exit Gate</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-slate-800 sticky top-0">Status</th>
-                      <th className="relative py-3.5 pl-3 pr-4 sm:pr-6 bg-gray-50 dark:bg-slate-800 sticky top-0"><span className="sr-only">Actions</span></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white dark:bg-slate-900 dark:divide-slate-700">
-                    {loading ? (
-                      <tr><td colSpan={9} className="text-center py-12 text-gray-500 font-bold uppercase tracking-widest text-xs">Loading records...</td></tr>
-                    ) : logs.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="px-6 py-24 text-center">
-                          <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
-                            <div className="bg-gradient-to-tr from-gray-100 to-gray-50 dark:from-slate-800 dark:to-slate-700/50 p-5 rounded-[2rem] mb-6 shadow-inner ring-1 ring-gray-200 dark:ring-slate-700">
-                              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm">
-                                <Inbox className="w-8 h-8 text-gray-400 dark:text-slate-400" />
-                              </div>
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-tight">No Records Found</h3>
-                            <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">Try adjusting your search or filters.</p>
-                          </div>
-                        </td>
+                <div className="lg:hidden px-6 py-2 bg-emerald-50/50 dark:bg-emerald-900/10 border-b border-gray-100 dark:border-slate-800/50">
+                  <p className="text-[9px] font-black text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-widest flex items-center gap-1.5">
+                    <span className="animate-pulse">←</span> Swipe horizontally to see more details <span className="animate-pulse">→</span>
+                  </p>
+                </div>
+                <div className="flex-1 overflow-x-auto scroll-ios scrollbar-hide">
+                  <table className="w-full divide-y divide-gray-200 dark:divide-slate-700/50 flex-1 min-w-[1100px]">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-slate-800/90 dark:to-slate-800/60">
+                        <th className="py-4 pl-5 pr-3 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Visitor
+                        </th>
+                        <th className="px-3 py-4 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Guests
+                        </th>
+                        <th className="px-3 py-4 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Vehicle
+                        </th>
+                        <th className="px-3 py-4 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Phone
+                        </th>
+                        <th className="px-3 py-4 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Entry Time
+                        </th>
+                        <th className="px-3 py-4 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Exit Time
+                        </th>
+                        <th className="px-3 py-4 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Entry Gate
+                        </th>
+                        <th className="px-3 py-4 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Exit Gate
+                        </th>
+                        <th className="px-3 py-4 text-left text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest sticky top-0">
+                          Status
+                        </th>
+                        <th className="relative py-4 pl-3 pr-4 sm:pr-5 sticky top-0">
+                          <span className="sr-only">Actions</span>
+                        </th>
                       </tr>
-                    ) : (
-                      logs.map((logItem, idx) => {
-                        const cfg = statusConfig[logItem.status] || statusConfig["pending"];
-                        const StatusIcon = cfg.icon;
-                        const visitorName = logItem.visitor?.name || "Unknown";
-                        
-                        return (
-                          <tr 
-                            key={logItem.id} 
-                            onClick={() => setSelectedVisit(logItem)} 
-                            className="cursor-pointer hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors animate-fadeInUp"
-                            style={{ animationDelay: `${idx * 0.02}s` }}
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white dark:bg-slate-900 dark:divide-slate-700">
+                      {loading ? (
+                        <tr>
+                          <td
+                            colSpan={10}
+                            className="text-center py-12 text-gray-500 font-bold uppercase tracking-widest text-xs"
                           >
-                            <td className="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-black text-xs shrink-0 overflow-hidden">
-                                  {logItem.visitor?.photo_url ? (
-                                    <img src={logItem.visitor.photo_url} className="w-full h-full object-cover" />
-                                  ) : visitorName.charAt(0).toUpperCase()}
+                            Loading records...
+                          </td>
+                        </tr>
+                      ) : logs.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} className="px-6 py-24 text-center">
+                            <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                              <div className="bg-gradient-to-tr from-gray-100 to-gray-50 dark:from-slate-800 dark:to-slate-700/50 p-5 rounded-[2rem] mb-6 shadow-inner ring-1 ring-gray-200 dark:ring-slate-700">
+                                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm">
+                                  <Inbox className="w-8 h-8 text-gray-400 dark:text-slate-400" />
                                 </div>
-                                <p className="font-semibold">{visitorName}</p>
                               </div>
-                            </td>
-                            <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400">
-                              {logItem.additional_guests > 0 ? (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase">
-                                  <Users className="w-3 h-3" /> +{logItem.additional_guests}
-                                </span>
-                              ) : (
-                                <span className="text-gray-300 dark:text-slate-600">None</span>
-                              )}
-                            </td>
+                              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-tight">
+                                No Records Found
+                              </h3>
+                              <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">
+                                Try adjusting your search or filters.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        logs.map((logItem, idx) => {
+                          const cfg = statusConfig[logItem.status] || statusConfig["pending"];
+                          const StatusIcon = cfg.icon;
+                          const visitorName = logItem.visitor?.name || "Unknown";
 
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-400 hidden xl:table-cell">
-                              {logItem.vehicle_number ? (
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{logItem.vehicle_number}</span>
-                              ) : (
-                                <span className="text-gray-300">—</span>
-                              )}
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-400 hidden lg:table-cell">
-                              {logItem.visitor?.phone || "—"}
-                            </td>
-                            <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400 hidden xl:table-cell">
-                              {logItem.check_in_time ? (
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{formatIST(logItem.check_in_time)}</span>
-                              ) : (
-                                <span className="text-gray-300">—</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400 hidden xl:table-cell">
-                              {logItem.check_out_time ? (
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{formatIST(logItem.check_out_time)}</span>
-                              ) : (
-                                <span className="text-gray-300">—</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400 hidden xl:table-cell">
-                              {logItem.entry_gate ? (
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{logItem.entry_gate}</span>
-                              ) : (
-                                <span className="text-gray-300">—</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400 hidden xl:table-cell">
-                              {logItem.exit_gate ? (
-                                <span className="text-xs font-semibold text-gray-900 dark:text-white">{logItem.exit_gate}</span>
-                              ) : (
-                                <span className="text-gray-300">—</span>
-                              )}
-                            </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm">
-                              <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-widest ${cfg.className}`}>
-                                <StatusIcon className={`w-3 h-3 ${logItem.status === 'checked-in' ? 'animate-pulse' : ''}`} />
-                                {cfg.label}
-                              </span>
-                            </td>
-                            <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                              <ChevronRight className="h-4 w-4 text-gray-400 inline ml-2" />
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                          return (
+                            <tr
+                              key={logItem.id}
+                              onClick={() => setSelectedVisit(logItem)}
+                              className="cursor-pointer hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors animate-fadeInUp"
+                              style={{ animationDelay: `${idx * 0.02}s` }}
+                            >
+                              <td className="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-[1.25rem] bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-black text-xs shrink-0 overflow-hidden">
+                                    {logItem.visitor?.photo_url ? (
+                                      <img
+                                        src={logItem.visitor.photo_url}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      visitorName.charAt(0).toUpperCase()
+                                    )}
+                                  </div>
+                                  <p className="font-semibold">{visitorName}</p>
+                                </div>
+                              </td>
+                              <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400">
+                                {logItem.additional_guests > 0 ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase">
+                                    <Users className="w-3 h-3" /> +{logItem.additional_guests}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 dark:text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-400">
+                                {logItem.vehicle_number ? (
+                                  <span className="text-xs font-semibold text-gray-800 dark:text-slate-200">
+                                    {logItem.vehicle_number}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 dark:text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-slate-400">
+                                <span className="text-xs font-medium">{logItem.visitor?.phone || "—"}</span>
+                              </td>
+                              <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400">
+                                {logItem.check_in_time ? (
+                                  <span className="text-xs font-semibold text-gray-800 dark:text-slate-200">
+                                    {formatIST(logItem.check_in_time)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 dark:text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400">
+                                {logItem.check_out_time ? (
+                                  <span className="text-xs font-semibold text-gray-800 dark:text-slate-200">
+                                    {formatIST(logItem.check_out_time)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 dark:text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400">
+                                {logItem.entry_gate ? (
+                                  <span className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-[10px] font-bold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800/60 ring-1 ring-gray-200 dark:ring-slate-700/50">
+                                    {logItem.entry_gate}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 dark:text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-4 text-sm text-gray-500 dark:text-slate-400">
+                                {logItem.exit_gate ? (
+                                  <span className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-[10px] font-bold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800/60 ring-1 ring-gray-200 dark:ring-slate-700/50">
+                                    {logItem.exit_gate}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 dark:text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 rounded-xl px-2 py-1 text-[10px] font-black uppercase tracking-widest ${cfg.className}`}
+                                >
+                                  <StatusIcon
+                                    className={`w-3 h-3 ${logItem.status === "checked-in" ? "animate-pulse" : ""}`}
+                                  />
+                                  {cfg.label}
+                                </span>
+                              </td>
+                              <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                <ChevronRight className="h-4 w-4 text-gray-400 inline ml-2" />
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -369,9 +456,9 @@ export function VisitLogs() {
       </div>
 
       {selectedVisit && (
-        <VisitDetails 
-          visit={selectedVisit as unknown as React.ComponentProps<typeof VisitDetails>["visit"]} 
-          onClose={() => setSelectedVisit(null)} 
+        <VisitDetails
+          visit={selectedVisit as unknown as React.ComponentProps<typeof VisitDetails>["visit"]}
+          onClose={() => setSelectedVisit(null)}
           onUpdate={fetchVisits}
         />
       )}

@@ -62,7 +62,7 @@ Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
   const onSubmit = async (formData: BulkUploadFormData) => {
     setUploading(true);
     try {
-      if (!user || (!["admin", "guard", "host"].includes(user.role || ""))) {
+      if (!user || !["admin", "guard", "host"].includes(user.role || "")) {
         throw new Error("Only authorized users can bulk upload visitors.");
       }
 
@@ -184,7 +184,7 @@ Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
     }
   };
 
-  if (!user || (!["admin", "guard", "host"].includes(user.role || ""))) {
+  if (!user || !["admin", "guard", "host"].includes(user.role || "")) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-12">
         <BackButton />

@@ -32,7 +32,7 @@ export function ChangePassword() {
 
   const onSubmit = async (data: ChangePasswordFormData) => {
     setErrorMessage("");
-    
+
     if (data.newPassword !== data.confirmPassword) {
       toast.error("New passwords do not match");
       return;
@@ -105,8 +105,8 @@ export function ChangePassword() {
                   </div>
                   <input
                     type={showCurrentPassword ? "text" : "password"}
-                    {...register("currentPassword", { 
-                      required: "Current password is required"
+                    {...register("currentPassword", {
+                      required: "Current password is required",
                     })}
                     className="block w-full pl-10 pr-10 rounded-lg border-gray-300 dark:border-slate-600 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-800 dark:text-white transition-all"
                     placeholder="••••••••"
@@ -116,7 +116,11 @@ export function ChangePassword() {
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
-                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
                 {errors.currentPassword && (
@@ -125,8 +129,10 @@ export function ChangePassword() {
               </div>
 
               <div className="border-t border-gray-100 dark:border-slate-800 pt-6">
-                <h3 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">New Credentials</h3>
-                
+                <h3 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+                  New Credentials
+                </h3>
+
                 {/* New Password */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
@@ -138,9 +144,9 @@ export function ChangePassword() {
                     </div>
                     <input
                       type={showNewPassword ? "text" : "password"}
-                      {...register("newPassword", { 
+                      {...register("newPassword", {
                         required: "New password is required",
-                        minLength: { value: 6, message: "Password must be at least 6 characters" }
+                        minLength: { value: 6, message: "Password must be at least 6 characters" },
                       })}
                       className="block w-full pl-10 pr-10 rounded-lg border-gray-300 dark:border-slate-600 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-800 dark:text-white transition-all"
                       placeholder="••••••••"
@@ -150,7 +156,11 @@ export function ChangePassword() {
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
-                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                   {errors.newPassword && (
@@ -178,7 +188,11 @@ export function ChangePassword() {
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                   {errors.confirmPassword && (

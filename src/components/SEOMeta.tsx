@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from "react-helmet-async";
 
 interface SEOMetaProps {
   title: string;
@@ -11,13 +11,13 @@ export function SEOMeta({
   title,
   description = "Official IIIT Nagpur VMS. Experience a seamless and secure visitor management process.",
   keywords = "IIITN, VMS, IIIT Nagpur VMS, secure access, campus administration, smart campus",
-  type = "website"
+  type = "website",
 }: SEOMetaProps) {
   const fullTitle = `${title} | IIIT Nagpur VMS`;
   const defaultImage = "/pwa-512x512.png"; // PWA icon or specific OG image
 
   // Avoid accessing window for SSR stability, although purely client-side here
-  const url = typeof window !== 'undefined' ? window.location.href : '';
+  const url = typeof window !== "undefined" ? window.location.href : "";
 
   return (
     <Helmet>
