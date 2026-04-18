@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 import {
@@ -10,12 +10,13 @@ import {
   Users,
   CalendarDays,
   RefreshCw,
+  ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useVisitStats } from "../hooks/useVisitStats";
 import { StatsGrid } from "./StatsGrid";
 import { formatDistanceToNow } from "date-fns";
-import { formatISTTime } from "../lib/dateIST";
+import { formatISTTime, getISTTodayRange } from "../lib/dateIST";
 import { SEOMeta } from "./SEOMeta";
 
 function getInitials(name: string) {
@@ -128,8 +129,6 @@ export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { stats, loading, error: statsError, fetchStats } = useVisitStats(user);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
-  const connectionTestedRef = useRef(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // ── Stale-while-revalidate for recent visits ────────────────────────────
@@ -168,6 +167,39 @@ export function Dashboard() {
     },
     [navigate]
   );
+
+  const prefetchVisits = useCallback(async (status: string) => {
+    if (status === "total_users" || !user) return;
+    
+    // Only prefetch if not already in cache or cache is old
+    const cacheKey = `vms_filtered_${status}`;
+    if (localStorage.getItem(cacheKey)) return;
+
+    try {
+      let query = supabase.from("visits").select(`*, visitor:visitors(*)`);
+      if (status === "cancelled_denied") {
+        query = query.in("status", ["cancelled", "denied"]);
+      } else {
+        query = query.eq("status", status);
+      }
+
+      if (user?.role === "host") query = query.eq("host_id", user.id);
+
+      const [utcTodayStart, utcTomorrowStart] = getISTTodayRange();
+      if (status === "approved") {
+        query = query.gte("approved_at", utcTodayStart).lt("approved_at", utcTomorrowStart);
+      } else if (status === "completed") {
+        query = query.gte("check_out_time", utcTodayStart).lt("check_out_time", utcTomorrowStart);
+      } else if (status === "cancelled_denied") {
+        query = query.gte("created_at", utcTodayStart).lt("created_at", utcTomorrowStart);
+      }
+
+      const { data } = await query.order("created_at", { ascending: false }).limit(50);
+      if (data) {
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+      }
+    } catch { /* ignore prefetch errors */ }
+  }, [user]);
 
   const fetchRecentVisits = useCallback(async () => {
     try {
@@ -235,30 +267,13 @@ export function Dashboard() {
     fetchActiveVisitors();
     setLastRefresh(new Date());
 
+    // Poll every 60s as a fallback — realtime subscription handles live changes
     const refreshInterval = setInterval(() => {
       fetchStats();
       fetchRecentVisits();
       fetchActiveVisitors();
       setLastRefresh(new Date());
-    }, 30000);
-
-    const testConnection = async () => {
-      try {
-        const { error } = await supabase.from("visits").select("id").limit(1);
-        if (error) setConnectionError(`Connection error: ${error.message}`);
-        else setConnectionError(null);
-      } catch (err: unknown) {
-        let errorMessage = "An unknown error occurred.";
-        if (err instanceof Error) errorMessage = err.message;
-        else if (typeof err === "string") errorMessage = err;
-        setConnectionError(`Connection exception: ${errorMessage}`);
-      }
-    };
-
-    if (!connectionTestedRef.current) {
-      connectionTestedRef.current = true;
-      testConnection();
-    }
+    }, 60000);
 
     const channel = supabase
       .channel("visits_realtime")
@@ -350,10 +365,10 @@ export function Dashboard() {
         </div>
       </div>
 
-      {(connectionError || statsError) && (
+      {statsError && (
         <div className="mb-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 text-red-700 dark:text-red-300 rounded-2xl flex items-center animate-fadeIn shadow-sm">
           <AlertCircle className="h-6 w-6 mr-3 text-red-500" />
-          <span className="font-medium">{connectionError || statsError}</span>
+          <span className="font-medium">{statsError}</span>
         </div>
       )}
 
@@ -372,7 +387,11 @@ export function Dashboard() {
             ))}
           </div>
         ) : (
-          <StatsGrid stats={stats} handleStatCardClick={handleStatCardClick} />
+          <StatsGrid 
+            stats={stats} 
+            handleStatCardClick={handleStatCardClick} 
+            handlePrefetch={prefetchVisits} 
+          />
         )}
       </div>
 
@@ -413,9 +432,14 @@ export function Dashboard() {
                 ))}
               </div>
             ) : activeVisitors.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-slate-500">
-                <Users className="w-8 h-8 mb-2 opacity-30" />
-                <p className="text-sm font-medium">No visitors currently inside</p>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-teal-50 dark:bg-teal-900/20 rounded-full flex items-center justify-center mb-4 ring-8 ring-teal-50/50 dark:ring-teal-900/10">
+                  <Users className="w-8 h-8 text-teal-400 dark:text-teal-500 opacity-80" />
+                </div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">No Active Visitors</h3>
+                <p className="text-xs font-medium text-gray-500 dark:text-slate-400 max-w-[200px]">
+                  There are no visitors currently checked-in on campus.
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-slate-800">
@@ -430,10 +454,17 @@ export function Dashboard() {
 
       {/* ── Recent Visits Feed ── */}
       <div className="animate-fadeInUp" style={{ animationDelay: "0.3s" }}>
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em]">
             Recent Visits
           </h2>
+          <button
+            onClick={() => navigate("/app/logs")}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 border border-sky-100 dark:border-sky-800/40 transition-all duration-200 hover:scale-[1.03] active:scale-95"
+          >
+            View All
+            <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
 
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] border border-white/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl overflow-hidden transition-all duration-300">
@@ -451,9 +482,14 @@ export function Dashboard() {
               ))}
             </div>
           ) : recentVisits.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-slate-500">
-              <Hourglass className="w-10 h-10 mb-3 opacity-40" />
-              <p className="text-sm font-medium">No visits recorded yet</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 ring-8 ring-gray-50/50 dark:ring-slate-800/50">
+                <Hourglass className="w-8 h-8 text-gray-400 dark:text-slate-500 opacity-80" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">No Visits Yet</h3>
+              <p className="text-xs font-medium text-gray-500 dark:text-slate-400 max-w-[200px]">
+                There are no recently recorded visits to display.
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-slate-800">

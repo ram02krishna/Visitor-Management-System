@@ -69,6 +69,13 @@ export function UnifiedVisitRegistration() {
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const [isBlacklisted, setIsBlacklisted] = useState(false);
 
+  useEffect(() => {
+    if (qrImageUrl) {
+      const el = document.getElementById("generated-pass");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [qrImageUrl]);
+
   const userRole = user?.role;
   const isVisitor = userRole === "visitor";
   const isGuardOrAdmin = userRole === "guard" || userRole === "admin";
@@ -618,7 +625,7 @@ export function UnifiedVisitRegistration() {
           </form>
 
           {qrImageUrl && (
-            <div className="px-3 xs:px-4 sm:px-5 pb-6 sm:pb-8 animate-scaleIn print:m-0">
+            <div id="generated-pass" className="px-3 xs:px-4 sm:px-5 pb-6 sm:pb-8 animate-scaleIn print:m-0">
               <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 dark:via-slate-700 to-transparent mb-6 sm:mb-8" />
               <div className="flex justify-center">
                 <div className="w-full max-w-sm relative">

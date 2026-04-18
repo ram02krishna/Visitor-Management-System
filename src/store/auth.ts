@@ -27,9 +27,38 @@ interface AuthState {
   refreshProfile: () => Promise<void>;
 }
 
+// ─── Profile Cache ────────────────────────────────────────────────────────────
+// Persist the user profile so `initialize()` can hydrate instantly from cache
+// while the real session is verified in the background.
+const PROFILE_CACHE_KEY = "vms_user_profile";
+
+function readProfileCache(): User | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeProfileCache(user: User) {
+  try {
+    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(user));
+  } catch {/* quota — silently ignore */}
+}
+
+function clearProfileCache() {
+  try {
+    localStorage.removeItem(PROFILE_CACHE_KEY);
+  } catch {/* ignore */}
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  isAuthenticated: false,
+  // Hydrate immediately from cache so the UI skips the full-screen spinner
+  // on return visits. Will be replaced/cleared once the real session resolves.
+  user: readProfileCache(),
+  isAuthenticated: readProfileCache() !== null,
   isLoading: true,
   error: null,
 
@@ -46,18 +75,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
       if (hostData) {
-        set({ user: hostData as User });
+        const user = hostData as User;
+        set({ user });
+        writeProfileCache(user);
       }
     } catch (err) {
       log.error("[Auth] Failed to refresh profile:", err);
     }
   },
 
-  //  Initialize authentication
+  // ── Initialize authentication ──────────────────────────────────────────────
+  // 1. Pre-populate from cache instantly (zero spinner for returning users).
+  // 2. Verify session with Supabase in the background.
+  // 3. Re-hydrate profile from DB to pick up any role/name changes.
   initialize: async () => {
     log.info("[Auth] Initializing authentication...");
     try {
-      log.info("[Auth] Fetching session from Supabase...");
       const {
         data: { session },
         error,
@@ -65,14 +98,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) {
         log.error("[Auth] Session fetch error:", error.message);
-        set({ isAuthenticated: false, isLoading: false });
+        clearProfileCache();
+        set({ isAuthenticated: false, isLoading: false, user: null });
         return;
       }
 
       if (session?.user) {
         log.info("[Auth] Session found for user:", session.user.id);
-        log.info("[Auth] Fetching profile data from database...");
 
+        // Check if cache already matches this session — skip DB call if so
+        const cached = readProfileCache();
+        if (cached?.auth_id === session.user.id) {
+          log.info("[Auth] Profile cache hit — hydrating instantly");
+          set({ user: cached, isAuthenticated: true, isLoading: false, error: null });
+          // Background revalidation to pick up remote changes (role updates etc.)
+          supabase
+            .from("hosts")
+            .select("*")
+            .eq("auth_id", session.user.id)
+            .single()
+            .then(({ data }) => {
+              if (data) {
+                const fresh = data as User;
+                set({ user: fresh });
+                writeProfileCache(fresh);
+              }
+            });
+          return;
+        }
+
+        // Cache miss — fetch profile normally
         const { data: hostData, error: hostError } = await supabase
           .from("hosts")
           .select("*")
@@ -85,35 +140,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
 
         if (hostData) {
-          log.info("[Auth] Profile data retrieved:", {
-            id: hostData.id,
-            name: hostData.name,
-            role: hostData.role,
-            email: hostData.email,
-          });
-
+          const user = hostData as User;
           log.info("[Auth] Authentication successful");
-          set({
-            user: hostData as User,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
+          set({ user, isAuthenticated: true, isLoading: false, error: null });
+          writeProfileCache(user);
         } else {
-          log.warn(
-            "[Auth] Auth session exists but no profile record found - account may be incomplete"
-          );
-          // Sign out the user since their profile record doesn't exist
+          log.warn("[Auth] Auth session exists but no profile record found");
           await supabase.auth.signOut();
+          clearProfileCache();
           set({ isAuthenticated: false, isLoading: false, user: null, error: null });
         }
       } else {
         log.info("[Auth] No active session found");
+        clearProfileCache();
         set({ isAuthenticated: false, isLoading: false, user: null });
       }
     } catch (err: unknown) {
       log.error("[Auth] Authentication initialization failed:", (err as Error).message);
-      log.error("[Auth] Error details:", err);
       set({
         isAuthenticated: false,
         isLoading: false,
@@ -122,13 +165,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  //  Login function
+  // ── Login ──────────────────────────────────────────────────────────────────
   login: async (email: string, password: string) => {
     log.info("[Auth] Login attempt for email:", email);
     try {
       set({ isLoading: true, error: null });
 
-      log.info("[Auth] Signing in with Supabase...");
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
@@ -137,9 +179,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       if (data?.user) {
-        log.info("[Auth] Sign-in successful, user ID:", data.user.id);
-        log.info("[Auth] Fetching profile data...");
-
         const { data: hostData, error: hostError } = await supabase
           .from("hosts")
           .select("*")
@@ -147,13 +186,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
 
         if (hostError) {
-          log.error("[Auth] Profile data fetch error:", hostError);
-          // If the error is "no rows" (PGRST116), provide a helpful message
           if (hostError.code === "PGRST116") {
-            log.warn(
-              "[Auth] Auth user exists but no profile record found - account setup may be incomplete"
-            );
-            // Sign out the user since their host record doesn't exist
             await supabase.auth.signOut();
             throw new Error(
               "Your account setup is incomplete. Please contact support or try signing up again."
@@ -162,31 +195,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           throw hostError;
         }
 
-        log.info("[Auth] Profile data retrieved:", {
-          id: hostData.id,
-          name: hostData.name,
-          role: hostData.role,
-          email: hostData.email,
-        });
-
+        const user = hostData as User;
+        writeProfileCache(user);
         log.info("[Auth] Login successful");
-        set({
-          user: hostData as User,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
+        set({ user, isAuthenticated: true, isLoading: false, error: null });
       }
     } catch (error: unknown) {
       const errorMessage = (error as Error).message || "Invalid credentials";
       log.error("[Auth] Login failed:", errorMessage);
-      log.error("[Auth] Error details:", error);
-      set({
-        error: errorMessage,
-        isLoading: false,
-        isAuthenticated: false,
-        user: null,
-      });
+      set({ error: errorMessage, isLoading: false, isAuthenticated: false, user: null });
     }
   },
 
@@ -195,8 +212,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // First, check if a profile record already exists with this email
-      log.info("[Auth] Checking for existing profile with email:", email);
       const { data: existingHost, error: checkError } = await supabase
         .from("hosts")
         .select("id, email, auth_id")
@@ -208,33 +223,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       if (existingHost) {
-        log.warn("[Auth] Profile with this email already exists");
         throw new Error("An account with this email already exists. Please sign in instead.");
       }
 
-      log.info("[Auth] Creating auth user in Supabase...");
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            full_name: name,
-            department_id: departmentId,
-          },
+          data: { full_name: name, department_id: departmentId },
         },
       });
 
       if (signUpError) {
-        log.error("[Auth] Sign-up error:", signUpError.message);
-
         if (
           signUpError.message.includes("already registered") ||
           signUpError.message.includes("User already exists") ||
           signUpError.message.includes("already exists") ||
           signUpError.status === 422
         ) {
-          log.warn("[Auth] Email already exists in auth system");
-          // Try to fetch existing auth user's role to provide helpful message
           throw new Error(
             "This email is already registered. Please sign in with your existing account, or reset your password if you forgot it."
           );
@@ -242,25 +248,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw signUpError;
       }
 
-      if (!authData.user) {
-        log.error("[Auth] No user data returned from sign-up");
-        throw new Error("Failed to create user account");
-      }
+      if (!authData.user) throw new Error("Failed to create user account");
 
-      log.info("[Auth] Auth user created:", authData.user.id);
-
-      // Profile record will be created by a database trigger.
-      // Now, simply set loading to false and clear error.
       log.info("[Auth] Signup successful; profile record handled by trigger.");
       set({ isLoading: false, error: null });
     } catch (error: unknown) {
       const errorMessage = (error as Error).message || "Failed to create account";
       log.error("[Auth] Signup failed:", errorMessage);
-      log.error("[Auth] Error details:", error);
-      set({
-        error: errorMessage,
-        isLoading: false,
-      });
+      set({ error: errorMessage, isLoading: false });
       throw error;
     }
   },
@@ -269,13 +264,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     log.info("[Auth] Logout initiated");
     try {
       set({ isLoading: true, error: null });
-      log.info("[Auth] Signing out from Supabase...");
       await supabase.auth.signOut();
+      clearProfileCache();
+      // Also clear dashboard caches
+      ["vms_recent_visits", "vms_active_visitors", "vms_users"].forEach((k) => {
+        try { localStorage.removeItem(k); } catch {/* ignore */}
+      });
+      // Clear stats caches (all roles)
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("vms_stats_cache_"))
+        .forEach((k) => { try { localStorage.removeItem(k); } catch {/* ignore */} });
       log.info("[Auth] Logout successful");
       set({ user: null, isAuthenticated: false, isLoading: false, error: null });
     } catch (error: unknown) {
       log.error("[Auth] Logout failed:", (error as Error).message);
-      log.error("[Auth] Error details:", error);
       set({ error: "Failed to logout", isLoading: false });
     }
   },
@@ -284,9 +286,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     log.info("[Auth] Initiating Google Sign-In...");
     try {
       set({ isLoading: true, error: null });
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-      });
+      const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
       if (error) {
         log.error("[Auth] Google Sign-In error:", error.message);
         throw error;

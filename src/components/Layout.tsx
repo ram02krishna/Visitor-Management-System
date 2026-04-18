@@ -24,8 +24,6 @@ export function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const canApprove = user?.role === "admin" || user?.role === "guard" || user?.role === "host";
-
   // Listen for profile changes (role updates)
   useEffect(() => {
     if (!user?.id) return;
@@ -50,46 +48,6 @@ export function Layout() {
       supabase.removeChannel(profileChannel);
     };
   }, [user?.id, refreshProfile]);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (!canApprove) return;
-
-    const fetchPending = async () => {
-      let pendingQuery = supabase
-        .from("visits")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "pending");
-
-      let activeQuery = supabase
-        .from("visits")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "checked-in");
-
-      if (user?.role === "host") {
-        pendingQuery = pendingQuery.eq("host_id", user.id);
-        activeQuery = activeQuery.eq("host_id", user.id);
-      }
-
-      await pendingQuery;
-      await activeQuery;
-    };
-
-    fetchPending();
-
-    const channel = supabase
-      .channel("pending_visits_bell")
-      .on("postgres_changes", { event: "*", schema: "public", table: "visits" }, fetchPending)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [canApprove, user?.id, user?.role]);
 
   const handleLogout = async () => {
     await logout();

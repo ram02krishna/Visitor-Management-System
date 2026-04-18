@@ -77,25 +77,51 @@ const useDebounce = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
+// ─── Stale-while-revalidate cache key for visit logs ────────────────────────
+const LOGS_CACHE_KEY = "vms_visit_logs_cache";
+
+function readLogsCache(): VisitLog[] | null {
+  try {
+    const raw = localStorage.getItem(LOGS_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as VisitLog[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLogsCache(logs: VisitLog[]) {
+  try {
+    // Only cache the first 50 rows to respect localStorage quota
+    localStorage.setItem(LOGS_CACHE_KEY, JSON.stringify(logs.slice(0, 50)));
+  } catch {/* quota — ignore */}
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function VisitLogs() {
   const { user } = useAuthStore();
-  const [logs, setLogs] = useState<VisitLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<VisitLog[]>(() => readLogsCache() ?? []);
+  const [loading, setLoading] = useState(() => readLogsCache() === null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [exporting, setExporting] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<VisitLog | null>(null);
+  const [page, setStatusPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 50;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const fetchVisits = useCallback(async () => {
+  const fetchVisits = useCallback(async (isLoadMore = false) => {
     if (!user) return;
-    setLoading(true);
+    
+    const currentPage = isLoadMore ? page + 1 : 1;
+    if (!isLoadMore && readLogsCache() === null) setLoading(true);
+
     try {
       let query = supabase.from("visits").select(`
         *,
         visitor:visitors(*),
-        host:hosts(*)
+        host:hosts!visits_host_id_fkey(*)
       `);
 
       if (debouncedSearchTerm) {
@@ -127,31 +153,39 @@ export function VisitLogs() {
         query = query.eq("host_id", user.id);
       }
 
-      const { data, error } = await query.order("created_at", { ascending: false });
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
-      if (error) {
-        logger.error("[VisitLogs] Primary fetch failed, trying fallback:", error);
-        const fallbackQuery = supabase.from("visits").select(`*, visitor:visitors(*)`);
-        const { data: fallbackData, error: fallbackError } = await fallbackQuery
-          .order("created_at", { ascending: false })
-          .limit(100);
+      const { data, error } = await query
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
-        if (fallbackError) throw fallbackError;
-        setLogs(fallbackData as VisitLog[]);
+      if (error) throw error;
+      
+      const result = (data as VisitLog[]) || [];
+      if (isLoadMore) {
+        setLogs(prev => [...prev, ...result]);
+        setStatusPage(currentPage);
       } else {
-        setLogs(data as VisitLog[]);
+        setLogs(result);
+        setStatusPage(1);
+        if (!debouncedSearchTerm && !statusFilter && !dateFilter) {
+          writeLogsCache(result);
+        }
       }
+      
+      setHasMore(result.length === PAGE_SIZE);
     } catch (err) {
       logger.error("[VisitLogs] Fetch error:", err);
       toast.error("Failed to load visit logs");
     } finally {
       setLoading(false);
     }
-  }, [user, debouncedSearchTerm, statusFilter, dateFilter]);
+  }, [user, debouncedSearchTerm, statusFilter, dateFilter, page]);
 
   useEffect(() => {
     fetchVisits();
-  }, [fetchVisits]);
+  }, [fetchVisits]); // fetchVisits handles internal filtering logic
 
   const handleExport = async () => {
     if (logs.length === 0) {
@@ -280,7 +314,7 @@ export function VisitLogs() {
                     <span className="animate-pulse">←</span> Swipe horizontally to see more details <span className="animate-pulse">→</span>
                   </p>
                 </div>
-                <div className="flex-1 overflow-x-auto scroll-ios scrollbar-hide">
+                <div className="flex-1 overflow-x-auto scrollbar-hide">
                   <table className="w-full divide-y divide-gray-200 dark:divide-slate-700/50 flex-1 min-w-[1100px]">
                     <thead>
                       <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-slate-800/90 dark:to-slate-800/60">
@@ -318,14 +352,27 @@ export function VisitLogs() {
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white dark:bg-slate-900 dark:divide-slate-700">
                       {loading ? (
-                        <tr>
-                          <td
-                            colSpan={10}
-                            className="text-center py-12 text-gray-500 font-bold uppercase tracking-widest text-xs"
-                          >
-                            Loading records...
-                          </td>
-                        </tr>
+                        <>
+                          {[...Array(5)].map((_, i) => (
+                            <tr key={i} className="animate-pulse">
+                              <td className="py-4 pl-4 pr-3 sm:pl-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="skeleton w-9 h-9 rounded-[1.25rem] shrink-0" />
+                                  <div className="skeleton h-4 w-24 rounded" />
+                                </div>
+                              </td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-12 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-20 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-5 w-16 rounded-xl" /></td>
+                              <td className="py-4 pl-3 pr-4 sm:pr-6 text-right"><div className="skeleton h-4 w-4 rounded inline-block ml-2" /></td>
+                            </tr>
+                          ))}
+                        </>
                       ) : logs.length === 0 ? (
                         <tr>
                           <td colSpan={10} className="px-6 py-24 text-center">
@@ -449,6 +496,18 @@ export function VisitLogs() {
                     </tbody>
                   </table>
                 </div>
+
+                {hasMore && logs.length > 0 && (
+                  <div className="mt-8 mb-4 flex justify-center">
+                    <button
+                      onClick={() => fetchVisits(true)}
+                      disabled={loading}
+                      className="px-8 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-sm font-black uppercase tracking-widest text-gray-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:border-sky-200 dark:hover:border-sky-900/50 shadow-sm hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? "Loading..." : "Load More Records"}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

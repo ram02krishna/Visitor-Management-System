@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Edit3,
   Trash2,
@@ -7,7 +7,6 @@ import {
   Shield,
   Users as UsersIcon,
   Inbox,
-  X,
   Check,
 } from "lucide-react";
 import { PageHeader } from "./PageHeader";
@@ -41,12 +40,14 @@ export function UserManagement() {
   const [loading, setLoading] = useState(() => localStorage.getItem("vms_users") === null);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const initialLoadDone = useRef(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const fetchUsers = useCallback(async () => {
-    if (!debouncedSearchTerm && users.length > 0) { /* background */ }
-    else setLoading(true);
+    // Only show the full-page spinner on the very first load;
+    // subsequent calls (search, refresh) update quietly in the background.
+    if (!initialLoadDone.current) setLoading(true);
 
     let query = supabase.from("hosts").select("*");
     if (debouncedSearchTerm)
@@ -60,8 +61,9 @@ export function UserManagement() {
         try { localStorage.setItem("vms_users", JSON.stringify(data)); } catch { /* quota */ }
       }
     }
+    initialLoadDone.current = true;
     setLoading(false);
-  }, [debouncedSearchTerm, users.length]);
+  }, [debouncedSearchTerm]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -73,8 +75,9 @@ export function UserManagement() {
       if (error) throw error;
       toast.success("User deleted successfully");
       fetchUsers();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete user");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Failed to delete user");
     }
   };
 
@@ -91,8 +94,9 @@ export function UserManagement() {
       toast.success(`Role updated to ${getRoleLabel(newRole)}`);
       setEditingUser(null);
       fetchUsers();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update role");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Failed to update role");
     } finally {
       setIsUpdating(false);
     }
@@ -130,7 +134,7 @@ export function UserManagement() {
               <span className="animate-pulse">←</span> Swipe horizontally to see more details <span className="animate-pulse">→</span>
             </p>
           </div>
-          <div className="overflow-x-auto scroll-ios scrollbar-hide">
+          <div className="overflow-x-auto scrollbar-hide">
             <table className="w-full divide-y divide-gray-200 dark:divide-slate-700 min-w-[800px]">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-slate-800 dark:to-slate-800/50">
@@ -143,9 +147,30 @@ export function UserManagement() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-12 text-[10px] font-black uppercase tracking-widest text-gray-400">Loading records...</td>
-                  </tr>
+                  <>
+                    {[...Array(5)].map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="py-4 pl-4 pr-3 sm:pl-6">
+                          <div className="flex items-center gap-3">
+                            <div className="skeleton w-9 h-9 rounded-[1.25rem] shrink-0" />
+                            <div className="space-y-2 w-full">
+                              <div className="skeleton h-4 w-24 rounded" />
+                              <div className="skeleton h-3 w-32 rounded lg:hidden" />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 hidden lg:table-cell"><div className="skeleton h-4 w-40 rounded" /></td>
+                        <td className="px-3 py-4 hidden lg:table-cell"><div className="skeleton h-5 w-20 rounded-xl" /></td>
+                        <td className="px-3 py-4 hidden lg:table-cell"><div className="skeleton h-5 w-20 rounded-xl" /></td>
+                        <td className="py-4 pl-3 pr-4 sm:pr-6 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="skeleton h-8 w-8 rounded-2xl" />
+                            <div className="skeleton h-8 w-8 rounded-2xl" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </>
                 ) : users.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-20 text-center">
@@ -235,9 +260,7 @@ export function UserManagement() {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setEditingUser(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
+
             </div>
 
             <div className="p-6 space-y-4">

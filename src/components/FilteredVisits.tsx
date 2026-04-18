@@ -77,8 +77,15 @@ export function FilteredVisits() {
   const { status } = useParams<{ status: string }>();
   const { user } = useAuthStore();
 
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [visits, setVisits] = useState<Visit[]>(() => {
+    try {
+      const cached = localStorage.getItem(`vms_filtered_${status}`);
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(() => localStorage.getItem(`vms_filtered_${status}`) === null);
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -181,7 +188,9 @@ export function FilteredVisits() {
 
   const fetchVisits = useCallback(async () => {
     if (!status || !user) return;
-    setLoading(true);
+    
+    const cached = localStorage.getItem(`vms_filtered_${status}`);
+    if (!cached && !debouncedSearchTerm) setLoading(true);
 
     try {
       let query = supabase.from("visits").select(`*, visitor:visitors(*)`);
@@ -211,7 +220,14 @@ export function FilteredVisits() {
 
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
+      
       setVisits(data as Visit[]);
+      
+      if (!debouncedSearchTerm) {
+        try {
+          localStorage.setItem(`vms_filtered_${status}`, JSON.stringify(data));
+        } catch { /* Quota */ }
+      }
     } catch (err) {
       log.error(`[FilteredVisits] Fetch error for status ${status}:`, err);
       toast.error("Failed to load visits. Please try again.");
@@ -259,7 +275,7 @@ export function FilteredVisits() {
                     <span className="animate-pulse">←</span> Swipe horizontally to see more details <span className="animate-pulse">→</span>
                   </p>
                 </div>
-                <div className="flex-1 overflow-x-auto scroll-ios scrollbar-hide">
+                <div className="flex-1 overflow-x-auto scrollbar-hide">
                   <table className="w-full divide-y divide-gray-200 dark:divide-slate-700/50 flex-1 min-w-[1100px]">
                     <thead>
                       <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-slate-800/90 dark:to-slate-800/60">
@@ -297,14 +313,27 @@ export function FilteredVisits() {
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white dark:bg-slate-900 dark:divide-slate-700">
                       {loading ? (
-                        <tr>
-                          <td
-                            colSpan={10}
-                            className="text-center py-12 text-gray-500 font-bold uppercase tracking-widest text-xs"
-                          >
-                            Loading records...
-                          </td>
-                        </tr>
+                        <>
+                          {[...Array(5)].map((_, i) => (
+                            <tr key={i} className="animate-pulse">
+                              <td className="py-4 pl-4 pr-3 sm:pl-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="skeleton w-9 h-9 rounded-[1.25rem] shrink-0" />
+                                  <div className="skeleton h-4 w-24 rounded" />
+                                </div>
+                              </td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-12 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-20 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-4 w-16 rounded" /></td>
+                              <td className="px-3 py-4"><div className="skeleton h-5 w-16 rounded-xl" /></td>
+                              <td className="py-4 pl-3 pr-4 sm:pr-6 text-right"><div className="skeleton h-4 w-4 rounded inline-block ml-2" /></td>
+                            </tr>
+                          ))}
+                        </>
                       ) : visits.length === 0 ? (
                         <tr>
                           <td colSpan={10} className="px-6 py-24 text-center">

@@ -98,24 +98,37 @@ export const useVisitStats = (user: User | null) => {
       const role = user.role;
       const [todayStart, todayEnd] = getISTTodayRange();
 
-      // Role filter helper
+      // ── Pre-fetch visitor profile ID once so we can use it
+      //    in all 6 parallel count queries below (avoids 7 serial calls).
+      let visitorProfileId: string | null = null;
+      if (role === "visitor") {
+        const { data: vProfile } = await supabase
+          .from("visitors")
+          .select("id")
+          .eq("email", user.email)
+          .maybeSingle();
+        visitorProfileId = vProfile?.id ?? null;
+      }
+
+      // Returns a query scoped to the current user's role in O(1)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const applyRoleFilter = async (q: any) => {
+      const withRoleFilter = (q: any) => {
         if (role === "host") return q.eq("host_id", user.id);
         if (role === "visitor") {
-          const { data: vProfile } = await supabase
-            .from("visitors")
-            .select("id")
-            .eq("email", user.email)
-            .maybeSingle();
-          if (vProfile) return q.eq("visitor_id", vProfile.id);
-          // If no visitor profile exists, return a query that returns nothing
-          return q.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
+          // Use the pre-fetched ID — no extra DB roundtrip
+          const fallbackId = "00000000-0000-0000-0000-000000000000";
+          return q.eq("visitor_id", visitorProfileId ?? fallbackId);
         }
         return q;
       };
 
-      // 1. Common Queries
+      // Base count builder — all queries now start from a common helper
+      const countQuery = (status: string) =>
+        withRoleFilter(
+          supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", status)
+        );
+
+      // ── 6 parallel count queries (+ optional users count for admin) ──────
       const [
         { count: ongoingCount },
         { count: approvedToday },
@@ -123,14 +136,10 @@ export const useVisitStats = (user: User | null) => {
         { count: completedToday },
         { count: cancelledCount },
         { count: deniedCount },
+        usersResult,
       ] = await Promise.all([
-        await applyRoleFilter(
-          supabase
-            .from("visits")
-            .select("*", { count: "exact", head: true })
-            .eq("status", "checked-in")
-        ),
-        await applyRoleFilter(
+        countQuery("checked-in"),
+        withRoleFilter(
           supabase
             .from("visits")
             .select("*", { count: "exact", head: true })
@@ -138,7 +147,7 @@ export const useVisitStats = (user: User | null) => {
             .gte("approved_at", todayStart)
             .lt("approved_at", todayEnd)
         ),
-        await applyRoleFilter(
+        withRoleFilter(
           supabase
             .from("visits")
             .select("*", { count: "exact", head: true })
@@ -146,7 +155,7 @@ export const useVisitStats = (user: User | null) => {
             .gte("created_at", todayStart)
             .lt("created_at", todayEnd)
         ),
-        await applyRoleFilter(
+        withRoleFilter(
           supabase
             .from("visits")
             .select("*", { count: "exact", head: true })
@@ -154,7 +163,7 @@ export const useVisitStats = (user: User | null) => {
             .gte("check_out_time", todayStart)
             .lt("check_out_time", todayEnd)
         ),
-        await applyRoleFilter(
+        withRoleFilter(
           supabase
             .from("visits")
             .select("*", { count: "exact", head: true })
@@ -162,7 +171,7 @@ export const useVisitStats = (user: User | null) => {
             .gte("updated_at", todayStart)
             .lt("updated_at", todayEnd)
         ),
-        await applyRoleFilter(
+        withRoleFilter(
           supabase
             .from("visits")
             .select("*", { count: "exact", head: true })
@@ -170,16 +179,15 @@ export const useVisitStats = (user: User | null) => {
             .gte("updated_at", todayStart)
             .lt("updated_at", todayEnd)
         ),
+        // Fetch total user count in parallel only for admin — returns null for other roles
+        role === "admin"
+          ? supabase.from("hosts").select("*", { count: "exact", head: true })
+          : Promise.resolve({ count: null }),
       ]);
 
-      // 2. Extra Queries based on Role
-      let totalUsers = 0;
-      if (role === "admin") {
-        const { count } = await supabase.from("hosts").select("*", { count: "exact", head: true });
-        totalUsers = count ?? 0;
-      }
+      const totalUsers = usersResult.count ?? 0;
 
-      // 3. Assemble Stats Array
+      // ── Assemble Stats Array ─────────────────────────────────────────────
       statsData = [
         {
           name: "Ongoing Visits",
@@ -234,7 +242,6 @@ export const useVisitStats = (user: User | null) => {
         });
       }
 
-      // Update UI + persist to cache
       setStats(statsData);
       writeCache(role, statsData);
     } catch (err: unknown) {

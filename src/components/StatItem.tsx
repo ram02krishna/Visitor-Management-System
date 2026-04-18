@@ -8,6 +8,7 @@ export type StatItemProps = {
   color: string;
   status?: string;
   onClick: (status: string) => void;
+  onMouseEnter?: (status: string) => void;
   style?: React.CSSProperties;
   className?: string;
 };
@@ -69,7 +70,7 @@ const CARD_THEMES: Record<
 };
 
 export const StatItem = React.memo(
-  ({ name, value, icon: Icon, color, status, onClick, style, className }: StatItemProps) => {
+  ({ name, value, icon: Icon, color, status, onClick, onMouseEnter, style, className }: StatItemProps) => {
     const theme = CARD_THEMES[color] ?? CARD_THEMES.default;
 
     return (
@@ -79,6 +80,7 @@ export const StatItem = React.memo(
         } ${className || ""}`}
         style={style}
         onClick={() => status && onClick(status)}
+        onMouseEnter={() => status && onMouseEnter && onMouseEnter(status)}
         aria-label={status ? `View ${name.toLowerCase()}` : undefined}
         tabIndex={status ? 0 : undefined}
       >

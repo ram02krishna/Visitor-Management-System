@@ -12,6 +12,7 @@ type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
 
 export function PublicDisplay() {
   const [visits, setVisits] = useState<Visit[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const loadApprovedVisits = async () => {
     try {
@@ -32,6 +33,8 @@ export function PublicDisplay() {
       setVisits(data as Visit[]);
     } catch (error) {
       console.error("Error loading approved visits:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,44 +60,66 @@ export function PublicDisplay() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {visits.map((visit) => (
-                <div
-                  key={visit.id}
-                  className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg divide-y divide-gray-200 dark:divide-gray-700"
-                >
-                  <div className="px-4 py-5 sm:p-6">
+            {loading ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 animate-pulse">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <UserCheck className="h-8 w-8 text-green-500" />
-                      </div>
-                      <div className="ml-5">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                          {visit.visitors.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{visit.purpose}</p>
+                      <div className="skeleton w-12 h-12 rounded-full shrink-0" />
+                      <div className="ml-5 flex-1 space-y-3">
+                        <div className="skeleton h-5 w-3/4 rounded" />
+                        <div className="skeleton h-4 w-1/2 rounded" />
                       </div>
                     </div>
-                    <div className="mt-4">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        <span className="font-medium">Meeting with:</span> {visit.hosts.name}
-                      </div>
-                      <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Valid until:{" "}
-                        {visit.valid_until ? format(new Date(visit.valid_until), "p") : "N/A"}
-                      </div>
+                    <div className="mt-6 space-y-3">
+                      <div className="skeleton h-4 w-full rounded" />
+                      <div className="skeleton h-4 w-2/3 rounded" />
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {visits.length === 0 && (
-              <div className="text-center mt-8">
-                <p className="text-gray-500 dark:text-gray-400 text-lg">
-                  No approved visits at the moment
-                </p>
+                ))}
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {visits.map((visit) => (
+                    <div
+                      key={visit.id}
+                      className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg divide-y divide-gray-200 dark:divide-gray-700"
+                    >
+                      <div className="px-4 py-5 sm:p-6">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0">
+                            <UserCheck className="h-8 w-8 text-green-500" />
+                          </div>
+                          <div className="ml-5">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                              {visit.visitors.name}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{visit.purpose}</p>
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <div className="text-sm text-gray-900 dark:text-white">
+                            <span className="font-medium">Meeting with:</span> {visit.hosts.name}
+                          </div>
+                          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                            Valid until:{" "}
+                            {visit.valid_until ? format(new Date(visit.valid_until), "p") : "N/A"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {visits.length === 0 && (
+                  <div className="text-center mt-8">
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">
+                      No approved visits at the moment
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

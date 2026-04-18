@@ -12,13 +12,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-// ✅ Create Supabase client with proper auth configuration
+// ✅ Create Supabase client
+// Use localStorage so sessions persist across tabs and survive page refreshes
+// without needing extra getSession() round trips.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: typeof window !== "undefined" ? sessionStorage : undefined,
+    storage: typeof window !== "undefined" ? localStorage : undefined,
   },
   db: {
     schema: "public",
@@ -31,10 +33,8 @@ if (typeof window !== "undefined") {
     if (session?.user) {
       log.info("[Supabase] User session active:", session.user.id);
     }
-    // Auth state change handler - can be used for logging or analytics
     if (event === "SIGNED_OUT") {
       log.info("[Supabase] User signed out");
-      // Supabase v2 signOut() already clears its own session storage — no manual removal needed.
     }
   });
 }
@@ -43,21 +43,4 @@ if (import.meta.env.DEV) {
   log.info("[Supabase] Environment check:");
   log.info("[Supabase] - URL:", supabaseUrl ? "✓ Loaded" : "✗ Missing");
   log.info("[Supabase] - Anon Key:", supabaseAnonKey ? "✓ Loaded" : "✗ Missing");
-}
-
-if (import.meta.env.DEV) {
-  (async () => {
-    try {
-      log.info("[Supabase] Testing database connection...");
-      const { error } = await supabase.from("visits").select("*", { count: "exact", head: true });
-      if (error) {
-        log.error("[Supabase] ✗ Connection test failed:", error.message);
-        log.error("[Supabase] Error details:", error);
-      } else {
-        log.info("[Supabase] ✓ Connection test successful");
-      }
-    } catch (err) {
-      log.error("[Supabase] ✗ Initialization error:", err);
-    }
-  })();
 }
