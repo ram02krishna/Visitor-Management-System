@@ -20,28 +20,27 @@ export const ThemeSwitcher = () => {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
-  }, [isDarkMode]);
-
-  const toggleTheme = () => {
+  const toggleTheme = (event?: React.MouseEvent) => {
+    // @ts-expect-error - View Transition API
     if (!document.startViewTransition) {
       setIsDarkMode(!isDarkMode);
       return;
     }
 
-    // Use current viewport dimensions for responsive calculation
-    const vWidth = window.innerWidth;
-    const vHeight = window.innerHeight;
-    
-    // Position the circle at the bottom-right corner as requested
-    const startX = vWidth;
-    const startY = vHeight;
-    
-    // Calculate the distance to the farthest corner (top-left: 0,0)
-    const endRadius = Math.hypot(startX, startY);
+    // Get the click coordinates or fallback to center of the button/bottom-right
+    const x = event?.clientX ?? window.innerWidth;
+    const y = event?.clientY ?? window.innerHeight;
+
+    // Radius of the circle should be the distance to the farthest corner
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
 
     // Store state before change
     const isCurrentlyDark = document.documentElement.classList.contains("dark");
 
+    // @ts-expect-error - View Transition API
     const transition = document.startViewTransition(() => {
       flushSync(() => {
         setIsDarkMode(!isCurrentlyDark);
@@ -50,8 +49,8 @@ export const ThemeSwitcher = () => {
 
     transition.ready.then(() => {
       const clipPath = [
-        `circle(0px at ${startX}px ${startY}px)`,
-        `circle(${endRadius}px at ${startX}px ${startY}px)`,
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`,
       ];
 
       const pseudoElement = isCurrentlyDark 
@@ -73,7 +72,7 @@ export const ThemeSwitcher = () => {
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={(e) => toggleTheme(e)}
       className={`relative p-2.5 rounded-2xl transition-all duration-500 group overflow-hidden border shadow-sm hover:shadow-xl active:scale-95 ${
         isDarkMode 
           ? "bg-slate-900 border-slate-800 text-yellow-400 hover:shadow-yellow-500/10" 

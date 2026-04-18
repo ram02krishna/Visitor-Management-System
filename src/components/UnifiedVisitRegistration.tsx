@@ -347,6 +347,9 @@ export function UnifiedVisitRegistration() {
                     </label>
                     <input
                       type="text"
+                      inputMode="text"
+                      autoCapitalize="words"
+                      autoComplete="name"
                       {...register("name", {
                         required: "Name is required",
                         onChange: (e) => {
@@ -357,7 +360,7 @@ export function UnifiedVisitRegistration() {
                         },
                       })}
                       disabled={isVisitor}
-                      className="block w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-2.5 sm:py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                      className="block w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 sm:py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                       placeholder="John Doe"
                     />
                   </div>
@@ -368,9 +371,11 @@ export function UnifiedVisitRegistration() {
                     </label>
                     <input
                       type="email"
+                      inputMode="email"
+                      autoComplete="email"
                       {...register("email", { required: "Email is required" })}
                       disabled={isVisitor}
-                      className="block w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-2.5 sm:py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+                      className="block w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 sm:py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
                       placeholder="john@example.com"
                     />
                   </div>
@@ -381,6 +386,8 @@ export function UnifiedVisitRegistration() {
                     </label>
                     <input
                       type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
                       maxLength={10}
                       {...register("phone", {
                         required: "Phone is required",
@@ -389,7 +396,7 @@ export function UnifiedVisitRegistration() {
                           e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
                         },
                       })}
-                      className={`block w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-2.5 sm:py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white ${errors.phone ? "border-red-500 ring-1 ring-red-500" : ""}`}
+                      className={`block w-full rounded-2xl border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 py-3 sm:py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white ${errors.phone ? "border-red-500 ring-1 ring-red-500" : ""}`}
                       placeholder="1234567890"
                     />
                     {errors.phone && (

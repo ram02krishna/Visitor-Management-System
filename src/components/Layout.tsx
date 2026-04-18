@@ -294,17 +294,18 @@ export function Layout() {
               <Link
                 key={link.href}
                 to={link.href}
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 active:scale-90 relative"
+                className="flex-1 flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-90 relative"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 {/* Active glow dot */}
                 {isActive && (
-                  <span className="absolute top-1.5 w-1 h-1 bg-sky-500 rounded-full animate-tabPop" />
+                  <span className="absolute top-1 w-1.5 h-1.5 bg-sky-500 rounded-full animate-tabPop shadow-[0_0_8px_rgba(14,165,233,0.6)]" />
                 )}
 
                 <div
-                  className={`flex items-center justify-center w-10 h-6 rounded-xl transition-all duration-300 ${
+                  className={`flex items-center justify-center w-12 h-7 rounded-2xl transition-all duration-300 ${
                     isActive
-                      ? "bg-sky-100 dark:bg-sky-900/40"
+                      ? "bg-sky-100 dark:bg-sky-900/40 shadow-sm"
                       : ""
                   }`}
                 >
@@ -312,14 +313,14 @@ export function Layout() {
                     className={`transition-all duration-200 ${
                       isActive
                         ? "w-5 h-5 text-sky-600 dark:text-sky-400"
-                        : "w-[18px] h-[18px] text-gray-400 dark:text-slate-500"
+                        : "w-[20px] h-[20px] text-gray-400 dark:text-slate-500"
                     }`}
-                    strokeWidth={isActive ? 2.5 : 1.75}
+                    strokeWidth={isActive ? 2.5 : 2}
                   />
                 </div>
 
                 <span
-                  className={`text-[9px] font-black tracking-wide transition-colors duration-200 ${
+                  className={`text-[10px] font-black tracking-wide transition-colors duration-200 ${
                     isActive
                       ? "text-sky-600 dark:text-sky-400"
                       : "text-gray-400 dark:text-slate-500"
