@@ -20,8 +20,9 @@ export const ThemeSwitcher = () => {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
+  }, [isDarkMode]);
+
   const toggleTheme = (event?: React.MouseEvent) => {
-    // @ts-expect-error - View Transition API
     if (!document.startViewTransition) {
       setIsDarkMode(!isDarkMode);
       return;
@@ -40,7 +41,6 @@ export const ThemeSwitcher = () => {
     // Store state before change
     const isCurrentlyDark = document.documentElement.classList.contains("dark");
 
-    // @ts-expect-error - View Transition API
     const transition = document.startViewTransition(() => {
       flushSync(() => {
         setIsDarkMode(!isCurrentlyDark);
