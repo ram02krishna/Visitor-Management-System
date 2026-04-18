@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Shield, Eye, EyeOff, ArrowRight, ArrowLeft, Building2, CheckCircle2 } from "lucide-react";
 import { useAuthStore } from "../store/auth";
 import { supabase } from "../lib/supabase";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import log from "../lib/logger";
 
 type Department = {
@@ -90,7 +91,10 @@ export function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950">
+    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950 relative">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeSwitcher />
+      </div>
       {/* ── Left Panel (Branding) ── */}
       <div className="hidden lg:flex lg:w-[45%] xl:w-1/2 relative overflow-hidden bg-gradient-to-br from-indigo-800 to-sky-900 border-r border-indigo-900">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGRlZnM+PHBhdHRlcm4gaWQ9InBhdHRlcm4iIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjEiIGZpbGw9IiNmZmYiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjcGF0dGVybikiLz48L3N2Zz4=')]"></div>

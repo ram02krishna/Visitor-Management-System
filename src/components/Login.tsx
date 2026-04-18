@@ -7,6 +7,7 @@ import { Shield, Eye, EyeOff, CheckCircle2, ArrowRight, ArrowLeft } from "lucide
 import { useAuthStore } from "../store/auth";
 import log from "../lib/logger";
 import { SEOMeta } from "./SEOMeta";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 export function Login() {
   const navigate = useNavigate();
@@ -50,7 +51,10 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950">
+    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950 relative">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeSwitcher />
+      </div>
       <SEOMeta title="Log In" />
 
       {/* ── Left Panel (Branding) ── */}

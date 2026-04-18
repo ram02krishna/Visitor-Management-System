@@ -2,7 +2,6 @@ import type React from "react";
 
 import { Suspense, lazy, useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "../components/ui/toaster";
 import { Toaster as HotToaster } from "react-hot-toast";
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -50,9 +49,6 @@ const UnifiedVisitRegistration = lazy(() =>
 );
 const ChangePassword = lazy(() =>
   import("./components/ChangePassword").then((m) => ({ default: m.ChangePassword }))
-);
-const RequestVisit = lazy(() =>
-  import("./components/RequestVisit").then((m) => ({ default: m.RequestVisit }))
 );
 const BulkVisitorUpload = lazy(() =>
   import("./components/BulkVisitorUpload").then((m) => ({ default: m.BulkVisitorUpload }))
@@ -147,7 +143,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/display" element={<PublicDisplay />} />
-            <Route path="/request-visit" element={<RequestVisit />} />
+            <Route path="/request-visit" element={<UnifiedVisitRegistration />} />
 
             <Route
               element={
@@ -175,7 +171,6 @@ function App() {
             </Route>
           </Routes>
         </Suspense>
-        <Toaster />
         <HotToaster
           position="top-center"
           toastOptions={{

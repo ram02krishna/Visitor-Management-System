@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import log from "../lib/logger";
 
 type UnifiedVisitFormData = {
@@ -303,9 +304,13 @@ export function UnifiedVisitRegistration() {
   };
 
   return (
-    <div className="px-2 xs:px-4 sm:px-6 lg:px-8 pb-12 animate-fadeIn">
+    <div className="px-2 xs:px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 animate-fadeIn relative">
+      <div className="absolute top-6 right-6 z-50 sm:right-8 lg:right-10">
+        <ThemeSwitcher />
+      </div>
+
       <div className="max-w-7xl mx-auto">
-        <BackButton />
+        <BackButton to={user ? "/app/dashboard" : "/"} />
 
         <PageHeader
           icon={isVisitor ? CalendarPlus : UserRoundPlus}
