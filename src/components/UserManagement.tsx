@@ -7,6 +7,8 @@ import {
   Shield,
   Users as UsersIcon,
   Inbox,
+  X,
+  Check,
 } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { supabase } from "../lib/supabase";
@@ -37,6 +39,8 @@ export function UserManagement() {
     catch { return []; }
   });
   const [loading, setLoading] = useState(() => localStorage.getItem("vms_users") === null);
+  const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -60,6 +64,39 @@ export function UserManagement() {
   }, [debouncedSearchTerm, users.length]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    
+    try {
+      const { error } = await supabase.from("hosts").delete().eq("id", userId);
+      if (error) throw error;
+      toast.success("User deleted successfully");
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete user");
+    }
+  };
+
+  const handleUpdateRole = async (newRole: string) => {
+    if (!editingUser) return;
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from("hosts")
+        .update({ role: newRole })
+        .eq("id", editingUser.id);
+      
+      if (error) throw error;
+      toast.success(`Role updated to ${getRoleLabel(newRole)}`);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update role");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 pb-8 animate-fadeIn">
@@ -156,10 +193,18 @@ export function UserManagement() {
                       </td>
                       <td className="py-4 pl-3 pr-4 sm:pr-6 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button className="p-2 rounded-2xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/20 dark:hover:bg-sky-900/40 text-sky-600 dark:text-sky-400 transition-all active:scale-90" title="Edit">
+                          <button 
+                            onClick={() => setEditingUser(user)}
+                            className="p-2 rounded-2xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-900/20 dark:hover:bg-sky-900/40 text-sky-600 dark:text-sky-400 transition-all active:scale-90" 
+                            title="Edit Role"
+                          >
                             <Edit3 className="h-3.5 w-3.5" strokeWidth={2} />
                           </button>
-                          <button className="p-2 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-all active:scale-90" title="Delete">
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="p-2 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-all active:scale-90" 
+                            title="Delete"
+                          >
                             <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
                           </button>
                         </div>
@@ -172,6 +217,61 @@ export function UserManagement() {
           </div>
         </div>
       </div>
+
+      {/* ── Edit Role Modal ── */}
+      {editingUser && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-8">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-xl animate-fadeIn" onClick={() => setEditingUser(null)} />
+          <div className="relative w-full max-w-sm glass-panel rounded-[2rem] shadow-2xl animate-springIn overflow-hidden border border-white/20 dark:border-slate-700/50">
+            <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-white/60 dark:border-slate-700/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
+                  <Shield className="h-5 w-5 text-white" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Update Role</h3>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tight truncate max-w-[180px]">
+                    {editingUser.name}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setEditingUser(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest ml-1">Select New Role</p>
+              <div className="grid grid-cols-1 gap-2">
+                {["admin", "host", "guard"].map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => handleUpdateRole(role)}
+                    disabled={isUpdating}
+                    className={`flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${
+                      editingUser.role === role
+                        ? "bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400 font-black"
+                        : "bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-600 dark:text-slate-400 hover:border-gray-200 dark:hover:border-slate-700 font-bold"
+                    }`}
+                  >
+                    <span className="text-xs uppercase tracking-widest">{getRoleLabel(role)}</span>
+                    {editingUser.role === role && <Check className="w-4 h-4" />}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="pt-2">
+                <button
+                  onClick={() => setEditingUser(null)}
+                  className="w-full py-3 rounded-2xl border border-gray-200 dark:border-slate-700 text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

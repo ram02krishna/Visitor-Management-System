@@ -18,13 +18,38 @@ function getInitials(name: string) {
 }
 
 export function Layout() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, refreshProfile } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const canApprove = user?.role === "admin" || user?.role === "guard" || user?.role === "host";
+
+  // Listen for profile changes (role updates)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const profileChannel = supabase
+      .channel(`user_profile_${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "hosts",
+          filter: `id=eq.${user.id}`,
+        },
+        () => {
+          refreshProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
+  }, [user?.id, refreshProfile]);
 
   // Close mobile menu on route change
   useEffect(() => {

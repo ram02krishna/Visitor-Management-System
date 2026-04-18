@@ -24,13 +24,34 @@ interface AuthState {
   signup: (email: string, password: string, name: string, departmentId: string) => Promise<void>;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
   error: null,
+
+  refreshProfile: async () => {
+    const currentUser = get().user;
+    if (!currentUser) return;
+
+    try {
+      const { data: hostData, error } = await supabase
+        .from("hosts")
+        .select("*")
+        .eq("id", currentUser.id)
+        .single();
+
+      if (error) throw error;
+      if (hostData) {
+        set({ user: hostData as User });
+      }
+    } catch (err) {
+      log.error("[Auth] Failed to refresh profile:", err);
+    }
+  },
 
   //  Initialize authentication
   initialize: async () => {
