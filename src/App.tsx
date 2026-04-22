@@ -59,6 +59,9 @@ const ScanQrCode = lazy(() =>
 const FilteredVisits = lazy(() =>
   import("./components/FilteredVisits").then((m) => ({ default: m.FilteredVisits }))
 );
+const BlacklistedUsers = lazy(() =>
+  import("./components/BlacklistedUsers").then((m) => ({ default: m.BlacklistedUsers }))
+);
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -167,6 +170,7 @@ function App() {
               />
               <Route path="/app/bulk-visitor-upload" element={<BulkVisitorUpload />} />
               <Route path="/app/visits/:status" element={<FilteredVisits />} />
+              <Route path="/app/blacklist" element={<BlacklistedUsers />} />
               <Route path="/app/change-password" element={<ChangePassword />} />
             </Route>
           </Routes>

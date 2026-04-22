@@ -158,15 +158,6 @@ export function ScanQrCode() {
 
         const visit = visitData as Visit;
 
-        // Security Check: Blacklist
-        if (visit.visitors?.is_blacklisted) {
-          setError(
-            `SECURITY ALERT: Visitor is on the campus watchlist. Reason: ${visit.visitors.blacklist_reason || "Security violation"}`
-          );
-          setVisit(visit);
-          return;
-        }
-
         // Validity Check
         const now = new Date();
         if (

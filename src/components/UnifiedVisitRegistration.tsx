@@ -109,16 +109,16 @@ export function UnifiedVisitRegistration() {
         if (data?.is_blacklisted) {
           setIsBlacklisted(true);
           setErrorMessage(
-            `Warning: This visitor is on the campus watchlist. Reason: ${data.blacklist_reason || "Not specified"}`
+            `BLOCKED: This visitor is on the campus blacklist. Reason: ${data.blacklist_reason || "Not specified"}`
           );
         } else {
           setIsBlacklisted(false);
-          if (errorMessage.includes("watchlist")) setErrorMessage("");
+          if (errorMessage.includes("watchlist") || errorMessage.includes("blocked")) setErrorMessage("");
         }
       };
       checkBlacklist();
     }
-  }, [visitorEmail, errorMessage]);
+  }, [visitorEmail, errorMessage, isGuardOrAdmin]);
 
   const handleFilePreview = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -148,8 +148,8 @@ export function UnifiedVisitRegistration() {
   };
 
   const onSubmit = async (formData: UnifiedVisitFormData) => {
-    if (isBlacklisted && isVisitor) {
-      toast.error("You are not permitted to register. Please contact security.");
+    if (isBlacklisted) {
+      toast.error("You are blocked and cannot register your visit. Please contact admin or support staff.");
       return;
     }
 
@@ -196,8 +196,8 @@ export function UnifiedVisitRegistration() {
         .eq("email", formData.email)
         .maybeSingle();
 
-      if (existingVisitor?.is_blacklisted && !isGuardOrAdmin) {
-        throw new Error("This visitor is blacklisted and cannot be registered.");
+      if (existingVisitor?.is_blacklisted) {
+        throw new Error("This user is completely blocked and cannot register any visits.");
       }
 
       const visitorPayload = {
@@ -607,8 +607,8 @@ export function UnifiedVisitRegistration() {
             <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800 flex flex-col xs:flex-row gap-3">
               <button
                 type="submit"
-                disabled={isSubmitting || loading || (isBlacklisted && isVisitor)}
-                className={`btn-primary flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 text-sm ${isBlacklisted && isVisitor ? "!bg-gray-400 !shadow-none" : ""}`}
+                disabled={isSubmitting || loading}
+                className="btn-primary flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 text-sm"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

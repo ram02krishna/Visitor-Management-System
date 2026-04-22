@@ -186,6 +186,9 @@ CREATE POLICY "visitors_select_authenticated" ON visitors FOR SELECT USING (auth
 DROP POLICY IF EXISTS "visitors_select_public_recent" ON visitors;
 CREATE POLICY "visitors_select_public_recent" ON visitors FOR SELECT USING (auth.role() = 'anon' AND created_at > (now() - interval '10 minutes'));
 
+DROP POLICY IF EXISTS "visitors_update_privileged" ON visitors;
+CREATE POLICY "visitors_update_privileged" ON visitors FOR UPDATE USING (is_admin(auth.uid()) OR is_guard(auth.uid())) WITH CHECK (is_admin(auth.uid()) OR is_guard(auth.uid()));
+
 -- Visits
 DROP POLICY IF EXISTS "visits_insert_public_validated" ON visits;
 CREATE POLICY "visits_insert_public_validated" ON visits FOR INSERT WITH CHECK (true);

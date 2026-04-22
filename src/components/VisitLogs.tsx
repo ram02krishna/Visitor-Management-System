@@ -108,7 +108,7 @@ export function VisitLogs() {
   const [selectedVisit, setSelectedVisit] = useState<VisitLog | null>(null);
   const [page, setStatusPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 1000;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const fetchVisits = useCallback(async (isLoadMore = false) => {
@@ -497,17 +497,7 @@ export function VisitLogs() {
                   </table>
                 </div>
 
-                {hasMore && logs.length > 0 && (
-                  <div className="mt-8 mb-4 flex justify-center">
-                    <button
-                      onClick={() => fetchVisits(true)}
-                      disabled={loading}
-                      className="px-8 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-sm font-black uppercase tracking-widest text-gray-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:border-sky-200 dark:hover:border-sky-900/50 shadow-sm hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? "Loading..." : "Load More Records"}
-                    </button>
-                  </div>
-                )}
+                {/* Load More Button removed as per user request */}
               </div>
             </div>
           </div>

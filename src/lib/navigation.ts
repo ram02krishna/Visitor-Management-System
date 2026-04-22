@@ -1,4 +1,4 @@
-import { Home, UserRoundPlus, ScanLine, UploadCloud, Lock, ScrollText } from "lucide-react";
+import { Home, UserRoundPlus, ScanLine, UploadCloud, Lock, ScrollText, UserMinus } from "lucide-react";
 
 export const navLinks = [
   {
@@ -23,6 +23,12 @@ export const navLinks = [
     href: "/app/scan",
     label: "Scan QR Code",
     icon: ScanLine,
+    roles: ["admin", "guard"],
+  },
+  {
+    href: "/app/blacklist",
+    label: "Blacklist Users",
+    icon: UserMinus,
     roles: ["admin", "guard"],
   },
   {
