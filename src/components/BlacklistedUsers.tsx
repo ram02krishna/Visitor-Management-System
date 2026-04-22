@@ -9,13 +9,36 @@ import { format } from "date-fns";
 
 type Visitor = Database["public"]["Tables"]["visitors"]["Row"];
 
+// ─── Stale-while-revalidate cache key for blacklist ────────────────────────
+const BLACKLIST_CACHE_KEY = "vms_blacklist_cache";
+
+function readBlacklistCache(): Visitor[] | null {
+  try {
+    const raw = localStorage.getItem(BLACKLIST_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Visitor[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeBlacklistCache(logs: Visitor[]) {
+  try {
+    localStorage.setItem(BLACKLIST_CACHE_KEY, JSON.stringify(logs.slice(0, 50)));
+  } catch {/* quota */}
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function BlacklistedUsers() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [visitors, setVisitors] = useState<Visitor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [visitors, setVisitors] = useState<Visitor[]>(() => readBlacklistCache() ?? []);
+  const [loading, setLoading] = useState(() => readBlacklistCache() === null);
 
   const fetchBlacklisted = useCallback(async () => {
-    setLoading(true);
+    // Only show loading spinner if cache is empty or active search
+    if (readBlacklistCache() === null || searchTerm) {
+      setLoading(true);
+    }
+    
     let query = supabase.from("visitors").select("*").eq("is_blacklisted", true).order("updated_at", { ascending: false });
     
     if (searchTerm) {
@@ -27,6 +50,9 @@ export function BlacklistedUsers() {
       toast.error("Failed to fetch blacklisted visitors");
     } else {
       setVisitors(data || []);
+      if (!searchTerm) {
+        writeBlacklistCache(data || []);
+      }
     }
     setLoading(false);
   }, [searchTerm]);
