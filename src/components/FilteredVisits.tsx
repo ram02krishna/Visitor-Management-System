@@ -208,6 +208,11 @@ export function FilteredVisits() {
       }
 
       if (user?.role === "host") query = query.eq("host_id", user.id);
+      else if (user?.role === "visitor") {
+        const { data: vProfile } = await supabase.from("visitors").select("id").ilike("email", user.email.trim()).limit(1).maybeSingle();
+        if (vProfile) query = query.eq("visitor_id", vProfile.id);
+        else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
+      }
 
       const [utcTodayStart, utcTomorrowStart] = getISTTodayRange();
       if (status === "approved") {

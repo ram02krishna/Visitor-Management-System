@@ -184,6 +184,11 @@ export function Dashboard() {
       }
 
       if (user?.role === "host") query = query.eq("host_id", user.id);
+      else if (user?.role === "visitor") {
+        const { data: vProfile } = await supabase.from("visitors").select("id").ilike("email", user.email.trim()).limit(1).maybeSingle();
+        if (vProfile) query = query.eq("visitor_id", vProfile.id);
+        else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
+      }
 
       const [utcTodayStart, utcTomorrowStart] = getISTTodayRange();
       if (status === "approved") {
@@ -210,6 +215,10 @@ export function Dashboard() {
 
       if (user?.role === "host") {
         query = query.eq("host_id", user.id);
+      } else if (user?.role === "visitor") {
+        const { data: vProfile } = await supabase.from("visitors").select("id").ilike("email", user.email.trim()).limit(1).maybeSingle();
+        if (vProfile) query = query.eq("visitor_id", vProfile.id);
+        else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
       }
 
       const { data } = await query.limit(5);
@@ -225,7 +234,7 @@ export function Dashboard() {
     } finally {
       setRecentLoading(false);
     }
-  }, [user?.role, user?.id]);
+  }, [user?.role, user?.id, user?.email]);
 
   const fetchActiveVisitors = useCallback(async () => {
     if (user?.role !== "admin" && user?.role !== "guard" && user?.role !== "host") {
@@ -285,7 +294,7 @@ export function Dashboard() {
           fetchRecentVisits();
           fetchActiveVisitors();
           setLastRefresh(new Date());
-        } else if (user?.role === "admin" || user?.role === "guard") {
+        } else if (user?.role === "admin" || user?.role === "guard" || user?.role === "visitor") {
           fetchStats();
           fetchRecentVisits();
           fetchActiveVisitors();
@@ -300,7 +309,7 @@ export function Dashboard() {
           fetchRecentVisits();
           fetchActiveVisitors();
           setLastRefresh(new Date());
-        } else if (user?.role === "admin" || user?.role === "guard") {
+        } else if (user?.role === "admin" || user?.role === "guard" || user?.role === "visitor") {
           fetchStats();
           fetchRecentVisits();
           fetchActiveVisitors();

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { UserMinus, Search, Mail, ShieldAlert, CheckCircle2, Inbox } from "lucide-react";
+import { UserMinus, Search, Mail, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";

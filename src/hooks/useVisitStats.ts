@@ -105,7 +105,8 @@ export const useVisitStats = (user: User | null) => {
         const { data: vProfile } = await supabase
           .from("visitors")
           .select("id")
-          .eq("email", user.email)
+          .ilike("email", user.email.trim())
+          .limit(1)
           .maybeSingle();
         visitorProfileId = vProfile?.id ?? null;
       }

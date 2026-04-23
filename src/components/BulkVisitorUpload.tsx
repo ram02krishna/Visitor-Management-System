@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
-import Papa from "papaparse";
+
 import { v4 as uuidv4 } from "uuid";
 
 type BulkUploadFormData = {
@@ -49,6 +49,7 @@ Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
   };
 
   const processCsv = async (file: File): Promise<{ [key: string]: string }[]> => {
+    const Papa = (await import("papaparse")).default;
     return new Promise((resolve, reject) => {
       Papa.parse(file, {
         header: true,

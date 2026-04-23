@@ -8,7 +8,7 @@ import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
-import emailjs from "@emailjs/browser";
+
 import {
   Camera,
   UserRoundPlus,
@@ -193,7 +193,8 @@ export function UnifiedVisitRegistration() {
       const { data: existingVisitor } = await supabase
         .from("visitors")
         .select("id, is_blacklisted")
-        .eq("email", formData.email)
+        .ilike("email", formData.email.trim())
+        .limit(1)
         .maybeSingle();
 
       if (existingVisitor?.is_blacklisted) {
@@ -272,6 +273,7 @@ export function UnifiedVisitRegistration() {
 
       if (emailServiceId && emailTemplateId && emailPublicKey) {
         try {
+          const emailjs = (await import("@emailjs/browser")).default;
           await emailjs.send(
             emailServiceId,
             emailTemplateId,

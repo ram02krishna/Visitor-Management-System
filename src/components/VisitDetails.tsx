@@ -27,6 +27,8 @@ export type VisitWithDetails = Database["public"]["Tables"]["visits"]["Row"] & {
   visitors?: Database["public"]["Tables"]["visitors"]["Row"] | null;
   host?: Database["public"]["Tables"]["hosts"]["Row"] | null;
   hosts?: Database["public"]["Tables"]["hosts"]["Row"] | null;
+  approved_at?: string | null;
+  approved_by?: string | null;
 };
 
 interface VisitDetailsProps {
@@ -323,14 +325,14 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
               </div>
 
               {/* Approved */}
-              {(visit as any).approved_at && (
+              {visit.approved_at && (
                 <div className="relative">
                   <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-white dark:ring-slate-900" />
                   <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase leading-none">
-                    Approved {(visit as any).approved_by ? <span className="text-indigo-600 dark:text-indigo-400 lowercase">({(visit as any).approved_by === visit.host_id ? "by Host" : "by Admin/Guard"})</span> : ""}
+                    Approved {visit.approved_by ? <span className="text-indigo-600 dark:text-indigo-400 lowercase">({visit.approved_by === visit.host_id ? "by Host" : "by Admin/Guard"})</span> : ""}
                   </p>
                   <p className="text-[10px] font-bold text-gray-500 mt-0.5">
-                    {formatIST((visit as any).approved_at)}
+                    {formatIST(visit.approved_at)}
                   </p>
                 </div>
               )}

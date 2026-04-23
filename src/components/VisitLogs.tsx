@@ -25,7 +25,7 @@ import logger from "../lib/logger";
 import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
 import { formatIST } from "../lib/dateIST";
-import Papa from "papaparse";
+
 import { SEOMeta } from "./SEOMeta";
 import { VisitDetails } from "./VisitDetails";
 
@@ -107,7 +107,6 @@ export function VisitLogs() {
   const [exporting, setExporting] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<VisitLog | null>(null);
   const [page, setStatusPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 1000;
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -151,6 +150,10 @@ export function VisitLogs() {
 
       if (user?.role === "host") {
         query = query.eq("host_id", user.id);
+      } else if (user?.role === "visitor") {
+        const { data: vProfile } = await supabase.from("visitors").select("id").ilike("email", user.email.trim()).limit(1).maybeSingle();
+        if (vProfile) query = query.eq("visitor_id", vProfile.id);
+        else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
       }
 
       const from = (currentPage - 1) * PAGE_SIZE;
@@ -174,7 +177,7 @@ export function VisitLogs() {
         }
       }
       
-      setHasMore(result.length === PAGE_SIZE);
+
     } catch (err) {
       logger.error("[VisitLogs] Fetch error:", err);
       toast.error("Failed to load visit logs");
@@ -206,6 +209,7 @@ export function VisitLogs() {
         "Check-out": logItem.check_out_time ? formatIST(new Date(logItem.check_out_time)) : "-",
         Created: logItem.created_at ? formatIST(new Date(logItem.created_at)) : "-",
       }));
+      const Papa = (await import("papaparse")).default;
       const csv = Papa.unparse(csvData);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
