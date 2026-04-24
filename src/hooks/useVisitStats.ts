@@ -100,15 +100,13 @@ export const useVisitStats = (user: User | null) => {
 
       // ── Pre-fetch visitor profile ID once so we can use it
       //    in all 6 parallel count queries below (avoids 7 serial calls).
-      let visitorProfileId: string | null = null;
-      if (role === "visitor") {
-        const { data: vProfile } = await supabase
+      let visitorProfileIds: string[] = [];
+      if (role === "visitor" && user?.email) {
+        const { data: vProfiles } = await supabase
           .from("visitors")
           .select("id")
-          .ilike("email", user.email.trim())
-          .limit(1)
-          .maybeSingle();
-        visitorProfileId = vProfile?.id ?? null;
+          .eq("email", user.email.trim());
+        visitorProfileIds = vProfiles?.map(v => v.id) || [];
       }
 
       // Returns a query scoped to the current user's role in O(1)
@@ -116,9 +114,8 @@ export const useVisitStats = (user: User | null) => {
       const withRoleFilter = (q: any) => {
         if (role === "host") return q.eq("host_id", user.id);
         if (role === "visitor") {
-          // Use the pre-fetched ID — no extra DB roundtrip
-          const fallbackId = "00000000-0000-0000-0000-000000000000";
-          return q.eq("visitor_id", visitorProfileId ?? fallbackId);
+          // Use the pre-fetched IDs — no extra DB roundtrip
+          return q.in("visitor_id", visitorProfileIds.length > 0 ? visitorProfileIds : ["00000000-0000-0000-0000-000000000000"]);
         }
         return q;
       };

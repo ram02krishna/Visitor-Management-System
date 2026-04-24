@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { supabase } from "../lib/supabase";
@@ -17,6 +15,7 @@ import {
 import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
 import type { Database } from "../lib/database.types";
+import { formatIST } from "../lib/dateIST";
 
 type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
   visitors: Database["public"]["Tables"]["visitors"]["Row"];
@@ -411,6 +410,26 @@ export function ScanQrCode() {
                     <MapPin className="w-4 h-4 text-emerald-500" /> {currentGate}
                   </p>
                 </div>
+                {visit?.valid_from && (
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Valid From
+                    </span>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                      {formatIST(visit.valid_from)}
+                    </p>
+                  </div>
+                )}
+                {visit?.valid_until && (
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      Valid Until
+                    </span>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                      {formatIST(visit.valid_until)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">

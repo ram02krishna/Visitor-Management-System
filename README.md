@@ -152,7 +152,7 @@ Visitor-Management-System/
   - id, name, created_at, updated_at
 
 **Enums:**
-- **user_role**: admin, guard, host
+- **user_role**: admin, guard, host, visitor
 - **visit_status**: pending, approved, denied, completed, cancelled, checked-in
 
 ### Installation Steps

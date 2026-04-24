@@ -186,6 +186,15 @@ CREATE POLICY "visitors_select_authenticated" ON visitors FOR SELECT USING (auth
 DROP POLICY IF EXISTS "visitors_select_public_recent" ON visitors;
 CREATE POLICY "visitors_select_public_recent" ON visitors FOR SELECT USING (auth.role() = 'anon' AND created_at > (now() - interval '10 minutes'));
 
+DROP POLICY IF EXISTS "visitors_select_own" ON visitors;
+CREATE POLICY "visitors_select_own" ON visitors FOR SELECT USING (
+    EXISTS (
+        SELECT 1 FROM hosts h 
+        WHERE LOWER(h.email) = LOWER(visitors.email) 
+        AND h.auth_id = auth.uid()
+    )
+);
+
 DROP POLICY IF EXISTS "visitors_update_privileged" ON visitors;
 CREATE POLICY "visitors_update_privileged" ON visitors FOR UPDATE USING (is_admin(auth.uid()) OR is_guard(auth.uid())) WITH CHECK (is_admin(auth.uid()) OR is_guard(auth.uid()));
 
@@ -195,12 +204,36 @@ CREATE POLICY "visits_insert_public_validated" ON visits FOR INSERT WITH CHECK (
 
 DROP POLICY IF EXISTS "visits_select_own_or_privileged" ON visits;
 CREATE POLICY "visits_select_own_or_privileged" ON visits FOR SELECT USING (
-    EXISTS (SELECT 1 FROM hosts WHERE hosts.id = visits.host_id AND hosts.auth_id = auth.uid()) OR is_admin(auth.uid()) OR is_guard(auth.uid())
+    is_admin(auth.uid()) 
+    OR is_guard(auth.uid())
+    OR EXISTS (
+        SELECT 1 FROM hosts 
+        WHERE hosts.id = visits.host_id 
+        AND hosts.auth_id = auth.uid()
+    )
+    OR EXISTS (
+        SELECT 1 FROM visitors v
+        JOIN hosts h ON LOWER(h.email) = LOWER(v.email)
+        WHERE v.id = visits.visitor_id
+        AND h.auth_id = auth.uid()
+    )
 );
 
 DROP POLICY IF EXISTS "visits_update_role_based" ON visits;
 CREATE POLICY "visits_update_role_based" ON visits FOR UPDATE USING (
-    is_admin(auth.uid()) OR is_guard(auth.uid()) OR EXISTS (SELECT 1 FROM hosts WHERE hosts.id = visits.host_id AND hosts.auth_id = auth.uid())
+    is_admin(auth.uid()) 
+    OR is_guard(auth.uid())
+    OR EXISTS (
+        SELECT 1 FROM hosts 
+        WHERE hosts.id = visits.host_id 
+        AND hosts.auth_id = auth.uid()
+    )
+    OR EXISTS (
+        SELECT 1 FROM visitors v
+        JOIN hosts h ON LOWER(h.email) = LOWER(v.email)
+        WHERE v.id = visits.visitor_id
+        AND h.auth_id = auth.uid()
+    )
 );
 
 -- INDEXES

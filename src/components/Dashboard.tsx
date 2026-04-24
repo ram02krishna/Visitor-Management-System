@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 import {
@@ -96,7 +96,7 @@ function useLiveDuration(checkInTime: string | null) {
   return duration;
 }
 
-function ActiveVisitorRow({ visitor }: { visitor: ActiveVisitor }) {
+const ActiveVisitorRow = memo(({ visitor }: { visitor: ActiveVisitor }) => {
   const duration = useLiveDuration(visitor.check_in_time);
   const name = visitor.visitors?.name ?? "Unknown";
   const initials = name
@@ -123,7 +123,7 @@ function ActiveVisitorRow({ visitor }: { visitor: ActiveVisitor }) {
       </div>
     </div>
   );
-}
+});
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -184,9 +184,10 @@ export function Dashboard() {
       }
 
       if (user?.role === "host") query = query.eq("host_id", user.id);
-      else if (user?.role === "visitor") {
-        const { data: vProfile } = await supabase.from("visitors").select("id").ilike("email", user.email.trim()).limit(1).maybeSingle();
-        if (vProfile) query = query.eq("visitor_id", vProfile.id);
+      else if (user?.role === "visitor" && user.email) {
+        const { data: vProfiles } = await supabase.from("visitors").select("id").eq("email", user.email.trim());
+        const visitorIds = vProfiles?.map(v => v.id) || [];
+        if (visitorIds.length > 0) query = query.in("visitor_id", visitorIds);
         else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
       }
 
@@ -215,9 +216,10 @@ export function Dashboard() {
 
       if (user?.role === "host") {
         query = query.eq("host_id", user.id);
-      } else if (user?.role === "visitor") {
-        const { data: vProfile } = await supabase.from("visitors").select("id").ilike("email", user.email.trim()).limit(1).maybeSingle();
-        if (vProfile) query = query.eq("visitor_id", vProfile.id);
+      } else if (user?.role === "visitor" && user.email) {
+        const { data: vProfiles } = await supabase.from("visitors").select("id").eq("email", user.email.trim());
+        const visitorIds = vProfiles?.map(v => v.id) || [];
+        if (visitorIds.length > 0) query = query.in("visitor_id", visitorIds);
         else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
       }
 

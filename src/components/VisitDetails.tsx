@@ -1,5 +1,3 @@
-"use client";
-
 import { createPortal } from "react-dom";
 import { useState } from "react";
 import {
@@ -13,6 +11,7 @@ import {
   FileText,
   History,
   Car,
+  Calendar,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
@@ -37,6 +36,8 @@ interface VisitDetailsProps {
   onUpdate?: () => void;
 }
 
+const CAMPUS_GATES = ["Main Gate", "North Gate", "South Gate", "Administrative Block"];
+
 export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
   const { user } = useAuthStore();
   const visitor = visit.visitor || visit.visitors;
@@ -44,6 +45,8 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [showBlacklistPrompt, setShowBlacklistPrompt] = useState(false);
   const [blacklistReason, setBlacklistReason] = useState("");
+  const [showExitGatePrompt, setShowExitGatePrompt] = useState(false);
+  const [selectedExitGate, setSelectedExitGate] = useState(CAMPUS_GATES[0]);
 
   const isGuardOrAdmin = user?.role === "admin" || user?.role === "guard";
   const isHost = visit.host_id === user?.id;
@@ -187,13 +190,13 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
           status: "completed",
           check_out_time: now,
           updated_at: now,
-          exit_gate: "Manual Checkout", // Default for manual completion from details
+          exit_gate: selectedExitGate,
         })
         .eq("id", visit.id);
 
       if (error) throw error;
 
-      toast.success("Visit marked as Completed");
+      toast.success(`Visit Completed via ${selectedExitGate}`);
       if (onUpdate) onUpdate();
       onClose();
     } catch (err: unknown) {
@@ -280,6 +283,24 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
                 {visit.pass_type?.replace("_", " ") || "Single Day"}
               </p>
             </div>
+
+            <div className="col-span-2 sm:col-span-1 p-3.5 rounded-[1rem] bg-gradient-to-br from-gray-50 to-white dark:from-slate-800/80 dark:to-slate-900/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow">
+              <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-blue-400" /> Valid From
+              </span>
+              <p className="text-[11px] font-bold text-gray-800 dark:text-slate-200">
+                {visit.valid_from ? formatIST(visit.valid_from) : "N/A"}
+              </p>
+            </div>
+            <div className="col-span-2 sm:col-span-1 p-3.5 rounded-[1rem] bg-gradient-to-br from-gray-50 to-white dark:from-slate-800/80 dark:to-slate-900/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow">
+              <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-purple-400" /> Valid Until
+              </span>
+              <p className="text-[11px] font-bold text-gray-800 dark:text-slate-200">
+                {visit.valid_until ? formatIST(visit.valid_until) : "N/A"}
+              </p>
+            </div>
+
             <div className="col-span-2 p-3.5 rounded-[1rem] bg-gradient-to-br from-gray-50 to-white dark:from-slate-800/80 dark:to-slate-900/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow">
               <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-blue-400" /> Host
@@ -412,13 +433,49 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
           )}
 
           {visit.status === "checked-in" && isGuardOrAdmin && (
-            <button
-              onClick={handleCompleteVisit}
-              disabled={loading}
-              className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
-            >
-              <CheckCircle2 className="w-4 h-4" /> Complete Visit
-            </button>
+            <div className="w-full space-y-3">
+              {showExitGatePrompt ? (
+                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-2xl border border-indigo-200 dark:border-indigo-900/50 animate-scaleIn">
+                  <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-2 px-1">
+                    Select Exit Gate
+                  </p>
+                  <select
+                    value={selectedExitGate}
+                    onChange={(e) => setSelectedExitGate(e.target.value)}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 text-gray-900 dark:text-white mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 shadow-sm appearance-none cursor-pointer"
+                  >
+                    {CAMPUS_GATES.map((gate) => (
+                      <option key={gate} value={gate}>
+                        {gate}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleCompleteVisit}
+                      disabled={loading}
+                      className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 active:scale-95 shadow-sm shadow-indigo-500/20"
+                    >
+                      Confirm Exit
+                    </button>
+                    <button
+                      onClick={() => setShowExitGatePrompt(false)}
+                      className="flex-1 py-2.5 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 transition-all active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowExitGatePrompt(true)}
+                  disabled={loading}
+                  className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Complete Visit
+                </button>
+              )}
+            </div>
           )}
 
           {isGuardOrAdmin && (

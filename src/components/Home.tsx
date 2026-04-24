@@ -1,5 +1,3 @@
-"use client";
-
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ShieldCheck, ClipboardList, BarChart2, Menu, X, ArrowRight } from "lucide-react";

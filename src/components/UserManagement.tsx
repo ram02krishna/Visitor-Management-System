@@ -266,7 +266,7 @@ export function UserManagement() {
             <div className="p-6 space-y-4">
               <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest ml-1">Select New Role</p>
               <div className="grid grid-cols-1 gap-2">
-                {["admin", "host", "guard"].map((role) => (
+                {["admin", "host", "guard", "visitor"].map((role) => (
                   <button
                     key={role}
                     onClick={() => handleUpdateRole(role)}

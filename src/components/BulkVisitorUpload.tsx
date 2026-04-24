@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Upload, FileSpreadsheet, Download, AlertCircle, UploadCloud } from "lucide-react";
 import { BackButton } from "./BackButton";

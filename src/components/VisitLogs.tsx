@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
@@ -150,9 +148,10 @@ export function VisitLogs() {
 
       if (user?.role === "host") {
         query = query.eq("host_id", user.id);
-      } else if (user?.role === "visitor") {
-        const { data: vProfile } = await supabase.from("visitors").select("id").ilike("email", user.email.trim()).limit(1).maybeSingle();
-        if (vProfile) query = query.eq("visitor_id", vProfile.id);
+      } else if (user?.role === "visitor" && user?.email) {
+        const { data: vProfiles } = await supabase.from("visitors").select("id").eq("email", user.email.trim());
+        const visitorIds = vProfiles?.map(v => v.id) || [];
+        if (visitorIds.length > 0) query = query.in("visitor_id", visitorIds);
         else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
       }
 

@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
@@ -56,8 +54,8 @@ export function Layout() {
 
   const accessibleNavLinks = user ? navLinks.filter((link) => link.roles.includes(user.role)) : [];
 
-  // Bottom tab bar shows max 6 links (most important first)
-  const bottomTabLinks = accessibleNavLinks.slice(0, 6);
+  // Bottom tab bar shows all links as it's now slidable
+  const bottomTabLinks = accessibleNavLinks;
 
   return (
     <div className="h-[100dvh] w-full flex overflow-hidden bg-gray-50 dark:bg-slate-950">
@@ -283,7 +281,7 @@ export function Layout() {
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-nav"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        <div className="flex items-stretch h-[56px]">
+        <div className="flex items-stretch h-[56px] overflow-x-auto scrollbar-hide flex-nowrap px-2">
           {bottomTabLinks.map((link) => {
             const isDashboard = link.href === "/app/dashboard";
             const isDashboardChild =
@@ -294,7 +292,7 @@ export function Layout() {
               <Link
                 key={link.href}
                 to={link.href}
-                className="flex-1 flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-90 relative"
+                className="flex-shrink-0 w-[72px] flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-90 relative"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 {/* Active glow dot */}
