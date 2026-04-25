@@ -37,6 +37,15 @@ This project is a full-stack web application that helps organizations manage vis
 - **Dark Mode:** Full native theme switching with persistent user preferences.
 - **Role-Based Access Control (RBAC):** Database-level RLS (Row Level Security) and frontend guards ensuring data integrity.
 
+## Authentication & Security Architecture
+
+### Supabase Authentication
+The system leverages **Supabase Auth** for robust, enterprise-grade user management. 
+- **JWT-Based Sessions:** Authentication is handled using JSON Web Tokens (JWT). Upon login/signup, Supabase issues a JWT that is securely stored in `localStorage` and automatically refreshed by the Supabase client.
+- **Stateless & Scalable:** By utilizing Supabase's built-in auth service, the application maintains a stateless architecture. There is no custom authentication middleware; instead, security is enforced at the database level.
+- **Identity Management:** Supports traditional Email/Password login and Signup, as well as Google OAuth integration.
+- **Row-Level Security (RLS):** Data access is strictly controlled via PostgreSQL RLS policies. The Supabase JWT is passed with every request, allowing the database to verify the user's identity and role before granting access to any data.
+
 ## Tech Stack
 
 | Category | Technology | Purpose |
