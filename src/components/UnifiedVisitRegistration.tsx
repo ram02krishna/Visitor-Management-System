@@ -57,10 +57,12 @@ export function UnifiedVisitRegistration() {
   } = useVisitRegistration(formMethods);
 
   return (
-    <div className="px-2 xs:px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-12 animate-fadeIn relative">
-      <div className="absolute top-6 right-6 z-50 sm:right-8 lg:right-10">
-        <ThemeSwitcher />
-      </div>
+    <div className="px-4 sm:px-6 lg:px-8 pb-12 animate-fadeIn relative">
+      {!user && (
+        <div className="absolute top-6 right-6 z-50 sm:right-8 lg:right-10">
+          <ThemeSwitcher />
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto">
         <BackButton to={user ? "/app/dashboard" : "/"} />
