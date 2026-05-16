@@ -31,9 +31,10 @@ export function BulkVisitorUpload() {
   }, [user?.email, user?.role, setValue]);
 
   const downloadSampleCsv = () => {
-    const csvContent = `name,email,phone,purpose,visit_date
-John Doe,john@example.com,+1234567890,Business Meeting,2024-03-15
-Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
+    const csvContent = `name,email,phone,purpose,visit_date,additional_guests,vehicle_number,vehicle_type,pass_type,valid_until
+John Doe,john@example.com,+1234567890,Business Meeting,2024-03-15,2,MH-31-AB-1234,Car,single_day,
+Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16,0,,No Vehicle,multi_day,2024-03-20
+Bob Wilson,bob@example.com,+1122334455,Maintenance,2024-03-17,1,KA-01-XY-5678,Bike,single_day,`;
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -117,8 +118,13 @@ Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
         purpose: string;
         status: string;
         valid_until: string;
+        valid_from: string;
         created_at: string;
         updated_at: string;
+        additional_guests: number;
+        vehicle_number: string | null;
+        vehicle_type: string | null;
+        pass_type: "single_day" | "multi_day";
       }[] = [];
 
       for (const visitorData of visitors) {
@@ -132,8 +138,29 @@ Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
           });
         }
 
+        // Parse pass_type (default: single_day)
+        const rawPassType = (visitorData.pass_type || "").trim().toLowerCase();
+        const passType: "single_day" | "multi_day" =
+          rawPassType === "multi_day" ? "multi_day" : "single_day";
+
+        // Parse visit_date
         const visitDate = visitorData.visit_date ? new Date(visitorData.visit_date) : new Date();
-        visitDate.setHours(23, 59, 59, 999);
+
+        // Parse valid_until based on pass_type
+        let validUntil: Date;
+        if (passType === "multi_day" && visitorData.valid_until) {
+          validUntil = new Date(visitorData.valid_until);
+        } else {
+          validUntil = new Date(visitDate);
+        }
+        validUntil.setHours(23, 59, 59, 999);
+
+        // Parse additional_guests (default: 0)
+        const additionalGuests = parseInt(visitorData.additional_guests, 10) || 0;
+
+        // Parse vehicle info
+        const vehicleNumber = visitorData.vehicle_number?.trim() || null;
+        const vehicleType = visitorData.vehicle_type?.trim() || null;
 
         visitsToInsert.push({
           id: uuidv4(),
@@ -141,9 +168,14 @@ Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
           host_id: approver.id,
           purpose: visitorData.purpose || "N/A",
           status: "pending",
-          valid_until: visitDate.toISOString(),
+          valid_until: validUntil.toISOString(),
+          valid_from: visitDate.toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          additional_guests: additionalGuests,
+          vehicle_number: vehicleNumber,
+          vehicle_type: vehicleType,
+          pass_type: passType,
         });
       }
 
@@ -315,6 +347,26 @@ Jane Smith,jane@example.com,+1987654321,Interview,2024-03-16`;
               <div>
                 <span className="text-gray-600 dark:text-slate-400 font-semibold">visit_date</span>{" "}
                 (optional, format: YYYY-MM-DD)
+              </div>
+              <div>
+                <span className="text-gray-600 dark:text-slate-400 font-semibold">additional_guests</span>{" "}
+                (optional, number, default: 0)
+              </div>
+              <div>
+                <span className="text-gray-600 dark:text-slate-400 font-semibold">vehicle_number</span>{" "}
+                (optional, e.g. MH-31-AB-1234)
+              </div>
+              <div>
+                <span className="text-gray-600 dark:text-slate-400 font-semibold">vehicle_type</span>{" "}
+                (optional: Car, Bike, No Vehicle)
+              </div>
+              <div>
+                <span className="text-gray-600 dark:text-slate-400 font-semibold">pass_type</span>{" "}
+                (optional: single_day or multi_day)
+              </div>
+              <div>
+                <span className="text-gray-600 dark:text-slate-400 font-semibold">valid_until</span>{" "}
+                (for multi_day, format: YYYY-MM-DD)
               </div>
             </div>
           </div>
