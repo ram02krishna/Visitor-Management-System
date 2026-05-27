@@ -6,13 +6,9 @@ import {
   Search,
   Inbox,
   Calendar,
-  CheckCircle2,
-  Hourglass,
   Filter,
   Download,
   Circle,
-  XCircle,
-  LogIn,
   ScrollText,
   Users,
   X,
@@ -23,7 +19,9 @@ import logger from "../lib/logger";
 import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
 import { formatIST } from "../lib/dateIST";
-
+import { useDebounce } from "../hooks/useDebounce";
+import { STATUS_CONFIG, getStatusConfig } from "../lib/statusConfig";
+import { readCache, writeCache } from "../lib/cache";
 import { SEOMeta } from "./SEOMeta";
 import { VisitDetails } from "./VisitDetails";
 
@@ -32,73 +30,15 @@ type VisitLog = Database["public"]["Tables"]["visits"]["Row"] & {
   host: Database["public"]["Tables"]["hosts"]["Row"] | null;
 };
 
-const statusConfig: Record<string, { label: string; icon: React.ElementType; className: string }> =
-  {
-    pending: {
-      label: "Pending",
-      icon: Hourglass,
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    },
-    approved: {
-      label: "Approved",
-      icon: CheckCircle2,
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    },
-    denied: {
-      label: "Denied",
-      icon: XCircle,
-      className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    },
-    completed: {
-      label: "Completed",
-      icon: CheckCircle2,
-      className: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
-    },
-    "checked-in": {
-      label: "Active",
-      icon: LogIn,
-      className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-    },
-    cancelled: {
-      label: "Cancelled",
-      icon: XCircle,
-      className: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400",
-    },
-  };
-
-const useDebounce = <T,>(value: T, delay: number): T => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debouncedValue;
-};
-
-// ─── Stale-while-revalidate cache key for visit logs ────────────────────────
+// ─── Cache configuration ────────────────────────────────────────────────────
 const LOGS_CACHE_KEY = "vms_visit_logs_cache";
-
-function readLogsCache(): VisitLog[] | null {
-  try {
-    const raw = localStorage.getItem(LOGS_CACHE_KEY);
-    return raw ? (JSON.parse(raw) as VisitLog[]) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeLogsCache(logs: VisitLog[]) {
-  try {
-    // Only cache the first 50 rows to respect localStorage quota
-    localStorage.setItem(LOGS_CACHE_KEY, JSON.stringify(logs.slice(0, 50)));
-  } catch {/* quota — ignore */}
-}
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function VisitLogs() {
   const { user } = useAuthStore();
-  const [logs, setLogs] = useState<VisitLog[]>(() => readLogsCache() ?? []);
-  const [loading, setLoading] = useState(() => readLogsCache() === null);
+  const [logs, setLogs] = useState<VisitLog[]>(() => readCache<VisitLog[]>(LOGS_CACHE_KEY, CACHE_TTL_MS) ?? []);
+  const [loading, setLoading] = useState(() => readCache(LOGS_CACHE_KEY, CACHE_TTL_MS) === null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -112,7 +52,7 @@ export function VisitLogs() {
     if (!user) return;
     
     const currentPage = isLoadMore ? page + 1 : 1;
-    if (!isLoadMore && readLogsCache() === null) setLoading(true);
+    if (!isLoadMore && readCache(LOGS_CACHE_KEY, CACHE_TTL_MS) === null) setLoading(true);
 
     try {
       let query = supabase.from("visits").select(`
@@ -140,10 +80,6 @@ export function VisitLogs() {
         query = query
           .gte("created_at", startOfDay.toISOString())
           .lte("created_at", endOfDay.toISOString());
-      } else {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        query = query.gte("created_at", thirtyDaysAgo.toISOString());
       }
 
       if (user?.role === "host") {
@@ -172,7 +108,7 @@ export function VisitLogs() {
         setLogs(result);
         setStatusPage(1);
         if (!debouncedSearchTerm && !statusFilter && !dateFilter) {
-          writeLogsCache(result);
+          writeCache(LOGS_CACHE_KEY, result.slice(0, 50));
         }
       }
       
@@ -203,7 +139,7 @@ export function VisitLogs() {
         Guests: logItem.additional_guests || 0,
         Vehicle: logItem.vehicle_number || "-",
         Phone: logItem.visitor?.phone || "-",
-        Status: statusConfig[logItem.status]?.label || logItem.status,
+        Status: getStatusConfig(logItem.status).label,
         "Check-in": logItem.check_in_time ? formatIST(new Date(logItem.check_in_time)) : "-",
         "Check-out": logItem.check_out_time ? formatIST(new Date(logItem.check_out_time)) : "-",
         Created: logItem.created_at ? formatIST(new Date(logItem.created_at)) : "-",
@@ -396,7 +332,7 @@ export function VisitLogs() {
                         </tr>
                       ) : (
                         logs.map((logItem, idx) => {
-                          const cfg = statusConfig[logItem.status] || statusConfig["pending"];
+                          const cfg = getStatusConfig(logItem.status);
                           const StatusIcon = cfg.icon;
                           const visitorName = logItem.visitor?.name || "Unknown";
 

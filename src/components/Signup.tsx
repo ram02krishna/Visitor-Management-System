@@ -5,6 +5,7 @@ import { Shield, Eye, EyeOff, ArrowRight, ArrowLeft, Building2, CheckCircle2 } f
 import { useAuthStore } from "../store/auth";
 import { supabase } from "../lib/supabase";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { validatePasswordStrength } from "../lib/sanitize";
 import log from "../lib/logger";
 
 type Department = {
@@ -64,10 +65,14 @@ export function Signup() {
       setError("Passwords do not match");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.valid) {
+      setError(passwordValidation.message);
       return;
     }
+
     if (!departmentId) {
       setError("Please select a department");
       return;

@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 import { UsersRound, CalendarCheck2, Hourglass, Trophy, ShieldX, Activity } from "lucide-react";
 import { User } from "../store/auth";
 import { getISTTodayRange } from "../lib/dateIST";
+import { readCache as readCacheUtil, writeCache as writeCacheUtil } from "../lib/cache";
+import { normalizeEmail } from "../lib/sanitize";
 
 export type StatItem = {
   name: string;
@@ -55,22 +57,13 @@ function cacheKey(role: string) {
 }
 
 function readCache(role: string): StatItem[] | null {
-  try {
-    const raw = localStorage.getItem(cacheKey(role));
-    if (!raw) return null;
-    const parsed: SerializedStat[] = JSON.parse(raw);
-    return deserializeStats(parsed);
-  } catch {
-    return null;
-  }
+  const raw = readCacheUtil<SerializedStat[]>(cacheKey(role), 5 * 60 * 1000);
+  if (!raw) return null;
+  return deserializeStats(raw);
 }
 
 function writeCache(role: string, stats: StatItem[]) {
-  try {
-    localStorage.setItem(cacheKey(role), JSON.stringify(serializeStats(stats)));
-  } catch {
-    // localStorage quota exceeded or unavailable — silently ignore
-  }
+  writeCacheUtil(cacheKey(role), serializeStats(stats));
 }
 
 export const useVisitStats = (user: User | null) => {
@@ -105,7 +98,7 @@ export const useVisitStats = (user: User | null) => {
         const { data: vProfiles } = await supabase
           .from("visitors")
           .select("id")
-          .eq("email", user.email.trim());
+          .eq("email", normalizeEmail(user.email));
         visitorProfileIds = vProfiles?.map(v => v.id) || [];
       }
 

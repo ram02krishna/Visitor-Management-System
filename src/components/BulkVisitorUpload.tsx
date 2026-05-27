@@ -6,13 +6,15 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
-
 import { v4 as uuidv4 } from "uuid";
 
 type BulkUploadFormData = {
   file: FileList;
   approverEmail: string;
 };
+
+// Maximum file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export function BulkVisitorUpload() {
   const { user } = useAuthStore();
@@ -69,6 +71,11 @@ Bob Wilson,bob@example.com,+1122334455,Maintenance,2024-03-17,1,KA-01-XY-5678,Bi
       const file = formData.file[0];
       if (!file) {
         throw new Error("Please select a file to upload.");
+      }
+
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        throw new Error(`File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit. Please use a smaller file.`);
       }
 
       if (!formData.approverEmail) {

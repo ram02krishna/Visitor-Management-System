@@ -3,10 +3,7 @@ import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/auth";
 import {
   AlertCircle,
-  CheckCircle2,
-  XCircle,
   Hourglass,
-  LogIn,
   Users,
   CalendarDays,
   RefreshCw,
@@ -17,6 +14,8 @@ import { useVisitStats } from "../hooks/useVisitStats";
 import { StatsGrid } from "./StatsGrid";
 import { formatDistanceToNow } from "date-fns";
 import { formatISTTime, getISTTodayRange } from "../lib/dateIST";
+import { STATUS_CONFIG, getStatusConfig } from "../lib/statusConfig";
+import { readCache, writeCache } from "../lib/cache";
 import { SEOMeta } from "./SEOMeta";
 
 function getInitials(name: string) {
@@ -44,39 +43,10 @@ type ActiveVisitor = {
   visitors: { name: string; email: string } | null;
 };
 
-const statusConfig: Record<string, { label: string; icon: React.ElementType; className: string }> =
-  {
-    pending: {
-      label: "Pending",
-      icon: Hourglass,
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    },
-    approved: {
-      label: "Approved",
-      icon: CheckCircle2,
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    },
-    denied: {
-      label: "Denied",
-      icon: XCircle,
-      className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    },
-    completed: {
-      label: "Completed",
-      icon: CheckCircle2,
-      className: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
-    },
-    "checked-in": {
-      label: "Checked In",
-      icon: LogIn,
-      className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-    },
-    cancelled: {
-      label: "Cancelled",
-      icon: XCircle,
-      className: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400",
-    },
-  };
+// Cache configuration
+const RECENT_VISITS_CACHE_KEY = "vms_recent_visits";
+const ACTIVE_VISITORS_CACHE_KEY = "vms_active_visitors";
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function useLiveDuration(checkInTime: string | null) {
   const [duration, setDuration] = useState("");
@@ -132,27 +102,19 @@ export function Dashboard() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // ── Stale-while-revalidate for recent visits ────────────────────────────
-  const [recentVisits, setRecentVisits] = useState<RecentVisit[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("vms_recent_visits") ?? "null") ?? [];
-    } catch {
-      return [];
-    }
-  });
+  const [recentVisits, setRecentVisits] = useState<RecentVisit[]>(
+    () => readCache<RecentVisit[]>(RECENT_VISITS_CACHE_KEY, CACHE_TTL_MS) ?? []
+  );
   const [recentLoading, setRecentLoading] = useState(
-    () => localStorage.getItem("vms_recent_visits") === null
+    () => readCache(RECENT_VISITS_CACHE_KEY, CACHE_TTL_MS) === null
   );
 
   // ── Stale-while-revalidate for active visitors ──────────────────────────
-  const [activeVisitors, setActiveVisitors] = useState<ActiveVisitor[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem("vms_active_visitors") ?? "null") ?? [];
-    } catch {
-      return [];
-    }
-  });
+  const [activeVisitors, setActiveVisitors] = useState<ActiveVisitor[]>(
+    () => readCache<ActiveVisitor[]>(ACTIVE_VISITORS_CACHE_KEY, CACHE_TTL_MS) ?? []
+  );
   const [activeLoading, setActiveLoading] = useState(
-    () => localStorage.getItem("vms_active_visitors") === null
+    () => readCache(ACTIVE_VISITORS_CACHE_KEY, CACHE_TTL_MS) === null
   );
 
   const isGuardOrAdmin = user?.role === "admin" || user?.role === "guard";
@@ -226,11 +188,7 @@ export function Dashboard() {
       const { data } = await query.limit(5);
       const visits = (data as unknown as RecentVisit[]) || [];
       setRecentVisits(visits);
-      try {
-        localStorage.setItem("vms_recent_visits", JSON.stringify(visits));
-      } catch {
-        /* Ignore quota errors */
-      }
+      writeCache(RECENT_VISITS_CACHE_KEY, visits);
     } catch {
       // Silence fetch errors for stale-while-revalidate pattern
     } finally {
@@ -258,11 +216,7 @@ export function Dashboard() {
       const { data } = await query;
       const visitors = (data as unknown as ActiveVisitor[]) || [];
       setActiveVisitors(visitors);
-      try {
-        localStorage.setItem("vms_active_visitors", JSON.stringify(visitors));
-      } catch {
-        /* Ignore quota errors */
-      }
+      writeCache(ACTIVE_VISITORS_CACHE_KEY, visitors);
     } catch {
       // Silence fetch errors for stale-while-revalidate pattern
     } finally {
@@ -505,7 +459,7 @@ export function Dashboard() {
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-slate-800">
               {recentVisits.map((visit, i) => {
-                const cfg = statusConfig[visit.status] || statusConfig["pending"];
+                const cfg = getStatusConfig(visit.status);
                 const StatusIcon = cfg.icon;
                 const visitorName = visit.visitors?.name ?? "Unknown";
                 const initials = visitorName
