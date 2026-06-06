@@ -3,8 +3,8 @@ import { supabase } from "../lib/supabase";
 import { UsersRound, CalendarCheck2, Hourglass, Trophy, ShieldX, Activity } from "lucide-react";
 import { User } from "../store/auth";
 import { getISTTodayRange } from "../lib/dateIST";
-import { readCache as readCacheUtil, writeCache as writeCacheUtil } from "../lib/cache";
-import { normalizeEmail } from "../lib/sanitize";
+import { readCache as readCacheUtil, writeCache as writeCacheUtil, getCacheTTL } from "../lib/cache";
+import { getSafeVisitorIds } from "../lib/visitorIds";
 
 export type StatItem = {
   name: string;
@@ -52,12 +52,14 @@ function deserializeStats(raw: SerializedStat[]): StatItem[] {
   }));
 }
 
+const STATS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 function cacheKey(role: string) {
   return `vms_stats_cache_${role}`;
 }
 
 function readCache(role: string): StatItem[] | null {
-  const raw = readCacheUtil<SerializedStat[]>(cacheKey(role), 5 * 60 * 1000);
+  const raw = readCacheUtil<SerializedStat[]>(cacheKey(role), STATS_CACHE_TTL);
   if (!raw) return null;
   return deserializeStats(raw);
 }
@@ -79,8 +81,21 @@ export const useVisitStats = (user: User | null) => {
 
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (force = false) => {
     if (!user?.role) return;
+
+    // ── Cache short-circuit ──────────────────────────────────────────────────
+    // If the cache is still valid and we're not forcing a refresh,
+    // skip all 7 Supabase queries entirely. The stale data is already in state.
+    if (!force) {
+      const remainingTTL = getCacheTTL(cacheKey(user.role), STATS_CACHE_TTL);
+      if (remainingTTL > 0) {
+        // Cache is fresh — nothing to do
+        setLoading(false);
+        return;
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     const cached = readCache(user.role);
     if (!cached) setLoading(true);
@@ -91,35 +106,29 @@ export const useVisitStats = (user: User | null) => {
       const role = user.role;
       const [todayStart, todayEnd] = getISTTodayRange();
 
-      // ── Pre-fetch visitor profile ID once so we can use it
-      //    in all 6 parallel count queries below (avoids 7 serial calls).
+      // ── Pre-fetch visitor profile IDs once (shared memoized helper) ──────
+      // Uses the in-memory cache from visitorIds.ts — no extra DB call if
+      // another component already fetched this on the same page load.
       let visitorProfileIds: string[] = [];
       if (role === "visitor" && user?.email) {
-        const { data: vProfiles } = await supabase
-          .from("visitors")
-          .select("id")
-          .eq("email", normalizeEmail(user.email));
-        visitorProfileIds = vProfiles?.map(v => v.id) || [];
+        visitorProfileIds = await getSafeVisitorIds(user.email);
       }
 
-      // Returns a query scoped to the current user's role in O(1)
+      // Returns a query scoped to the current user's role
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const withRoleFilter = (q: any) => {
         if (role === "host") return q.eq("host_id", user.id);
-        if (role === "visitor") {
-          // Use the pre-fetched IDs — no extra DB roundtrip
-          return q.in("visitor_id", visitorProfileIds.length > 0 ? visitorProfileIds : ["00000000-0000-0000-0000-000000000000"]);
-        }
+        if (role === "visitor") return q.in("visitor_id", visitorProfileIds);
         return q;
       };
 
-      // Base count builder — all queries now start from a common helper
+      // Base count builder
       const countQuery = (status: string) =>
         withRoleFilter(
           supabase.from("visits").select("*", { count: "exact", head: true }).eq("status", status)
         );
 
-      // ── 6 parallel count queries (+ optional users count for admin) ──────
+      // ── 7 parallel count queries ─────────────────────────────────────────
       const [
         { count: ongoingCount },
         { count: approvedToday },
@@ -170,7 +179,7 @@ export const useVisitStats = (user: User | null) => {
             .gte("updated_at", todayStart)
             .lt("updated_at", todayEnd)
         ),
-        // Fetch total user count in parallel only for admin — returns null for other roles
+        // Fetch total user count in parallel only for admin
         role === "admin"
           ? supabase.from("hosts").select("*", { count: "exact", head: true })
           : Promise.resolve({ count: null }),

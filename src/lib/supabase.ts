@@ -22,8 +22,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     storage: typeof window !== "undefined" ? localStorage : undefined,
   },
-  db: {
-    schema: "public",
+  realtime: {
+    // Keep the WebSocket alive with a periodic heartbeat.
+    // Prevents costly reconnect + re-subscribe on every navigation.
+    params: {
+      heartbeat_interval_ms: 30000, // 30 s keepalive
+    },
   },
 });
 
@@ -35,6 +39,8 @@ if (typeof window !== "undefined") {
     }
     if (event === "SIGNED_OUT") {
       log.info("[Supabase] User signed out");
+      // Clear the in-memory visitor ID cache on logout
+      import("./visitorIds").then(({ clearVisitorIdCache }) => clearVisitorIdCache());
     }
   });
 }

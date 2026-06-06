@@ -16,6 +16,7 @@ import { formatDistanceToNow } from "date-fns";
 import { formatISTTime, getISTTodayRange } from "../lib/dateIST";
 import { STATUS_CONFIG, getStatusConfig } from "../lib/statusConfig";
 import { readCache, writeCache } from "../lib/cache";
+import { getSafeVisitorIds } from "../lib/visitorIds";
 import { SEOMeta } from "./SEOMeta";
 
 function getInitials(name: string) {
@@ -179,10 +180,9 @@ export function Dashboard() {
       if (user?.role === "host") {
         query = query.eq("host_id", user.id);
       } else if (user?.role === "visitor" && user.email) {
-        const { data: vProfiles } = await supabase.from("visitors").select("id").eq("email", user.email.trim());
-        const visitorIds = vProfiles?.map(v => v.id) || [];
-        if (visitorIds.length > 0) query = query.in("visitor_id", visitorIds);
-        else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
+        // Use shared memoized helper — no extra round-trip if already fetched
+        const visitorIds = await getSafeVisitorIds(user.email);
+        query = query.in("visitor_id", visitorIds);
       }
 
       const { data } = await query.limit(5);
@@ -205,7 +205,8 @@ export function Dashboard() {
     try {
       let query = supabase
         .from("visits")
-        .select("id, purpose, check_in_time, visitors(name, email), host_id")
+        // Only select columns actually rendered — avoids fetching the full row
+        .select("id, purpose, check_in_time, visitors(name, email)")
         .eq("status", "checked-in")
         .order("check_in_time", { ascending: true });
 
@@ -227,57 +228,41 @@ export function Dashboard() {
   useEffect(() => {
     if (!user?.role) return;
 
-    fetchStats();
-    fetchRecentVisits();
-    fetchActiveVisitors();
+    // Fire all 3 fetches in parallel — no sequential waterfall on page load
+    Promise.all([fetchStats(), fetchRecentVisits(), fetchActiveVisitors()]);
     setLastRefresh(new Date());
 
     // Poll every 60s as a fallback — realtime subscription handles live changes
     const refreshInterval = setInterval(() => {
-      fetchStats();
-      fetchRecentVisits();
-      fetchActiveVisitors();
+      Promise.all([fetchStats(), fetchRecentVisits(), fetchActiveVisitors()]);
       setLastRefresh(new Date());
     }, 60000);
+
+    // Helper: refresh all data, bypassing cache (used by realtime events)
+    const refreshAll = () => {
+      Promise.all([fetchStats(true), fetchRecentVisits(), fetchActiveVisitors()]);
+      setLastRefresh(new Date());
+    };
 
     const channel = supabase
       .channel("visits_realtime")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "visits" }, (payload) => {
-        // For new visits, check if it's relevant to current user
         const newVisit = payload.new as { host_id: string };
         if (user?.role === "host" && newVisit.host_id === user.id) {
-          fetchStats();
-          fetchRecentVisits();
-          fetchActiveVisitors();
-          setLastRefresh(new Date());
+          refreshAll();
         } else if (user?.role === "admin" || user?.role === "guard" || user?.role === "visitor") {
-          fetchStats();
-          fetchRecentVisits();
-          fetchActiveVisitors();
-          setLastRefresh(new Date());
+          refreshAll();
         }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "visits" }, (payload) => {
-        // For updated visits (approve/deny), check if relevant to current user
         const updatedVisit = payload.new as { host_id: string };
         if (user?.role === "host" && updatedVisit.host_id === user.id) {
-          fetchStats();
-          fetchRecentVisits();
-          fetchActiveVisitors();
-          setLastRefresh(new Date());
+          refreshAll();
         } else if (user?.role === "admin" || user?.role === "guard" || user?.role === "visitor") {
-          fetchStats();
-          fetchRecentVisits();
-          fetchActiveVisitors();
-          setLastRefresh(new Date());
+          refreshAll();
         }
       })
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "visits" }, () => {
-        fetchStats();
-        fetchRecentVisits();
-        fetchActiveVisitors();
-        setLastRefresh(new Date());
-      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "visits" }, refreshAll)
       .subscribe();
 
     return () => {

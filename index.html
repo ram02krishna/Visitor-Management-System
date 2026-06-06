@@ -6,10 +6,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Indian Institute of Information Technology, Nagpur - Visitor Management System</title>
     <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         ANTI-FOUC: Apply saved theme BEFORE first paint.
+         This tiny inline script runs synchronously in <head> so the
+         browser never paints the wrong background color.
+         ═══════════════════════════════════════════════════════════════ -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = saved ? saved === 'dark' : prefersDark;
+          if (isDark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Critical inline style: set background before CSS loads to kill white flash -->
+    <style>
+      html { background-color: #f9fafb; }
+      html.dark { background-color: #020617; }
+    </style>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         RESOURCE HINTS — tell browser about external origins early
+         so DNS + TLS handshakes happen before JS even runs.
+         ═══════════════════════════════════════════════════════════════ -->
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Load font stylesheet non-blocking via media swap trick -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <!-- Noscript fallback -->
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap"
+      />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- <script type="module" src="/src/registerSW.ts"></script> -->
   </body>
 </html>

@@ -13,6 +13,7 @@ import {
   Users,
   X,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import type { Database } from "../lib/database.types";
 import logger from "../lib/logger";
@@ -22,6 +23,7 @@ import { formatIST } from "../lib/dateIST";
 import { useDebounce } from "../hooks/useDebounce";
 import { STATUS_CONFIG, getStatusConfig } from "../lib/statusConfig";
 import { readCache, writeCache } from "../lib/cache";
+import { getSafeVisitorIds } from "../lib/visitorIds";
 import { SEOMeta } from "./SEOMeta";
 import { VisitDetails } from "./VisitDetails";
 
@@ -39,26 +41,42 @@ export function VisitLogs() {
   const { user } = useAuthStore();
   const [logs, setLogs] = useState<VisitLog[]>(() => readCache<VisitLog[]>(LOGS_CACHE_KEY, CACHE_TTL_MS) ?? []);
   const [loading, setLoading] = useState(() => readCache(LOGS_CACHE_KEY, CACHE_TTL_MS) === null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [exporting, setExporting] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<VisitLog | null>(null);
   const [page, setStatusPage] = useState(1);
-  const PAGE_SIZE = 1000;
+  const PAGE_SIZE = 50; // Fetch 50 rows at a time — fast first load, load-more for the rest
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const fetchVisits = useCallback(async (isLoadMore = false) => {
     if (!user) return;
-    
+
     const currentPage = isLoadMore ? page + 1 : 1;
     if (!isLoadMore && readCache(LOGS_CACHE_KEY, CACHE_TTL_MS) === null) setLoading(true);
+    if (isLoadMore) setLoadingMore(true);
 
     try {
+      // Narrow the select to exactly the columns rendered in the table.
+      // Fetching visitor.* and host.* (full rows) was the biggest data transfer
+      // waste. We now only fetch what is displayed.
       let query = supabase.from("visits").select(`
-        *,
-        visitor:visitors(*),
-        host:hosts!visits_host_id_fkey(*)
+        id,
+        purpose,
+        status,
+        created_at,
+        check_in_time,
+        check_out_time,
+        vehicle_number,
+        additional_guests,
+        entry_gate,
+        exit_gate,
+        host_id,
+        visitor:visitors(id, name, email, phone, photo_url),
+        host:hosts!visits_host_id_fkey(id, name, email, department_id)
       `);
 
       if (debouncedSearchTerm) {
@@ -76,7 +94,6 @@ export function VisitLogs() {
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(dateFilter);
         endOfDay.setHours(23, 59, 59, 999);
-
         query = query
           .gte("created_at", startOfDay.toISOString())
           .lte("created_at", endOfDay.toISOString());
@@ -85,10 +102,9 @@ export function VisitLogs() {
       if (user?.role === "host") {
         query = query.eq("host_id", user.id);
       } else if (user?.role === "visitor" && user?.email) {
-        const { data: vProfiles } = await supabase.from("visitors").select("id").eq("email", user.email.trim());
-        const visitorIds = vProfiles?.map(v => v.id) || [];
-        if (visitorIds.length > 0) query = query.in("visitor_id", visitorIds);
-        else query = query.eq("visitor_id", "00000000-0000-0000-0000-000000000000");
+        // Use shared memoized helper — no extra sequential round-trip
+        const visitorIds = await getSafeVisitorIds(user.email);
+        query = query.in("visitor_id", visitorIds);
       }
 
       const from = (currentPage - 1) * PAGE_SIZE;
@@ -99,25 +115,29 @@ export function VisitLogs() {
         .range(from, to);
 
       if (error) throw error;
-      
-      const result = (data as VisitLog[]) || [];
+
+      const result = (data as unknown as VisitLog[]) || [];
+      // If we got a full page back, there may be more rows
+      setHasMore(result.length === PAGE_SIZE);
+
       if (isLoadMore) {
         setLogs(prev => [...prev, ...result]);
         setStatusPage(currentPage);
       } else {
         setLogs(result);
         setStatusPage(1);
+        // Only cache unfiltered results
         if (!debouncedSearchTerm && !statusFilter && !dateFilter) {
           writeCache(LOGS_CACHE_KEY, result.slice(0, 50));
         }
       }
-      
 
     } catch (err) {
       logger.error("[VisitLogs] Fetch error:", err);
       toast.error("Failed to load visit logs");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [user, debouncedSearchTerm, statusFilter, dateFilter, page]);
 
@@ -132,7 +152,26 @@ export function VisitLogs() {
     }
     setExporting(true);
     try {
-      const csvData = logs.map((logItem) => ({
+      // For export, fetch ALL matching rows (ignoring PAGE_SIZE limit)
+      let exportQuery = supabase.from("visits").select(`
+        id, purpose, status, created_at, check_in_time, check_out_time,
+        vehicle_number, additional_guests, entry_gate, exit_gate,
+        visitor:visitors(name, phone, email),
+        host:hosts!visits_host_id_fkey(name)
+      `);
+
+      if (statusFilter) exportQuery = exportQuery.eq("status", statusFilter);
+      if (dateFilter) {
+        const startOfDay = new Date(dateFilter); startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(dateFilter); endOfDay.setHours(23, 59, 59, 999);
+        exportQuery = exportQuery.gte("created_at", startOfDay.toISOString()).lte("created_at", endOfDay.toISOString());
+      }
+      if (user?.role === "host") exportQuery = exportQuery.eq("host_id", user.id);
+
+      const { data: exportData } = await exportQuery.order("created_at", { ascending: false });
+      const rows = (exportData as unknown as VisitLog[]) || [];
+
+      const csvData = rows.map((logItem) => ({
         "Visitor Name": logItem.visitor?.name || "Unknown",
         Host: logItem.host?.name || "Unknown",
         Purpose: logItem.purpose,
@@ -449,6 +488,24 @@ export function VisitLogs() {
           onClose={() => setSelectedVisit(null)}
           onUpdate={fetchVisits}
         />
+      )}
+
+      {/* Load More — only shown when there are more rows to fetch */}
+      {hasMore && !loading && (
+        <div className="flex justify-center py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <button
+            onClick={() => fetchVisits(true)}
+            disabled={loadingMore}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-sm font-black uppercase tracking-widest text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all shadow-sm disabled:opacity-50"
+          >
+            {loadingMore ? (
+              <Circle className="animate-spin w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+            {loadingMore ? "Loading..." : "Load More"}
+          </button>
+        </div>
       )}
     </div>
   );
