@@ -41,6 +41,21 @@ body {
     transition-duration: 200ms;
   }
 
+  /* ── Freeze all CSS transitions during View Transition to prevent stutter ── */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    /* Ensure individual element transitions don't fight the clip-path animation */
+    animation: none !important;
+    will-change: clip-path;
+  }
+
+  html:not(.vt-active) * {
+    /* Only apply the global transition when NOT in a view transition */
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+
   body {
     @apply bg-gray-50 text-gray-900;
     background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
@@ -226,37 +241,45 @@ body {
 
   /* ═══════════════════════════════════════════
      VIEW TRANSITION API — Theme Switcher
+     ═══════════════════════════════════════════
+
+     Strategy: Always clip the NEW (destination) snapshot over the OLD.
+     The clip-path circle expands FROM the click point.
+     For dark→light, we animate the new (light) snapshot expanding.
+     For light→dark, we animate the new (dark) snapshot expanding.
+     This gives a clean, jank-free ripple in both directions.
      ═══════════════════════════════════════════ */
+
+  /* Reset both snapshot layers — no default browser animation */
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation: none !important;
-    mix-blend-mode: normal !important;
-    display: block !important;
-    opacity: 1 !important;
-    height: 100% !important;
-    width: 100% !important;
-    object-fit: none !important;
-    transform: none !important;
+    mix-blend-mode: normal;
+    display: block;
+    /* GPU-promote the snapshot layer BEFORE animation begins */
+    will-change: clip-path;
+    /* Prevent any inherited transitions from causing stutter */
+    transition: none !important;
+    /* Prevent snapshot contents from having their own scroll */
+    overflow: clip;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
   }
 
-  /* Ensure snapshots don't have their own internal scroll or offset */
+  /* The group wrapper — no animation, just a positioning context */
   ::view-transition-group(root) {
-    z-index: 10000 !important;
     animation: none !important;
+    z-index: 9999;
   }
-  /* 
-     Dark layer MUST be on top for clipping.
-     Switching TO Dark: new is Dark.
-     Switching TO Light: old is Dark.
-  */
 
-  /* Default (Switching TO Dark): New snapshot on top */
-  ::view-transition-old(root) { z-index: 1 !important; }
-  ::view-transition-new(root) { z-index: 10000 !important; }
-
-  /* Switching TO Light: force Old (Dark) snapshot on top */
-  html:not(.dark)::view-transition-old(root) { z-index: 10000 !important; }
-  html:not(.dark)::view-transition-new(root) { z-index: 1 !important; }  /* ═══════════════════════════════════════
+  /* NEW snapshot always sits on top — JS animates its clip-path */
+  ::view-transition-old(root) {
+    z-index: 1;
+  }
+  ::view-transition-new(root) {
+    z-index: 10000;
+  }  /* ═══════════════════════════════════════
      SKELETON SHIMMER
      ═══════════════════════════════════════ */
   .skeleton {

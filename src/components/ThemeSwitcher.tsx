@@ -24,49 +24,55 @@ export const ThemeSwitcher = () => {
 
   const toggleTheme = (event?: React.MouseEvent) => {
     if (!document.startViewTransition) {
-      setIsDarkMode(!isDarkMode);
+      setIsDarkMode((prev) => !prev);
       return;
     }
 
-    // Get the click coordinates or fallback to center of the button/bottom-right
-    const x = event?.clientX ?? window.innerWidth;
-    const y = event?.clientY ?? window.innerHeight;
+    // Get the click coordinates or fallback to viewport center
+    const x = event?.clientX ?? window.innerWidth / 2;
+    const y = event?.clientY ?? window.innerHeight / 2;
 
-    // Radius of the circle should be the distance to the farthest corner
+    // Radius: distance to the farthest corner of the viewport
     const endRadius = Math.hypot(
       Math.max(x, window.innerWidth - x),
       Math.max(y, window.innerHeight - y)
     );
 
-    // Store state before change
-    const isCurrentlyDark = document.documentElement.classList.contains("dark");
+    // Suppress all per-element CSS transitions during the View Transition
+    // so they don't fight the clip-path ripple and cause stutter.
+    document.documentElement.classList.add("vt-active");
 
     const transition = document.startViewTransition(() => {
       flushSync(() => {
-        setIsDarkMode(!isCurrentlyDark);
+        setIsDarkMode((prev) => !prev);
       });
     });
 
     transition.ready.then(() => {
-      const clipPath = [
-        `circle(0px at ${x}px ${y}px)`,
-        `circle(${endRadius}px at ${x}px ${y}px)`,
-      ];
-
-      const pseudoElement = isCurrentlyDark 
-        ? "::view-transition-old(root)" 
-        : "::view-transition-new(root)";
-
+      // Always animate the NEW (destination) snapshot expanding from the
+      // click point. The new snapshot sits on top (z-index 10000 in CSS)
+      // with clip-path starting at a 0px circle, growing to full screen.
+      // This unified strategy works cleanly for BOTH directions with no stutter.
       document.documentElement.animate(
         {
-          clipPath: isCurrentlyDark ? [...clipPath].reverse() : clipPath,
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`,
+          ],
         },
         {
-          duration: 500,
-          easing: "cubic-bezier(0.4, 0, 0.2, 1)",
-          pseudoElement,
+          duration: 600,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)", // Apple spring — fast start, smooth decel
+          pseudoElement: "::view-transition-new(root)",
         }
       );
+    });
+
+    // Re-enable per-element CSS transitions after the animation completes
+    transition.finished.then(() => {
+      document.documentElement.classList.remove("vt-active");
+    }).catch(() => {
+      document.documentElement.classList.remove("vt-active");
     });
   };
 
@@ -87,19 +93,25 @@ export const ThemeSwitcher = () => {
       }`} />
 
       <div className="relative z-10 h-5 w-5 flex items-center justify-center">
-        {/* Sun Icon: Rises and shines */}
+        {/* Sun Icon: Rises up into view */}
         <Sun
-          className={`absolute h-5 w-5 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) transform ${
-            isDarkMode ? "translate-y-8 scale-0 opacity-0 rotate-45" : "translate-y-0 scale-100 opacity-100 rotate-0"
+          className={`absolute h-5 w-5 transition-all duration-500 transform ${
+            isDarkMode
+              ? "translate-y-8 scale-0 opacity-0 rotate-45"
+              : "translate-y-0 scale-100 opacity-100 rotate-0"
           }`}
+          style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
           strokeWidth={2.5}
         />
         
-        {/* Moon Icon: Slides in from the side with a curve */}
+        {/* Moon Icon: Slides in from the side */}
         <div
-          className={`absolute h-5 w-5 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) transform ${
-            isDarkMode ? "translate-x-0 scale-100 opacity-100 rotate-0" : "-translate-x-8 scale-0 opacity-0 -rotate-45"
+          className={`absolute h-5 w-5 transition-all duration-500 transform ${
+            isDarkMode
+              ? "translate-x-0 scale-100 opacity-100 rotate-0"
+              : "-translate-x-8 scale-0 opacity-0 -rotate-45"
           }`}
+          style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
           <Moon className="h-5 w-5" strokeWidth={2.5} fill="currentColor" />
         </div>
