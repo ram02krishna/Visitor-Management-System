@@ -151,10 +151,10 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
         .select("id");
 
       if (error) throw error;
-      
+
       // If data is empty, it means Row Level Security blocked the UPDATE operation silently
       if (!data || data.length === 0) {
-         throw new Error("Update blocked by database Row-Level Security (RLS) policy on the 'visitors' table.");
+        throw new Error("Update blocked by database Row-Level Security (RLS) policy on the 'visitors' table.");
       }
 
       setIsBlacklisted(isBlocking);
@@ -516,11 +516,10 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
                 <button
                   onClick={handleBlacklistClick}
                   disabled={loading}
-                  className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-                    isBlacklisted
+                  className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${isBlacklisted
                       ? "bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400"
                       : "bg-red-50 border-red-100 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
-                  }`}
+                    }`}
                 >
                   {isBlacklisted ? "Unblock Visitor" : "Blacklist"}
                 </button>

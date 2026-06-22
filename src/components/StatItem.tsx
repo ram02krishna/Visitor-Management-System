@@ -75,9 +75,8 @@ export const StatItem = React.memo(
 
     return (
       <div
-        className={`relative flex flex-col bg-white dark:bg-slate-900 rounded-[2rem] shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group animate-fadeInUp overflow-hidden border border-gray-100/80 dark:border-slate-800 ${
-          status ? "cursor-pointer" : ""
-        } ${className || ""}`}
+        className={`relative flex flex-col bg-white dark:bg-slate-900 rounded-[2rem] shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group animate-fadeInUp overflow-hidden border border-gray-100/80 dark:border-slate-800 ${status ? "cursor-pointer" : ""
+          } ${className || ""}`}
         style={style}
         onClick={() => status && onClick(status)}
         onMouseEnter={() => status && onMouseEnter && onMouseEnter(status)}

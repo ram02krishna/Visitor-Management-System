@@ -86,7 +86,7 @@ export function useVisitRegistration(formMethods: UseFormReturn<UnifiedVisitForm
     }
   }, [visitorEmail, errorMessage, isGuardOrAdmin]);
 
-  
+
   const handleFilePreview = (
     e: React.ChangeEvent<HTMLInputElement>,
     setter: (val: string | null) => void

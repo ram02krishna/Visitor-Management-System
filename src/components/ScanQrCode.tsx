@@ -98,7 +98,7 @@ export function ScanQrCode() {
               scanner.stop().catch(console.error);
             }
           },
-          () => {}
+          () => { }
         );
         setScannerReady(true);
       } catch (err) {

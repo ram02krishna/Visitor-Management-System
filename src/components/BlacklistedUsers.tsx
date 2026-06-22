@@ -24,7 +24,7 @@ function readBlacklistCache(): Visitor[] | null {
 function writeBlacklistCache(logs: Visitor[]) {
   try {
     localStorage.setItem(BLACKLIST_CACHE_KEY, JSON.stringify(logs.slice(0, 50)));
-  } catch {/* quota */}
+  } catch {/* quota */ }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -38,9 +38,9 @@ export function BlacklistedUsers() {
     if (readBlacklistCache() === null || searchTerm) {
       setLoading(true);
     }
-    
+
     let query = supabase.from("visitors").select("*").eq("is_blacklisted", true).order("updated_at", { ascending: false });
-    
+
     if (searchTerm) {
       query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
     }
@@ -70,12 +70,12 @@ export function BlacklistedUsers() {
     try {
       const { error } = await supabase
         .from("visitors")
-        .update({ 
+        .update({
           is_blacklisted: false,
           blacklist_reason: null
         })
         .eq("id", visitorId);
-        
+
       if (error) throw error;
       toast.success("Visitor unblocked successfully");
       fetchBlacklisted();
@@ -197,9 +197,9 @@ export function BlacklistedUsers() {
                         {visitor.updated_at ? format(new Date(visitor.updated_at), "MMM d, yyyy") : "N/A"}
                       </td>
                       <td className="py-4 pl-3 pr-4 sm:pr-6 text-right">
-                        <button 
+                        <button
                           onClick={() => handleUnblacklist(visitor.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 transition-all border border-emerald-200 dark:border-emerald-800" 
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 transition-all border border-emerald-200 dark:border-emerald-800"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} /> Unblock
                         </button>

@@ -79,38 +79,34 @@ export const ThemeSwitcher = () => {
   return (
     <button
       onClick={(e) => toggleTheme(e)}
-      className={`relative p-2.5 rounded-2xl transition-all duration-500 group overflow-hidden border shadow-sm hover:shadow-xl active:scale-95 ${
-        isDarkMode 
-          ? "bg-slate-900 border-slate-800 text-yellow-400 hover:shadow-yellow-500/10" 
+      className={`relative p-2.5 rounded-2xl transition-all duration-500 group overflow-hidden border shadow-sm hover:shadow-xl active:scale-95 ${isDarkMode
+          ? "bg-slate-900 border-slate-800 text-yellow-400 hover:shadow-yellow-500/10"
           : "bg-white border-gray-100 text-slate-700 hover:shadow-sky-500/10"
-      }`}
+        }`}
       aria-label="Toggle theme"
       title="Toggle theme"
     >
       {/* Dynamic Background Glow */}
-      <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 bg-gradient-to-br ${
-        isDarkMode ? "from-yellow-500 to-transparent" : "from-sky-500 to-transparent"
-      }`} />
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 bg-gradient-to-br ${isDarkMode ? "from-yellow-500 to-transparent" : "from-sky-500 to-transparent"
+        }`} />
 
       <div className="relative z-10 h-5 w-5 flex items-center justify-center">
         {/* Sun Icon: Rises up into view */}
         <Sun
-          className={`absolute h-5 w-5 transition-all duration-500 transform ${
-            isDarkMode
+          className={`absolute h-5 w-5 transition-all duration-500 transform ${isDarkMode
               ? "translate-y-8 scale-0 opacity-0 rotate-45"
               : "translate-y-0 scale-100 opacity-100 rotate-0"
-          }`}
+            }`}
           style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
           strokeWidth={2.5}
         />
-        
+
         {/* Moon Icon: Slides in from the side */}
         <div
-          className={`absolute h-5 w-5 transition-all duration-500 transform ${
-            isDarkMode
+          className={`absolute h-5 w-5 transition-all duration-500 transform ${isDarkMode
               ? "translate-x-0 scale-100 opacity-100 rotate-0"
               : "-translate-x-8 scale-0 opacity-0 -rotate-45"
-          }`}
+            }`}
           style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
         >
           <Moon className="h-5 w-5" strokeWidth={2.5} fill="currentColor" />

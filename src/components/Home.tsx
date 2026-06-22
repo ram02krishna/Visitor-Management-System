@@ -55,8 +55,8 @@ const Home = () => {
       {/* ── Navbar ── */}
       <nav
         className={`w-full flex items-center justify-between px-4 sm:px-6 lg:px-10 py-3 fixed top-0 z-50 transition-all duration-500 ${scrolled
-            ? "bg-white/95 dark:bg-slate-950/95 shadow-lg dark:shadow-slate-800/50 backdrop-blur-md border-b border-gray-200/60 dark:border-slate-800/60"
-            : "bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg"
+          ? "bg-white/95 dark:bg-slate-950/95 shadow-lg dark:shadow-slate-800/50 backdrop-blur-md border-b border-gray-200/60 dark:border-slate-800/60"
+          : "bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg"
           }`}
       >
         <div
@@ -110,8 +110,8 @@ const Home = () => {
 
       <div
         className={`md:hidden fixed top-[68px] left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-xl transition-all duration-300 ${mobileMenuOpen
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 -translate-y-3 pointer-events-none"
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 -translate-y-3 pointer-events-none"
           }`}
       >
         <div className="px-4 py-3 space-y-1.5">

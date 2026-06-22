@@ -95,7 +95,7 @@ export function Signup() {
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950 relative">
-      <div className="absolute top-6 right-6 z-50">
+      <div className="fixed top-6 right-6 z-50">
         <ThemeSwitcher />
       </div>
       {/* ── Left Panel (Branding) ── */}
@@ -147,19 +147,19 @@ export function Signup() {
       </div>
 
       {/* Right Panel (Form) */}
-      <div className="w-full lg:w-[55%] xl:w-1/2 flex flex-col justify-center py-8 sm:py-10 px-0 sm:px-8 lg:px-12 xl:px-24 min-h-[100dvh] lg:h-screen lg:overflow-y-auto">
+      <div className="w-full lg:w-[55%] xl:w-1/2 flex flex-col justify-center pt-12 pb-8 sm:pt-16 sm:pb-10 px-4 sm:px-8 lg:px-12 xl:px-24 min-h-[100dvh] lg:h-screen lg:overflow-y-auto">
         <div className="w-full max-w-md sm:max-w-lg mx-auto relative z-10 sm:py-8">
-          <div className="mb-6 px-5 sm:px-0 animate-fadeInUp">
+          <div className="mb-6 animate-fadeInUp">
             <button
               onClick={() => navigate("/")}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white bg-white sm:bg-transparent dark:bg-slate-900 sm:dark:bg-transparent border border-gray-200 dark:border-slate-800 sm:border-transparent rounded-2xl shadow-sm sm:shadow-none hover:shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-95"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Home
             </button>
           </div>
 
-          <div className="text-center lg:text-left mb-6 sm:mb-8 px-5 sm:px-0 animate-fadeInUp">
+          <div className="text-center lg:text-left mb-6 sm:mb-8 animate-fadeInUp">
             <div className="lg:hidden flex justify-center mb-6">
               <div className="p-3 bg-indigo-100 dark:bg-indigo-900/40 rounded-3xl shadow-sm border border-indigo-200 dark:border-indigo-800/50">
                 <Shield className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
@@ -293,9 +293,8 @@ export function Signup() {
                         {[1, 2, 3, 4].map((point) => (
                           <div
                             key={point}
-                            className={`h-full w-1/4 transition-colors duration-300 ${
-                              strength >= point ? strengthColors[strength - 1] : "bg-transparent"
-                            }`}
+                            className={`h-full w-1/4 transition-colors duration-300 ${strength >= point ? strengthColors[strength - 1] : "bg-transparent"
+                              }`}
                           />
                         ))}
                       </div>

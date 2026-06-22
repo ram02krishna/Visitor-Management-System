@@ -29,38 +29,38 @@ type Visit = Database["public"]["Tables"]["visits"]["Row"] & {
 };
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; className: string }> =
-  {
-    pending: {
-      label: "Pending",
-      icon: Hourglass,
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    },
-    approved: {
-      label: "Approved",
-      icon: CheckCircle2,
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    },
-    denied: {
-      label: "Denied",
-      icon: XCircle,
-      className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    },
-    completed: {
-      label: "Completed",
-      icon: CheckCircle2,
-      className: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
-    },
-    "checked-in": {
-      label: "Active",
-      icon: LogIn,
-      className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-    },
-    cancelled: {
-      label: "Cancelled",
-      icon: XCircle,
-      className: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400",
-    },
-  };
+{
+  pending: {
+    label: "Pending",
+    icon: Hourglass,
+    className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  },
+  approved: {
+    label: "Approved",
+    icon: CheckCircle2,
+    className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  },
+  denied: {
+    label: "Denied",
+    icon: XCircle,
+    className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  },
+  completed: {
+    label: "Completed",
+    icon: CheckCircle2,
+    className: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+  },
+  "checked-in": {
+    label: "Active",
+    icon: LogIn,
+    className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
+  },
+  cancelled: {
+    label: "Cancelled",
+    icon: XCircle,
+    className: "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400",
+  },
+};
 
 const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -186,7 +186,7 @@ export function FilteredVisits() {
 
   const fetchVisits = useCallback(async () => {
     if (!status || !user) return;
-    
+
     const cached = localStorage.getItem(`vms_filtered_${status}`);
     if (!cached && !debouncedSearchTerm) setLoading(true);
 
@@ -224,9 +224,9 @@ export function FilteredVisits() {
 
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
-      
+
       setVisits(data as Visit[]);
-      
+
       if (!debouncedSearchTerm) {
         try {
           localStorage.setItem(`vms_filtered_${status}`, JSON.stringify(data));
@@ -369,9 +369,8 @@ export function FilteredVisits() {
                             <tr
                               key={visit.id}
                               onClick={() => setSelectedVisit(visit)}
-                              className={`cursor-pointer hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors animate-fadeInUp ${
-                                isOverstay ? "bg-red-50/10 dark:bg-red-900/10" : ""
-                              }`}
+                              className={`cursor-pointer hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors animate-fadeInUp ${isOverstay ? "bg-red-50/10 dark:bg-red-900/10" : ""
+                                }`}
                               style={{ animationDelay: `${idx * 0.02}s` }}
                             >
                               <td className="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">

@@ -133,7 +133,7 @@ export function Dashboard() {
 
   const prefetchVisits = useCallback(async (status: string) => {
     if (status === "total_users" || !user) return;
-    
+
     // Only prefetch if not already in cache or cache is old
     const cacheKey = `vms_filtered_${status}`;
     if (localStorage.getItem(cacheKey)) return;
@@ -337,10 +337,10 @@ export function Dashboard() {
             ))}
           </div>
         ) : (
-          <StatsGrid 
-            stats={stats} 
-            handleStatCardClick={handleStatCardClick} 
-            handlePrefetch={prefetchVisits} 
+          <StatsGrid
+            stats={stats}
+            handleStatCardClick={handleStatCardClick}
+            handlePrefetch={prefetchVisits}
           />
         )}
       </div>

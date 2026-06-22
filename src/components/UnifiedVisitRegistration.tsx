@@ -408,11 +408,10 @@ export function UnifiedVisitRegistration() {
                           </p>
                         </div>
                         <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-widest uppercase shadow-sm ${
-                            isVisitor
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-widest uppercase shadow-sm ${isVisitor
                               ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50"
                               : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50"
-                          }`}
+                            }`}
                         >
                           <ShieldCheck className="w-3 h-3" />
                           {isVisitor ? "Pending" : "Approved"}
@@ -443,10 +442,10 @@ export function UnifiedVisitRegistration() {
                             <p className="text-xs sm:text-sm font-bold text-gray-800 dark:text-slate-200">
                               {watch("visitDate")
                                 ? new Date(watch("visitDate")).toLocaleDateString("en-US", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })
                                 : "---"}
                             </p>
                           </div>

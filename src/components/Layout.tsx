@@ -144,11 +144,10 @@ export function Layout() {
                     key={link.href}
                     to={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-200 ${
-                      isActive
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-200 ${isActive
                         ? "bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 font-black"
                         : "text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800/60 font-semibold"
-                    }`}
+                      }`}
                   >
                     <link.icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 2} />
                     <span className="text-sm">{link.label}</span>
@@ -205,11 +204,10 @@ export function Layout() {
               <Link
                 key={link.href}
                 to={link.href}
-                className={`flex items-center px-3 py-2.5 rounded-2xl transition-all duration-200 group relative overflow-hidden ${
-                  isActive
+                className={`flex items-center px-3 py-2.5 rounded-2xl transition-all duration-200 group relative overflow-hidden ${isActive
                     ? "text-sky-700 dark:text-sky-300 font-black"
                     : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100/70 dark:hover:bg-slate-800/50 font-semibold"
-                }`}
+                  }`}
               >
                 {isActive && (
                   <div className="absolute inset-0 bg-gradient-to-r from-sky-100/80 to-blue-50/80 dark:from-sky-900/40 dark:to-blue-900/20 border border-sky-200/60 dark:border-sky-700/40 rounded-2xl" />
@@ -219,9 +217,8 @@ export function Layout() {
                 )}
 
                 <link.icon
-                  className={`relative z-10 h-4.5 w-4.5 mr-3 transition-colors duration-200 ${
-                    isActive ? "text-sky-600 dark:text-sky-400" : "text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300"
-                  }`}
+                  className={`relative z-10 h-4.5 w-4.5 mr-3 transition-colors duration-200 ${isActive ? "text-sky-600 dark:text-sky-400" : "text-gray-400 group-hover:text-gray-600 dark:group-hover:text-slate-300"
+                    }`}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 <span className="relative z-10 text-sm">{link.label}</span>
@@ -301,28 +298,25 @@ export function Layout() {
                 )}
 
                 <div
-                  className={`flex items-center justify-center w-12 h-7 rounded-2xl transition-all duration-300 ${
-                    isActive
+                  className={`flex items-center justify-center w-12 h-7 rounded-2xl transition-all duration-300 ${isActive
                       ? "bg-sky-100 dark:bg-sky-900/40 shadow-sm"
                       : ""
-                  }`}
+                    }`}
                 >
                   <link.icon
-                    className={`transition-all duration-200 ${
-                      isActive
+                    className={`transition-all duration-200 ${isActive
                         ? "w-5 h-5 text-sky-600 dark:text-sky-400"
                         : "w-[20px] h-[20px] text-gray-400 dark:text-slate-500"
-                    }`}
+                      }`}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                 </div>
 
                 <span
-                  className={`text-[10px] font-black tracking-wide transition-colors duration-200 ${
-                    isActive
+                  className={`text-[10px] font-black tracking-wide transition-colors duration-200 ${isActive
                       ? "text-sky-600 dark:text-sky-400"
                       : "text-gray-400 dark:text-slate-500"
-                  }`}
+                    }`}
                 >
                   {link.label.split(" ")[0]}
                 </span>

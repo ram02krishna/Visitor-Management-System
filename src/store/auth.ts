@@ -286,7 +286,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     log.info("[Auth] Initiating Google Sign-In...");
     try {
       set({ isLoading: true, error: null });
-      const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
       if (error) {
         log.error("[Auth] Google Sign-In error:", error.message);
         throw error;
