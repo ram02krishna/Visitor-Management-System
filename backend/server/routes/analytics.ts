@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
+
 router.get('/', requireAuth, async (req: AuthRequest, res) => {
   try {
     const authUser = req.user!;
@@ -69,7 +70,10 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
     res.status(200).json(analytics);
   } catch (err: unknown) {
     console.error('[API GET /analytics]', err);
-    res.status(500).json({ error: 'Failed to fetch analytics', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to fetch analytics',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 

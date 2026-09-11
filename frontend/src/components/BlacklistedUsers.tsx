@@ -18,7 +18,6 @@ import { api } from "../lib/api";
 import { useDataSync } from "../lib/dataSync";
 import { toast } from "react-hot-toast";
 import type { Database } from "../lib/database.types";
-import { BackButton } from "./BackButton";
 import { format } from "date-fns";
 import { SEOMeta } from "./SEOMeta";
 
@@ -37,7 +36,7 @@ export function BlacklistedUsers() {
   const [visitors, setVisitors] = useState<Visitor[]>(() => api.uiCache.get("vms_blacklisted") || []);
   const [loading, setLoading] = useState(!api.uiCache.has("vms_blacklisted"));
 
-  // Add Blacklist Modal State
+
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [blockName, setBlockName] = useState("");
   const [blockEmail, setBlockEmail] = useState("");
@@ -68,7 +67,7 @@ export function BlacklistedUsers() {
     }
   }, [searchTerm, visitors.length]);
 
-  // Real-time synchronization subscription
+
   useDataSync(["visitors", "all"], () => {
     fetchBlacklisted(true);
   });
@@ -140,12 +139,11 @@ export function BlacklistedUsers() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pb-16 animate-fadeIn max-w-7xl mx-auto">
+    <div className="space-y-6 pb-8 animate-fadeIn">
       <SEOMeta title="Security Watchlist" />
 
-      <BackButton to="/app/dashboard" />
-
       <PageHeader
+        backTo="/app/dashboard"
         icon={ShieldAlert}
         gradient="from-red-500 to-rose-600"
         title="Security Watchlist"
@@ -153,7 +151,7 @@ export function BlacklistedUsers() {
         right={
           <button
             onClick={() => setShowBlockModal(true)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md shadow-red-500/20 active:scale-95 transition-all shrink-0 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-bold shadow-sm shadow-red-500/20 active:scale-95 transition-all shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Security Block</span>
@@ -161,11 +159,11 @@ export function BlacklistedUsers() {
         }
       />
 
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
               Active Watchlist
             </span>
             <p className="text-2xl sm:text-3xl font-black text-red-600 dark:text-red-400 mt-0.5">
@@ -173,14 +171,14 @@ export function BlacklistedUsers() {
             </p>
             <span className="text-[11px] text-gray-400">Barred from campus entry</span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-500/20">
-            <UserX className="w-6 h-6" />
+          <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-500/20">
+            <UserX className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
               Gate Radar Status
             </span>
             <p className="text-base sm:text-lg font-black text-gray-900 dark:text-white mt-1 flex items-center gap-2">
@@ -191,14 +189,14 @@ export function BlacklistedUsers() {
               Instant scan intercept enabled
             </span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <Radio className="w-6 h-6" />
+          <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <Radio className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
               Disciplinary Authority
             </span>
             <p className="text-base sm:text-lg font-black text-gray-900 dark:text-white mt-1">
@@ -206,19 +204,19 @@ export function BlacklistedUsers() {
             </p>
             <span className="text-[11px] text-gray-400">Campus security protocol</span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-            <ShieldCheck className="w-6 h-6" />
+          <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+            <ShieldCheck className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="mt-8 mb-4 max-w-sm">
+
+      <div className="max-w-sm">
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           <input
             id="user-search"
-            className="block w-full rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-xs"
+            className="block w-full rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-4 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all shadow-xs"
             placeholder="Search by name, email or reason..."
             type="search"
             value={searchTerm}
@@ -227,8 +225,8 @@ export function BlacklistedUsers() {
         </div>
       </div>
 
-      {/* Watchlist Table */}
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full divide-y divide-gray-200 dark:divide-slate-800 min-w-[750px]">
             <thead>
@@ -352,10 +350,10 @@ export function BlacklistedUsers() {
         </div>
       </div>
 
-      {/* Add Security Block Modal */}
+
       {showBlockModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-gray-200 dark:border-slate-800 shadow-2xl space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 max-w-lg w-full border border-gray-200 dark:border-slate-800 shadow-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 border border-red-500/20">

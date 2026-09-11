@@ -323,7 +323,6 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
                   </p>
                 </div>
               )}
-              {/* Activity log sequence: Student Movement vs Regular Visitor Visit */}
               {isStudentMovement ? (
                 <>
                   <div className="relative">

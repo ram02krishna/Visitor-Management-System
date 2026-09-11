@@ -32,7 +32,7 @@ export function ClaimStudentPassModal({ isOpen, onClose }: ClaimStudentPassModal
     try {
       const res = await api.students.claimPass(rollNumber.trim().toUpperCase());
 
-      // Update auth store with new student token and profile
+
       localStorage.setItem("vms_token", res.token);
       localStorage.setItem("vms_user_profile", JSON.stringify(res.user));
       useAuthStore.setState({ user: res.user, isAuthenticated: true, error: null });
@@ -50,11 +50,11 @@ export function ClaimStudentPassModal({ isOpen, onClose }: ClaimStudentPassModal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 sm:p-7 relative overflow-hidden">
-        {/* Glow effect */}
+      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 sm:p-7 relative overflow-hidden">
+
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Close Button */}
+
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
@@ -62,7 +62,7 @@ export function ClaimStudentPassModal({ isOpen, onClose }: ClaimStudentPassModal
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
+
         <div className="flex items-center gap-3.5 mb-5">
           <div className="p-3 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-md">
             <GraduationCap className="w-6 h-6" />

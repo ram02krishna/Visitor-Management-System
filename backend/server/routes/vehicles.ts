@@ -4,9 +4,6 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-/**
- * 1. REGISTER VEHICLE PASS: POST /api/vehicles
- */
 router.post('/', requireAuth, async (req: AuthRequest, res) => {
   try {
     const {
@@ -16,7 +13,7 @@ router.post('/', requireAuth, async (req: AuthRequest, res) => {
       vehicle_type = 'two_wheeler',
       license_plate,
       vehicle_model,
-      parking_slot
+      parking_slot,
     } = req.body;
 
     if (!license_plate || !license_plate.trim()) {
@@ -25,9 +22,8 @@ router.post('/', requireAuth, async (req: AuthRequest, res) => {
 
     const cleanPlate = license_plate.trim().toUpperCase();
 
-    // Check duplicate plate
     const existing = await prisma.vehiclePass.findUnique({
-      where: { license_plate: cleanPlate }
+      where: { license_plate: cleanPlate },
     });
 
     if (existing) {
@@ -43,14 +39,14 @@ router.post('/', requireAuth, async (req: AuthRequest, res) => {
         license_plate: cleanPlate,
         vehicle_model: vehicle_model || null,
         parking_slot: parking_slot || null,
-        status: 'active'
-      }
+        status: 'active',
+      },
     });
 
     res.status(201).json({
       success: true,
       message: `Vehicle Pass issued for ${cleanPlate}.`,
-      vehiclePass
+      vehiclePass,
     });
   } catch (err) {
     console.error('[API POST /vehicles]', err);
@@ -58,9 +54,6 @@ router.post('/', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * 2. LIST VEHICLE PASSES: GET /api/vehicles
- */
 router.get('/', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { search, owner_type, status } = req.query;
@@ -74,13 +67,13 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
               OR: [
                 { license_plate: { contains: String(search), mode: 'insensitive' } },
                 { roll_number: { contains: String(search), mode: 'insensitive' } },
-                { owner_name: { contains: String(search), mode: 'insensitive' } }
-              ]
+                { owner_name: { contains: String(search), mode: 'insensitive' } },
+              ],
             }
-          : {})
+          : {}),
       },
       orderBy: { created_at: 'desc' },
-      take: 100
+      take: 100,
     });
 
     res.json(passes);
@@ -90,18 +83,14 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * 3. FAST GATE LOOKUP BY PLATE: GET /api/vehicles/lookup/:plate
- */
 router.get('/lookup/:plate', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { plate } = req.params;
     const cleanPlate = String(plate).trim().toUpperCase();
 
     const pass = await prisma.vehiclePass.findUnique({
-      where: { license_plate: cleanPlate }
+      where: { license_plate: cleanPlate },
     });
-
 
     if (!pass) {
       return res.status(404).json({ error: `Vehicle "${cleanPlate}" has no registered gate pass.` });
@@ -114,15 +103,12 @@ router.get('/lookup/:plate', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * 4. REVOKE / DELETE VEHICLE PASS: DELETE /api/vehicles/:id
- */
 router.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
     await prisma.vehiclePass.delete({
-      where: { id: String(id) }
+      where: { id: String(id) },
     });
 
     res.json({ success: true, message: 'Vehicle Pass revoked successfully.' });

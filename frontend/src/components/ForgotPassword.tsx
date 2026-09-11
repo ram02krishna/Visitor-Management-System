@@ -8,7 +8,6 @@ import { API_BASE } from "../lib/api";
 import { Logo } from "./Logo";
 import { BackButton } from "./BackButton";
 
-
 export function ForgotPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");

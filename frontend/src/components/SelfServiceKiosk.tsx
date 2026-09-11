@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   UserCheck,
   Package,
@@ -23,11 +24,13 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 type KioskCategory = "guest" | "courier" | "interview" | "vip";
 
 export function SelfServiceKiosk() {
+  const location = useLocation();
+  const isStandalone = !location.pathname.startsWith("/app");
   const [step, setStep] = useState<"category" | "details" | "photo" | "badge">("category");
   const [category, setCategory] = useState<KioskCategory>("guest");
   const [currentTime, setCurrentTime] = useState("");
 
-  // Form State
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -36,18 +39,18 @@ export function SelfServiceKiosk() {
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [photoData, setPhotoData] = useState<string | null>(null);
 
-  // Submission & Result
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdVisit, setCreatedVisit] = useState<any | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
 
-  // Camera video ref
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
 
-  // Live IST Clock
+
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -66,7 +69,7 @@ export function SelfServiceKiosk() {
     return () => clearInterval(interval);
   }, []);
 
-  // Attach camera stream when video element renders
+
   useEffect(() => {
     if (isCameraActive && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
@@ -74,7 +77,7 @@ export function SelfServiceKiosk() {
     }
   }, [isCameraActive]);
 
-  // Camera start / stop
+
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -171,7 +174,7 @@ export function SelfServiceKiosk() {
         });
         setQrCodeUrl(qrUrl);
       } catch {
-        // fallback
+
       }
       setStep("badge");
       toast.success("Self check-in completed! Here is your entry badge.");
@@ -198,20 +201,27 @@ export function SelfServiceKiosk() {
 
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-16 animate-fadeIn space-y-6 min-h-screen">
-      {/* Top Header Row with Back Button */}
-      <div className="flex items-center justify-between">
-        <BackButton to="/" className="mb-0 flex items-center gap-2" />
-        <ThemeSwitcher />
-      </div>
+    <div
+      className={
+        isStandalone
+          ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-16 animate-fadeIn space-y-6 min-h-screen"
+          : "space-y-6 pb-8 animate-fadeIn"
+      }
+    >
+      {isStandalone && (
+        <div className="flex items-center justify-between">
+          <BackButton to="/" className="mb-0 flex items-center gap-2" />
+          <ThemeSwitcher />
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-
         <PageHeader
+          backTo={isStandalone ? undefined : "/app/dashboard"}
           icon={MonitorSmartphone}
           gradient="from-sky-500 via-blue-600 to-indigo-600"
-          title="Reception Check-In Kiosk"
-          description="Touchscreen visitor self-registration, webcam photo capture, and instant QR badge printing."
+          title="Reception Kiosk"
+          description="Self-service visitor check-in, webcam photo capture, and instant QR badge issuance."
         />
 
 
@@ -233,7 +243,7 @@ export function SelfServiceKiosk() {
         </div>
       </div>
 
-      {/* Step 1: Big Touch Category Tiles */}
+
       {step === "category" && (
         <div className="my-6 space-y-6">
 
@@ -247,7 +257,7 @@ export function SelfServiceKiosk() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 pt-2">
-            {/* General Guest */}
+
             <div
               onClick={() => handleCategorySelect("guest")}
               className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-sky-500/30 bg-sky-50/20 dark:bg-sky-950/20 shadow-sm hover:shadow-md hover:border-sky-500/60 transition-all cursor-pointer flex flex-col justify-between group"
@@ -275,7 +285,7 @@ export function SelfServiceKiosk() {
               </div>
             </div>
 
-            {/* Courier & Delivery */}
+
             <div
               onClick={() => handleCategorySelect("courier")}
               className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-500/30 bg-amber-50/20 dark:bg-amber-950/20 shadow-sm hover:shadow-md hover:border-amber-500/60 transition-all cursor-pointer flex flex-col justify-between group"
@@ -303,7 +313,7 @@ export function SelfServiceKiosk() {
               </div>
             </div>
 
-            {/* Candidate / Job Interview */}
+
             <div
               onClick={() => handleCategorySelect("interview")}
               className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-sm hover:shadow-md hover:border-indigo-500/60 transition-all cursor-pointer flex flex-col justify-between group"
@@ -331,7 +341,7 @@ export function SelfServiceKiosk() {
               </div>
             </div>
 
-            {/* VIP & Academic Dignitary */}
+
             <div
               onClick={() => handleCategorySelect("vip")}
               className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-purple-500/40 bg-purple-50/30 dark:bg-purple-950/30 shadow-sm hover:shadow-md hover:border-purple-500/70 transition-all cursor-pointer flex flex-col justify-between group"
@@ -364,10 +374,10 @@ export function SelfServiceKiosk() {
 
 
 
-      {/* Step 2: Form Details & Webcam Capture */}
+
       {step === "details" && (
         <form onSubmit={handleSubmit} className="my-6 space-y-6 max-w-3xl mx-auto w-full">
-          <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xl space-y-6">
+          <div className="p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xl space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-800">
               <div>
                 <h2 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white capitalize">
@@ -468,7 +478,7 @@ export function SelfServiceKiosk() {
                 />
               </div>
 
-              {/* Photo Capture Preview Block */}
+
               <div className="flex flex-col justify-end">
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-slate-300 mb-1.5">
                   Visitor Photo Badge (Optional)
@@ -563,7 +573,7 @@ export function SelfServiceKiosk() {
             </div>
 
 
-            {/* Action Buttons */}
+
             <div className="pt-4 flex items-center justify-end gap-3">
               <button
                 type="button"
@@ -595,11 +605,11 @@ export function SelfServiceKiosk() {
         </form>
       )}
 
-      {/* Step 3: Generated Thermal Badge & QR */}
+
       {step === "badge" && createdVisit && (
         <div className="my-6 space-y-6 max-w-md mx-auto w-full animate-fadeIn">
-          {/* Printable Thermal Card */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border-2 border-sky-500/40 dark:border-sky-500/30 shadow-2xl space-y-5 print:border-none print:shadow-none">
+
+          <div className="p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900 border-2 border-sky-500/40 dark:border-sky-500/30 shadow-2xl space-y-5 print:border-none print:shadow-none">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div>
                 <span className="text-[10px] font-black tracking-widest uppercase text-sky-600 dark:text-sky-400">
@@ -618,7 +628,7 @@ export function SelfServiceKiosk() {
               </span>
             </div>
 
-            {/* QR Code Container */}
+
             <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 shadow-inner">
               <div className="p-2 bg-white rounded-xl shadow-md">
                 {qrCodeUrl ? (
@@ -639,7 +649,7 @@ export function SelfServiceKiosk() {
             </div>
 
 
-            {/* Details */}
+
             <div className="space-y-2 text-xs text-gray-600 dark:text-slate-300">
               <div className="flex justify-between py-1 border-b border-gray-100 dark:border-slate-800">
                 <span className="text-gray-400 font-semibold uppercase">Purpose:</span>
@@ -669,7 +679,7 @@ export function SelfServiceKiosk() {
               </div>
             </div>
 
-            {/* Print & Finish Actions */}
+
             <div className="pt-3 flex flex-col gap-2 print:hidden">
               <button
                 type="button"

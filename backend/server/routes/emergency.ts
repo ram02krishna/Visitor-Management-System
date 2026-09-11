@@ -4,10 +4,6 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-/**
- * 1. GET ACTIVE EMERGENCY ALERT: GET /api/emergency/active
- * Accessible to all authenticated users (students, guards, visitors, hosts, admins).
- */
 router.get('/active', requireAuth, async (_req: AuthRequest, res) => {
   try {
     const alert = await prisma.emergencyAlert.findFirst({
@@ -15,9 +11,9 @@ router.get('/active', requireAuth, async (_req: AuthRequest, res) => {
       orderBy: { created_at: 'desc' },
       include: {
         checkins: {
-          orderBy: { checked_in_at: 'desc' }
-        }
-      }
+          orderBy: { checked_in_at: 'desc' },
+        },
+      },
     });
 
     res.json(alert || null);
@@ -27,10 +23,6 @@ router.get('/active', requireAuth, async (_req: AuthRequest, res) => {
   }
 });
 
-/**
- * 2. BROADCAST EMERGENCY / LOCKDOWN ALERT: POST /api/emergency/alert
- * Guard / Admin only.
- */
 router.post('/alert', requireAuth, async (req: AuthRequest, res) => {
   try {
     if (req.user?.role !== 'admin' && req.user?.role !== 'guard' && req.user?.role !== 'host') {
@@ -42,10 +34,9 @@ router.post('/alert', requireAuth, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Title and emergency instructions message are required.' });
     }
 
-    // Deactivate previous alerts
     await prisma.emergencyAlert.updateMany({
       where: { active: true },
-      data: { active: false, resolved_at: new Date() }
+      data: { active: false, resolved_at: new Date() },
     });
 
     const alert = await prisma.emergencyAlert.create({
@@ -54,14 +45,14 @@ router.post('/alert', requireAuth, async (req: AuthRequest, res) => {
         message,
         severity,
         active: true,
-        created_by: req.user?.name || 'Campus Emergency Command'
-      }
+        created_by: req.user?.name || 'Campus Emergency Command',
+      },
     });
 
     res.status(201).json({
       success: true,
       message: `🚨 Emergency Alert "${title}" broadcasted campus-wide!`,
-      alert
+      alert,
     });
   } catch (err) {
     console.error('[API POST /emergency/alert]', err);
@@ -69,9 +60,6 @@ router.post('/alert', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * 3. RESOLVE EMERGENCY ALERT: POST /api/emergency/resolve
- */
 router.post('/resolve', requireAuth, async (req: AuthRequest, res) => {
   try {
     if (req.user?.role !== 'admin' && req.user?.role !== 'guard' && req.user?.role !== 'host') {
@@ -80,7 +68,7 @@ router.post('/resolve', requireAuth, async (req: AuthRequest, res) => {
 
     await prisma.emergencyAlert.updateMany({
       where: { active: true },
-      data: { active: false, resolved_at: new Date() }
+      data: { active: false, resolved_at: new Date() },
     });
 
     res.json({ success: true, message: 'Campus Emergency Alert resolved. Normal operations resumed.' });
@@ -90,9 +78,6 @@ router.post('/resolve', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * 4. STUDENT "MARK MYSELF SAFE" CHECK-IN: POST /api/emergency/checkin
- */
 router.post('/checkin', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { alert_id, status = 'safe', location, notes, roll_number, name } = req.body;
@@ -109,16 +94,16 @@ router.post('/checkin', requireAuth, async (req: AuthRequest, res) => {
         alert_id,
         roll_number: studentRoll,
         name: studentName,
-        status, // "safe" | "need_help"
+        status,
         location: location || 'Hostel Block A',
-        notes: notes || null
-      }
+        notes: notes || null,
+      },
     });
 
     res.status(201).json({
       success: true,
       message: status === 'need_help' ? '🚨 Assistance request dispatched to Security!' : '✅ Marked Safe on Campus Census.',
-      checkin
+      checkin,
     });
   } catch (err) {
     console.error('[API POST /emergency/checkin]', err);
@@ -126,9 +111,6 @@ router.post('/checkin', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * 5. GET HEADCOUNT / RESCUE TELEMETRY: GET /api/emergency/census/:alertId
- */
 router.get('/census/:alertId', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { alertId } = req.params;
@@ -136,12 +118,12 @@ router.get('/census/:alertId', requireAuth, async (req: AuthRequest, res) => {
     const [totalStudents, checkins] = await Promise.all([
       prisma.student.count(),
       prisma.emergencyCheckIn.findMany({
-        where: { alert_id: String(alertId) }
-      })
+        where: { alert_id: String(alertId) },
+      }),
     ]);
 
-    const safeCount = checkins.filter(c => c.status === 'safe').length;
-    const needHelpCount = checkins.filter(c => c.status === 'need_help').length;
+    const safeCount = checkins.filter((c) => c.status === 'safe').length;
+    const needHelpCount = checkins.filter((c) => c.status === 'need_help').length;
     const pendingCount = Math.max(0, totalStudents - checkins.length);
 
     res.json({
@@ -149,7 +131,7 @@ router.get('/census/:alertId', requireAuth, async (req: AuthRequest, res) => {
       safeCount,
       needHelpCount,
       pendingCount,
-      checkins
+      checkins,
     });
   } catch (err) {
     console.error('[API GET /emergency/census]', err);

@@ -125,29 +125,29 @@ export const useVisitStats = (user: User | null) => {
 
         allVisits.forEach(v => {
           if (v.status === "checked_in") ongoingCount++;
-          
+
           if (v.status === VISIT_STATUS.APPROVED && (v as { approved_at?: string }).approved_at) {
-             const t = new Date((v as { approved_at?: string }).approved_at!).getTime();
-             if (t >= start && t < end) approvedToday++;
+            const t = new Date((v as { approved_at?: string }).approved_at!).getTime();
+            if (t >= start && t < end) approvedToday++;
           }
-          
+
           if (v.status === VISIT_STATUS.PENDING) {
-             pendingCount++;
+            pendingCount++;
           }
-          
+
           if (v.status === VISIT_STATUS.COMPLETED && v.check_out_time) {
-             const t = new Date(v.check_out_time).getTime();
-             if (t >= start && t < end) completedToday++;
+            const t = new Date(v.check_out_time).getTime();
+            if (t >= start && t < end) completedToday++;
           }
-          
+
           if (v.status === VISIT_STATUS.CANCELLED && v.updated_at) {
-             const t = new Date(v.updated_at).getTime();
-             if (t >= start && t < end) cancelledCount++;
+            const t = new Date(v.updated_at).getTime();
+            if (t >= start && t < end) cancelledCount++;
           }
-          
+
           if (v.status === VISIT_STATUS.DENIED && v.updated_at) {
-             const t = new Date(v.updated_at).getTime();
-             if (t >= start && t < end) deniedCount++;
+            const t = new Date(v.updated_at).getTime();
+            if (t >= start && t < end) deniedCount++;
           }
         });
 
@@ -219,7 +219,6 @@ export const useVisitStats = (user: User | null) => {
     [user]
   );
 
-  // Automatically refresh stats in real-time on any relevant event
   useDataSync(["stats", "visits", "all"], () => {
     fetchStats(true);
   });

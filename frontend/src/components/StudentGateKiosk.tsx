@@ -33,7 +33,7 @@ export function StudentGateKiosk() {
   const [processing, setProcessing] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Camera State
+
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -42,12 +42,12 @@ export function StudentGateKiosk() {
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
 
-  // Quick Vehicle Lookup State
+
   const [plateQuery, setPlateQuery] = useState("");
   const [vehicleResult, setVehicleResult] = useState<any>(null);
   const [vehicleSearching, setVehicleSearching] = useState(false);
   
-  // Last scan result state
+
   const [lastScan, setLastScan] = useState<{
     success: boolean;
     action: "exit" | "entry";
@@ -82,7 +82,7 @@ export function StudentGateKiosk() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanningRef = useRef(false);
 
-  // Play audio chimes
+
   const playSound = useCallback((type: "success" | "warning" | "error" | "siren") => {
     if (!soundEnabled) return;
     try {
@@ -123,11 +123,11 @@ export function StudentGateKiosk() {
         osc.stop(ctx.currentTime + 0.5);
       }
     } catch {
-      // AudioContext unavailable
+
     }
   }, [soundEnabled]);
 
-  // Fast Vehicle Lookup Handler
+
   const handleVehicleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!plateQuery.trim()) return;
@@ -146,7 +146,7 @@ export function StudentGateKiosk() {
     }
   };
 
-  // Keep input focused at all times for hardware laser scanners when camera is inactive
+
   useEffect(() => {
     if (!isCameraActive && inputRef.current) {
       inputRef.current.focus();
@@ -193,7 +193,7 @@ export function StudentGateKiosk() {
     }
   }, [processing, selectedGate, playSound, isCameraActive]);
 
-  // Robust Camera Lifecycle Controller
+
   useEffect(() => {
     let isMounted = true;
 
@@ -205,7 +205,7 @@ export function StudentGateKiosk() {
           }
           await scannerRef.current.clear();
         } catch {
-          // ignore cleanup errors
+
         }
         scannerRef.current = null;
         isScanningRef.current = false;
@@ -359,12 +359,12 @@ export function StudentGateKiosk() {
     };
   }, [isCameraActive, selectedCameraId, handleScanSubmit]);
 
-  // Toggle Camera Function
+
   const toggleCamera = () => {
     setIsCameraActive((prev) => !prev);
   };
 
-  // Toggle Torch/Flashlight
+
   const toggleTorch = async () => {
     if (!scannerRef.current || !torchSupported) return;
     try {
@@ -379,8 +379,8 @@ export function StudentGateKiosk() {
 
   return (
     <div className="space-y-6">
-      {/* Top Command & Checkpoint Bar */}
-      <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+
+      <div className="p-4 sm:p-5 rounded-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-800/40 shrink-0">
             <MapPin className="w-5 h-5" />
@@ -436,10 +436,10 @@ export function StudentGateKiosk() {
         </div>
       </div>
 
-      {/* Camera Live Viewfinder when Active */}
+
       {isCameraActive && (
-        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl flex flex-col items-center justify-center animate-fadeIn relative overflow-hidden">
-          {/* Header in Camera card */}
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl flex flex-col items-center justify-center animate-fadeIn relative overflow-hidden">
+
           <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800/80">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />
@@ -492,7 +492,7 @@ export function StudentGateKiosk() {
             </div>
           </div>
 
-          {/* Camera Viewport Box */}
+
           <div className="w-full max-w-[340px] sm:max-w-[380px] aspect-square relative rounded-2xl overflow-hidden border-2 border-sky-500/50 ring-4 ring-sky-500/10 shadow-2xl bg-black flex items-center justify-center">
             <div id="student-qr-reader" className="w-full h-full" />
 
@@ -532,9 +532,9 @@ export function StudentGateKiosk() {
 
             {!isCameraLoading && !cameraError && (
               <div className="absolute inset-0 pointer-events-none">
-                {/* Laser scan line */}
+
                 <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#38bdf8] animate-scan-laser" />
-                {/* Target Corners */}
+
                 <div className="absolute top-3 left-3 w-7 h-7 border-t-4 border-l-4 border-cyan-400 rounded-tl-lg" />
                 <div className="absolute top-3 right-3 w-7 h-7 border-t-4 border-r-4 border-cyan-400 rounded-tr-lg" />
                 <div className="absolute bottom-3 left-3 w-7 h-7 border-b-4 border-l-4 border-cyan-400 rounded-bl-lg" />
@@ -549,8 +549,8 @@ export function StudentGateKiosk() {
         </div>
       )}
 
-      {/* Main High-Speed Pass Scanner Terminal */}
-      <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-3.5">
+
+      <div className="p-5 sm:p-6 rounded-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-3.5">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
             <QrCode className="w-4 h-4 text-sky-500 animate-pulse" />
@@ -611,12 +611,12 @@ export function StudentGateKiosk() {
         </form>
 
         <p className="text-xs text-gray-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
           Ready for continuous USB/Bluetooth laser barcode scanner or keyboard entry.
         </p>
       </div>
 
-      {/* Quick Vehicle License Plate Lookup Bar */}
+
       <div className="p-3.5 sm:p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-900/40 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-xs">
         <form onSubmit={handleVehicleLookup} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
           <div className="flex items-center gap-2.5 flex-1">
@@ -675,10 +675,10 @@ export function StudentGateKiosk() {
         )}
       </div>
 
-      {/* Live Scan Verification Result Display Card */}
+
       {lastScan && (
         <div
-          className={`p-5 sm:p-6 rounded-2xl sm:rounded-3xl border shadow-xl transition-all animate-fadeIn relative ${
+          className={`p-5 sm:p-6 rounded-2xl sm:rounded-2xl border shadow-xl transition-all animate-fadeIn relative ${
             lastScan.is_overdue
               ? "bg-red-50/90 dark:bg-red-950/40 border-red-500/50"
               : lastScan.action === "exit"
@@ -798,8 +798,8 @@ export function StudentGateKiosk() {
         </div>
       )}
 
-      {/* Recent Scans Real-time Ticker */}
-      <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm">
+
+      <div className="p-4 sm:p-5 rounded-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm">
         <h3 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
           <Clock className="w-4 h-4 text-sky-500" /> Recent Checkpoint Activity
         </h3>

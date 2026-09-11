@@ -19,7 +19,6 @@ import { formatIST } from "../lib/dateIST";
 import { PageHeader } from "./PageHeader";
 import { CustomSelect } from "./ui/CustomSelect";
 import { SEOMeta } from "./SEOMeta";
-import { BackButton } from "./BackButton";
 import QRCode from "qrcode";
 
 export function StudentPassPortal() {
@@ -29,14 +28,14 @@ export function StudentPassPortal() {
   const [activeTab, setActiveTab] = useState<"pass" | "leave" | "vehicles">("pass");
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
 
-  // Extension Modal State
+
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [extMinutes, setExtMinutes] = useState(30);
   const [extReason, setExtReason] = useState("");
   const [extSubmitting, setExtSubmitting] = useState(false);
   const [myExtensions, setMyExtensions] = useState<any[]>([]);
 
-  // Vehicle Pass State
+
   const [myVehicles, setMyVehicles] = useState<any[]>([]);
   const [vehiclePlate, setVehiclePlate] = useState("");
   const [vehicleType, setVehicleType] = useState("two_wheeler");
@@ -44,7 +43,7 @@ export function StudentPassPortal() {
   const [parkingSlot, setParkingSlot] = useState("");
   const [vehicleSubmitting, setVehicleSubmitting] = useState(false);
 
-  // Live Curfew Countdown State
+
   const [curfewCountdown, setCurfewCountdown] = useState({
     hours: 0,
     mins: 0,
@@ -52,7 +51,7 @@ export function StudentPassPortal() {
     label: "Calculating..."
   });
 
-  // Calculate IST Curfew Countdown (09:30 PM / 21:30 IST)
+
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date();
@@ -71,7 +70,7 @@ export function StudentPassPortal() {
       }
       if (hour === 24) hour = 0;
 
-      // Current time in IST represented as minutes from midnight
+
       const currentISTMinutes = hour * 60 + minute;
       const curfewISTMinutes = 21 * 60 + 30; // 21:30 IST is 1290 mins
 
@@ -95,19 +94,22 @@ export function StudentPassPortal() {
     return () => clearInterval(interval);
   }, []);
 
-  // Student Profile state
-  const [studentInfo, setStudentInfo] = useState({
-    roll_number: user?.roll_number || "",
-    name: user?.name || "",
-    email: user?.email || "",
-    hostel_block: "Hostel Block A",
-    room_number: "",
-    branch: "CSE",
-    phone: "",
-    status: "inside"
+
+  const studentCacheKey = user?.id ? `vms_student_profile_${user.id}` : "vms_student_profile";
+  const [studentInfo, setStudentInfo] = useState(() => {
+    return api.uiCache.get(studentCacheKey) || {
+      roll_number: user?.roll_number || "",
+      name: user?.name || "",
+      email: user?.email || "",
+      hostel_block: "Hostel Block A",
+      room_number: "",
+      branch: "CSE",
+      phone: "",
+      status: "inside"
+    };
   });
 
-  // Fetch current logged in student record
+
   useEffect(() => {
     if (user?.role !== "student") return;
     const searchParam = user?.roll_number || user?.email;
@@ -116,7 +118,7 @@ export function StudentPassPortal() {
         .then((res) => {
           if (res.students && res.students.length > 0) {
             const s = res.students[0];
-            setStudentInfo({
+            const profile = {
               roll_number: s.roll_number,
               name: s.name,
               email: s.email,
@@ -125,18 +127,20 @@ export function StudentPassPortal() {
               branch: s.branch || "CSE",
               phone: s.phone || "",
               status: s.status
-            });
+            };
+            setStudentInfo(profile);
+            api.uiCache.set(studentCacheKey, profile);
           }
         })
         .catch(() => {});
     }
-  }, [user]);
+  }, [user, studentCacheKey]);
 
 
 
 
 
-  // Leave Form state
+
   const [leaveType, setLeaveType] = useState("vacation");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -145,7 +149,7 @@ export function StudentPassPortal() {
   const [submitting, setSubmitting] = useState(false);
   const [myLeaves, setMyLeaves] = useState<any[]>([]);
 
-  // Generate QR Code
+
   useEffect(() => {
     const payload = JSON.stringify({
       type: "student_gate_pass",
@@ -162,7 +166,7 @@ export function StudentPassPortal() {
     });
   }, [studentInfo]);
 
-  // Fetch Leaves, Extensions, and Vehicles
+
   useEffect(() => {
     api.students.listLeaves({ student_id: undefined })
       .then((data) => setMyLeaves(data))
@@ -213,22 +217,21 @@ export function StudentPassPortal() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pb-12 animate-fadeIn max-w-4xl mx-auto">
+    <div className="space-y-6 pb-8 animate-fadeIn">
       <SEOMeta title="Student Campus Pass & Leave" />
 
-      <BackButton to={user ? "/app/dashboard" : "/"} />
-
       <PageHeader
+        backTo={user ? "/app/dashboard" : "/"}
         icon={QrCode}
         gradient="from-sky-500 to-indigo-600"
-        title="Student Outing Pass"
-        description="Digital QR gatepass, curfew extension requests, and approved hostel leaves."
+        title="Student Pass Portal"
+        description="Digital gatepasses, curfew extension requests, and approved campus leave records."
       />
 
 
       {user?.role !== "student" ? (
-        <div className="mt-8 p-8 sm:p-10 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xl text-center space-y-4">
-          <div className="w-16 h-16 rounded-3xl bg-sky-50 dark:bg-sky-950/40 text-sky-500 flex items-center justify-center mx-auto shadow-inner">
+        <div className="mt-8 p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xl text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-sky-50 dark:bg-sky-950/40 text-sky-500 flex items-center justify-center mx-auto shadow-inner">
             <GraduationCap className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-black text-gray-900 dark:text-white">
@@ -248,7 +251,7 @@ export function StudentPassPortal() {
         </div>
       ) : (
         <>
-          {/* Live Curfew Countdown Widget */}
+
           <div
             className={`mt-5 p-4 sm:p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs ${
               curfewCountdown.isPast
@@ -284,7 +287,7 @@ export function StudentPassPortal() {
             </button>
           </div>
 
-          {/* Tabs */}
+
           <div className="flex border-b border-gray-200 dark:border-slate-800 mt-6 space-x-2 sm:space-x-4 overflow-x-auto">
             <button
               onClick={() => setActiveTab("pass")}
@@ -324,13 +327,13 @@ export function StudentPassPortal() {
 
       {user?.role === "student" && activeTab === "pass" && (
         <div className="mt-8 flex flex-col items-center">
-          {/* Digital ID Card */}
-          <div className="w-full max-w-sm rounded-[2rem] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-7 shadow-2xl border border-indigo-500/30 relative overflow-hidden">
-            {/* Background glowing ambient light */}
+
+          <div className="w-full max-w-sm rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-7 shadow-2xl border border-indigo-500/30 relative overflow-hidden">
+
             <div className="absolute -top-16 -right-16 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
 
-            {/* Header */}
+
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
@@ -343,7 +346,7 @@ export function StudentPassPortal() {
               </div>
             </div>
 
-            {/* Live QR Pass */}
+
             <div className="flex flex-col items-center py-5">
               <div className="p-3.5 bg-white rounded-2xl shadow-xl ring-4 ring-sky-500/30">
                 {qrCodeUrl ? (
@@ -361,7 +364,7 @@ export function StudentPassPortal() {
               </span>
             </div>
 
-            {/* Student Info Details */}
+
             <div className="bg-white/5 rounded-2xl p-4 border border-white/10 space-y-3 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-slate-300 text-xs font-medium uppercase">Student Name</span>
@@ -395,7 +398,7 @@ export function StudentPassPortal() {
             </p>
           </div>
 
-          {/* Action Buttons: Print / Save GatePass & Extension */}
+
           <div className="mt-5 flex items-center gap-3">
             <button
               onClick={() => window.print()}
@@ -418,8 +421,8 @@ export function StudentPassPortal() {
 
       {activeTab === "leave" && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Leave Form */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
+
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
               <CalendarDays className="w-4 h-4 text-indigo-500" /> Apply for Multi-Day Leave
             </h3>
@@ -508,8 +511,8 @@ export function StudentPassPortal() {
             </form>
           </div>
 
-          {/* Leave History List */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
+
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="text-base font-black text-gray-900 dark:text-white uppercase tracking-wider">
               Leave History & Status
             </h3>
@@ -549,11 +552,11 @@ export function StudentPassPortal() {
 
       )}
 
-      {/* Tab 3: Vehicles & Two-Wheeler Gate Passes */}
+
       {activeTab === "vehicles" && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Register Vehicle Pass Form */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
+
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
               <Bike className="w-4 h-4 text-purple-500" /> Register Vehicle / Two-Wheeler
             </h3>
@@ -653,8 +656,8 @@ export function StudentPassPortal() {
             </form>
           </div>
 
-          {/* Active Vehicles List */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
+
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
               My Registered Vehicles
             </h3>
@@ -683,10 +686,10 @@ export function StudentPassPortal() {
         </div>
       )}
 
-      {/* Curfew Late Extension Request Modal */}
+
       {showExtensionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 relative">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 relative">
             <button
               onClick={() => setShowExtensionModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white"

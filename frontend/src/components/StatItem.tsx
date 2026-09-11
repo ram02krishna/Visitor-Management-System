@@ -98,7 +98,7 @@ export const StatItem = React.memo(
 
     return (
       <div
-        className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl sm:rounded-[1.5rem] overflow-hidden group relative flex flex-col transition-all duration-300 shadow-sm dark:shadow-none ${
+        className={`bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden group relative flex flex-col transition-all duration-300 shadow-xs ${
           status ? "cursor-pointer" : ""
         } ${theme.hoverGlow} ${className || ""}`}
         style={style}
@@ -107,10 +107,10 @@ export const StatItem = React.memo(
         aria-label={status ? `View ${name.toLowerCase()}` : undefined}
         tabIndex={status ? 0 : undefined}
       >
-        <div className="p-4 sm:p-5 relative z-10 flex-1 flex flex-col bg-white dark:bg-[#0f172a] transition-colors duration-300">
+        <div className="p-4 sm:p-5 relative z-10 flex-1 flex flex-col bg-white dark:bg-slate-900 transition-colors duration-300">
           <div className="flex items-start justify-between">
             <div
-              className={`p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br ${theme.gradient} ${theme.glow} transition-all duration-300`}
+              className={`p-3 sm:p-3.5 rounded-xl bg-gradient-to-br ${theme.gradient} ${theme.glow} transition-all duration-300`}
             >
               <Icon
                 className="h-5 w-5 sm:h-6 sm:w-6 text-white"

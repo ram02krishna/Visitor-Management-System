@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 
 
-import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
 import { SEOMeta } from "./SEOMeta";
 
@@ -96,7 +95,7 @@ export function ChangePassword() {
           const errorData = await res.json();
           errorMsg = errorData.error || errorMsg;
         } catch {
-          // fallback
+
         }
         throw new Error(errorMsg);
       }
@@ -111,22 +110,21 @@ export function ChangePassword() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pb-16 animate-fadeIn max-w-5xl mx-auto">
+    <div className="space-y-6 pb-8 animate-fadeIn">
       <SEOMeta title="Security Settings" />
 
-      <BackButton to="/app/dashboard" />
-
       <PageHeader
+        backTo="/app/dashboard"
         icon={KeyRound}
         gradient="from-indigo-500 to-purple-600"
         title="Security Settings"
         description="Manage account credentials, authentication security, and password updates."
       />
 
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: User Security Profile Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
         <div className="lg:col-span-5 space-y-6">
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-5">
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs space-y-5">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-sky-500 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-500/20 shrink-0">
                 {user?.name ? user.name.slice(0, 2).toUpperCase() : "US"}
@@ -167,8 +165,8 @@ export function ChangePassword() {
             </div>
           </div>
 
-          {/* Password Best Practices Checklist */}
-          <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-800 space-y-3">
+
+          <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-800 space-y-3">
             <h2 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-sky-500" /> Security Recommendations
             </h2>
@@ -201,9 +199,9 @@ export function ChangePassword() {
           </div>
         </div>
 
-        {/* Right Column: Update Password Form */}
+
         <div className="lg:col-span-7">
-          <div className="bg-white dark:bg-slate-900 shadow-sm border border-gray-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8">
+          <div className="bg-white dark:bg-slate-900 shadow-xs border border-gray-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="border-b border-gray-100 dark:border-slate-800 pb-4">
                 <h3 className="text-base font-black text-gray-900 dark:text-white">
@@ -221,7 +219,7 @@ export function ChangePassword() {
                 </div>
               )}
 
-              {/* Current Password */}
+
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
                   Current Password *
@@ -251,7 +249,7 @@ export function ChangePassword() {
                 )}
               </div>
 
-              {/* New Password */}
+
               <div className="space-y-1.5 pt-2">
                 <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
                   New Password *
@@ -278,7 +276,7 @@ export function ChangePassword() {
                   </button>
                 </div>
 
-                {/* Live Password Strength Meter */}
+
                 {newPasswordValue && (
                   <div className="pt-2 space-y-1">
                     <div className="flex items-center justify-between text-[11px] font-bold">
@@ -301,7 +299,7 @@ export function ChangePassword() {
                 )}
               </div>
 
-              {/* Confirm Password */}
+
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
                   Confirm New Password *
@@ -332,7 +330,7 @@ export function ChangePassword() {
                 )}
               </div>
 
-              {/* Submit Button */}
+
               <div className="pt-2">
                 <button
                   type="submit"

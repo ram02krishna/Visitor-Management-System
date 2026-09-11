@@ -14,20 +14,16 @@ import vehiclesRoutes from './routes/vehicles.js';
 import lostAndFoundRoutes from './routes/lostAndFound.js';
 import healthRoutes from './routes/health.js';
 
-
 const app = express();
 
-// CORS
 const rawOrigins = process.env.FRONTEND_URL ?? 'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:3000';
 const allowedOrigins = rawOrigins.split(',').map((o) => o.trim());
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
 
-      // Dynamically allow any localhost or 127.0.0.1 port in development
       const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
       if (isLocalhost || allowedOrigins.includes(origin)) {
         return callback(null, true);
@@ -41,8 +37,7 @@ app.use(
 
 app.use(express.json());
 
-// Routes
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.send('IIIT Nagpur VMS API is running! 🚀');
 });
 
@@ -60,8 +55,7 @@ app.use('/api/emergency', emergencyRoutes);
 app.use('/api/vehicles', vehiclesRoutes);
 app.use('/api/lost-and-found', lostAndFoundRoutes);
 
-// Global error handler
-app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
     error: err.message || 'Internal Server Error',
@@ -69,10 +63,8 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
   });
 });
 
-// Export for Vercel
 export default app;
 
-// Local dev server
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {

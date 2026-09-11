@@ -18,6 +18,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
   try {
     const authHeader = req.headers.authorization;
     let token: string | undefined;
+
     if (authHeader?.startsWith('Bearer ')) {
       token = authHeader.slice(7);
     } else if (typeof req.query.token === 'string') {
@@ -27,7 +28,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     if (!token) {
       return res.status(401).json({ error: 'UNAUTHORIZED: Missing Bearer token' });
     }
-    
+
     let payload: jwt.JwtPayload;
     try {
       payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
@@ -53,14 +54,13 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     };
 
     next();
-
   } catch (err) {
     console.error('[Auth Middleware Error]', err);
     res.status(500).json({ error: 'Internal server error during authentication' });
   }
 };
 
-export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return next();
@@ -73,7 +73,7 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
       where: { id: payload.userId as string },
       select: { id: true, name: true, role: true, email: true, roll_number: true },
     });
-    
+
     if (host) {
       req.user = {
         id: host.id,
@@ -84,8 +84,6 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
       };
     }
   } catch {
-
-    // Optional auth, ignore errors
   }
   next();
 };

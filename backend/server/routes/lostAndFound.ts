@@ -4,10 +4,6 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-/**
- * GET /api/lost-and-found
- * List all lost and found items with search and filter
- */
 router.get('/', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { status, category, search } = req.query;
@@ -37,7 +33,6 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
       take: 100,
     });
 
-    // Compute stats
     const totalCount = await prisma.lostAndFoundItem.count();
     const inCustodyCount = await prisma.lostAndFoundItem.count({
       where: { status: 'in_custody' },
@@ -60,10 +55,6 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * POST /api/lost-and-found
- * Log a newly recovered campus item
- */
 router.post('/', requireAuth, async (req: AuthRequest, res) => {
   try {
     const {
@@ -104,10 +95,6 @@ router.post('/', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * PATCH /api/lost-and-found/:id/claim
- * Process item verification & handover to claimant
- */
 router.patch('/:id/claim', requireAuth, async (req: AuthRequest, res) => {
   try {
     const id = req.params.id as string;
@@ -153,10 +140,6 @@ router.patch('/:id/claim', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-/**
- * DELETE /api/lost-and-found/:id
- * Delete item (admin only)
- */
 router.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
   try {
     const id = req.params.id as string;
@@ -169,6 +152,5 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
     res.status(500).json({ error: 'Failed to delete item.' });
   }
 });
-
 
 export default router;

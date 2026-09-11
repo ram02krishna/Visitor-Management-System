@@ -30,7 +30,6 @@ export function writeCache<T>(key: string, data: T): void {
     };
     localStorage.setItem(key, JSON.stringify(entry));
   } catch {
-    // Ignore error
   }
 }
 
@@ -38,7 +37,6 @@ export function invalidateCache(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch {
-    // Ignore error
   }
 }
 
@@ -48,7 +46,6 @@ export function clearCacheByPattern(pattern: string | RegExp): void {
     const keys = Object.keys(localStorage).filter((key) => regex.test(key));
     keys.forEach((key) => localStorage.removeItem(key));
   } catch {
-    // Ignore error
   }
 }
 
@@ -58,10 +55,8 @@ export function getCacheTTL(key: string, maxAgeMs: number = 5 * 60 * 1000): numb
     if (!item) return -1;
 
     const entry: CacheEntry<unknown> = JSON.parse(item);
-    const ageMs = Date.now() - entry.timestamp;
-    const remainingMs = maxAgeMs - ageMs;
-
-    return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : -1;
+    const remainingMs = maxAgeMs - (Date.now() - entry.timestamp);
+    return Math.max(0, remainingMs);
   } catch {
     return -1;
   }

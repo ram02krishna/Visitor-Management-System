@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth, optionalAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
+
 router.get('/', optionalAuth, async (req: AuthRequest, res) => {
   try {
     const authUser = req.user;
@@ -55,9 +56,13 @@ router.get('/', optionalAuth, async (req: AuthRequest, res) => {
     res.status(200).json(visitors);
   } catch (err: unknown) {
     console.error('[API GET /visitors]', err);
-    res.status(500).json({ error: 'Failed to fetch visitors', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to fetch visitors',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
+
 router.post('/', optionalAuth, async (req: AuthRequest, res) => {
   try {
     const { name, email, phone, photo_url, id_proof_url } = req.body;
@@ -65,13 +70,16 @@ router.post('/', optionalAuth, async (req: AuthRequest, res) => {
     if (!name || !email || !phone) {
       return res.status(400).json({ error: 'name, email, and phone are required' });
     }
+
     const existing = await prisma.visitor.findFirst({
       where: { email: { equals: email.trim(), mode: 'insensitive' } },
       select: { id: true, is_blacklisted: true, blacklist_reason: true },
     });
 
     if (existing?.is_blacklisted) {
-      return res.status(403).json({ error: `Visitor is blacklisted: ${existing.blacklist_reason ?? 'No reason given'}` });
+      return res.status(403).json({
+        error: `Visitor is blacklisted: ${existing.blacklist_reason ?? 'No reason given'}`,
+      });
     }
 
     const visitor = existing
@@ -91,9 +99,13 @@ router.post('/', optionalAuth, async (req: AuthRequest, res) => {
     res.status(existing ? 200 : 201).json(visitor);
   } catch (err) {
     console.error('[API POST /visitors]', err);
-    res.status(500).json({ error: 'Failed to upsert visitor', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to upsert visitor',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
+
 router.patch('/:id', requireAuth, async (req: AuthRequest, res) => {
   try {
     const authUser = req.user!;
@@ -115,7 +127,10 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res) => {
     res.status(200).json(updated);
   } catch (err: unknown) {
     console.error('[API PATCH /visitors/:id]', err);
-    res.status(500).json({ error: 'Failed to update visitor', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to update visitor',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 

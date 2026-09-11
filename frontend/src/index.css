@@ -1,9 +1,6 @@
-/* Google Fonts are loaded non-blocking via <link> in index.html */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 
 html,
 body {
@@ -16,11 +13,8 @@ body {
     BlinkMacSystemFont,
     sans-serif;
   font-size: 16px;
-  /* Modern base size */
   line-height: 1.6;
-  /* Improved readability */
   letter-spacing: -0.011em;
-  /* Slightly tighter for that professional look */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -29,17 +23,14 @@ body {
 }
 
 @media (max-width: 640px) {
-
   html,
   body {
     font-size: 14px;
-    /* Slightly smaller base for small screens */
   }
 }
 
 #root {
   min-height: 100dvh;
-  /* dvh = dynamic viewport height (iOS Safari aware) */
   display: flex;
   flex-direction: column;
 }
@@ -53,7 +44,6 @@ html:not(.dark) {
   color-scheme: light;
 }
 
-/* Custom styling for native date inputs */
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0.6;
@@ -81,8 +71,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     background-size: 24px 24px;
   }
 
-
-  /* ── Scrollbar – light ── */
   ::-webkit-scrollbar {
     width: 5px;
     height: 5px;
@@ -100,7 +88,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     @apply bg-gray-400 rounded-full;
   }
 
-  /* ── Scrollbar – dark ── */
   .dark ::-webkit-scrollbar-track {
     background: transparent;
   }
@@ -115,7 +102,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 @layer utilities {
-
   .scroll-ios {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -129,7 +115,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-
 
   .pt-safe {
     padding-top: env(safe-area-inset-top, 0px);
@@ -151,13 +136,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     margin-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-
   @keyframes fadeIn {
     from {
       opacity: 0;
       transform: translateY(14px);
     }
-
     to {
       opacity: 1;
       transform: translateY(0);
@@ -169,7 +152,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       opacity: 0;
       transform: translateY(24px);
     }
-
     to {
       opacity: 1;
       transform: translateY(0);
@@ -181,7 +163,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       opacity: 0;
       transform: translateX(-24px);
     }
-
     to {
       opacity: 1;
       transform: translateX(0);
@@ -193,90 +174,74 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       opacity: 0;
       transform: translateX(24px);
     }
-
     to {
       opacity: 1;
       transform: translateX(0);
     }
   }
 
-  /* iOS spring overshoot */
   @keyframes scaleIn {
     0% {
       opacity: 0;
       transform: scale(0.88);
     }
-
     65% {
       opacity: 1;
       transform: scale(1.03);
     }
-
     100% {
       opacity: 1;
       transform: scale(1);
     }
   }
 
-  /* Apple bounce spring */
   @keyframes springIn {
     0% {
       opacity: 0;
       transform: scale(0.82) translateY(24px);
     }
-
     55% {
       opacity: 1;
       transform: scale(1.04) translateY(-4px);
     }
-
     75% {
       transform: scale(0.98) translateY(2px);
     }
-
     100% {
       transform: scale(1) translateY(0);
     }
   }
 
-  /* Tab indicator slide */
   @keyframes tabPop {
     0% {
       transform: scale(0.7);
       opacity: 0;
     }
-
     60% {
       transform: scale(1.12);
       opacity: 1;
     }
-
     100% {
       transform: scale(1);
       opacity: 1;
     }
   }
 
-  /* ── Looping ── */
   @keyframes pulse-slow {
-
     0%,
     100% {
       opacity: 1;
     }
-
     50% {
       opacity: 0.7;
     }
   }
 
   @keyframes float {
-
     0%,
     100% {
       transform: translateY(0px);
     }
-
     50% {
       transform: translateY(-9px);
     }
@@ -286,7 +251,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     from {
       transform: rotate(0deg);
     }
-
     to {
       transform: rotate(360deg);
     }
@@ -296,19 +260,16 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     0% {
       background-position: -200% 0;
     }
-
     100% {
       background-position: 200% 0;
     }
   }
 
   @keyframes glow-pulse {
-
     0%,
     100% {
       box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
     }
-
     50% {
       box-shadow: 0 0 20px 6px rgba(14, 165, 233, 0.3);
     }
@@ -319,7 +280,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       opacity: 0;
       transform: scale(0.8);
     }
-
     to {
       opacity: 1;
       transform: scale(1);
@@ -327,12 +287,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   }
 
   @keyframes shake {
-
     0%,
     100% {
       transform: translateX(0);
     }
-
     10%,
     30%,
     50%,
@@ -340,7 +298,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     90% {
       transform: translateX(-4px);
     }
-
     20%,
     40%,
     60%,
@@ -348,8 +305,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       transform: translateX(4px);
     }
   }
-
-  /* ── Utility classes ── */
 
   .animate-pulse-slow {
     animation: pulse-slow 3s ease-in-out infinite;
@@ -375,14 +330,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
   }
 
-  /* ═══════════════════════════════════════
-     SKELETON SHIMMER
-     ═══════════════════════════════════════ */
   .skeleton {
     background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
     background-size: 200% 100%;
     animation: shimmer 1.6s infinite;
-    @apply rounded-lg;
+    @apply rounded-xl;
   }
 
   .dark .skeleton {
@@ -391,12 +343,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     animation: shimmer 1.6s infinite;
   }
 
-  /* ═══════════════════════════════════════════════════
-     GLASSMORPHISM  — Apple iOS / visionOS style
-     Three tiers: light frosted → mid → heavy visor
-     ═══════════════════════════════════════════════════ */
-
-  /* Tier 1 — subtle frosted (cards, inputs) */
   .glass {
     background: rgba(255, 255, 255, 0.62);
     backdrop-filter: blur(28px) saturate(160%);
@@ -419,11 +365,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
-  /* Tier 2 — medium panel (modals, sidebars) */
   .glass-panel {
-    background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.82) 0%,
-        rgba(255, 255, 255, 0.58) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(255, 255, 255, 0.58) 100%
+    );
     backdrop-filter: blur(40px) saturate(180%);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.75);
@@ -446,7 +393,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
 
-  /* Tier 3 — heavy visor (nav bars, floating sheets) */
   .glass-nav {
     background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(48px) saturate(200%) brightness(1.04);
@@ -469,7 +415,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       0 -16px 48px rgba(0, 0, 0, 0.2);
   }
 
-  /* Sidebar glass */
   .glass-sidebar {
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(48px) saturate(180%);
@@ -490,15 +435,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       4px 0 8px rgba(0, 0, 0, 0.3);
   }
 
-  /* ── Legacy alias ── */
   .glass-dark {
     @apply bg-slate-950/60 backdrop-blur-2xl border border-slate-800/50;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   }
 
-  /* ═══════════════════════════════════════
-     GRADIENTS
-     ═══════════════════════════════════════ */
   .gradient-primary {
     @apply bg-gradient-to-r from-sky-500 to-blue-600;
   }
@@ -511,56 +452,28 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     @apply bg-gradient-to-r from-purple-500 to-pink-600;
   }
 
-  /* ═══════════════════════════════════════
-     BUTTONS (Standardized Design System)
-     ═══════════════════════════════════════ */
   .btn {
-    @apply inline-flex items-center justify-center gap-2
-           font-semibold text-sm
-           px-4 py-2.5 rounded-xl
-           transition-all duration-200 ease-out
-           focus:outline-none focus:ring-2 focus:ring-offset-2
-           active:scale-[0.98]
-           disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed
-           cursor-pointer select-none;
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm px-4 py-2.5 rounded-xl transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed cursor-pointer select-none;
   }
 
   .btn-primary {
-    @apply btn
-           bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700
-           text-white shadow-sm shadow-sky-500/25 hover:shadow-md hover:shadow-sky-500/35
-           focus:ring-sky-500 focus:ring-offset-white dark:focus:ring-offset-slate-900;
+    @apply btn bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-sm hover:shadow-sm focus:ring-sky-500 focus:ring-offset-white dark:focus:ring-offset-slate-900;
   }
 
   .btn-secondary {
-    @apply btn
-           bg-white dark:bg-slate-800
-           text-gray-700 dark:text-slate-200
-           border border-gray-200 dark:border-slate-700
-           hover:bg-gray-50 dark:hover:bg-slate-700/70
-           shadow-sm hover:border-gray-300 dark:hover:border-slate-600
-           focus:ring-slate-400 focus:ring-offset-white dark:focus:ring-offset-slate-900;
+    @apply btn bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/70 shadow-sm hover:border-gray-300 dark:hover:border-slate-600 focus:ring-slate-400 focus:ring-offset-white dark:focus:ring-offset-slate-900;
   }
 
   .btn-outline {
-    @apply btn
-           border border-sky-500 text-sky-600 dark:text-sky-400
-           hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 dark:hover:text-white
-           focus:ring-sky-500 focus:ring-offset-white dark:focus:ring-offset-slate-900;
+    @apply btn border border-sky-500 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-600 dark:hover:text-white focus:ring-sky-500 focus:ring-offset-white dark:focus:ring-offset-slate-900;
   }
 
   .btn-success {
-    @apply btn
-           bg-emerald-600 hover:bg-emerald-700
-           text-white shadow-sm shadow-emerald-600/20 hover:shadow-md hover:shadow-emerald-600/30
-           focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900;
+    @apply btn bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900;
   }
 
   .btn-danger {
-    @apply btn
-           bg-rose-600 hover:bg-rose-700
-           text-white shadow-sm shadow-rose-600/20 hover:shadow-md hover:shadow-rose-600/30
-           focus:ring-rose-500 focus:ring-offset-white dark:focus:ring-offset-slate-900;
+    @apply btn bg-rose-600 hover:bg-rose-700 text-white shadow-sm focus:ring-rose-500 focus:ring-offset-white dark:focus:ring-offset-slate-900;
   }
 
   .btn-sm {
@@ -575,63 +488,36 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     @apply px-6 py-3 text-base rounded-2xl;
   }
 
-
-  /* ═══════════════════════════════════════
-     CARDS & CONTAINERS (Standardized)
-     ═══════════════════════════════════════ */
   .card {
-    @apply bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl
-           border border-gray-200/80 dark:border-slate-800 shadow-sm p-5 sm:p-6
-           transition-all duration-200;
+    @apply bg-white dark:bg-slate-900 rounded-2xl border border-gray-200/80 dark:border-slate-800 shadow-sm p-5 sm:p-6 transition-all duration-200;
   }
 
   .card-inset {
-    @apply bg-slate-50/90 dark:bg-slate-800/50 rounded-xl sm:rounded-2xl
-           border border-slate-100 dark:border-slate-700/60 p-4 transition-all;
+    @apply bg-slate-50/90 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/60 p-4 transition-all;
   }
 
   .card-hover {
-    @apply card hover:shadow-md hover:border-gray-300 dark:hover:border-slate-700;
+    @apply card hover:shadow-sm hover:border-gray-300 dark:hover:border-slate-700;
   }
 
-  /* ═══════════════════════════════════════
-     INPUTS & FORMS (Standardized)
-     ═══════════════════════════════════════ */
   .input-standard {
-    @apply w-full py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-xl sm:rounded-2xl
-           bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700
-           text-sm sm:text-base font-medium text-gray-900 dark:text-white
-           outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all
-           placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-inner;
+    @apply w-full py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-xs sm:text-sm font-medium text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500 shadow-sm;
   }
 
-  /* ═══════════════════════════════════════
-     TABLES & LISTS (Standardized)
-     ═══════════════════════════════════════ */
   .table-container {
-    @apply overflow-x-auto rounded-2xl sm:rounded-3xl border border-gray-200/80 dark:border-slate-800
-           bg-white dark:bg-slate-900 shadow-sm;
+    @apply overflow-x-auto rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm;
   }
 
-  /* ═══════════════════════════════════════
-     LOADING SPINNER
-     ═══════════════════════════════════════ */
   .loading-spinner {
     @apply inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full;
     animation: spin-slow 0.75s linear infinite;
   }
 
-  /* ═══════════════════════════════════════
-     ACTIVE NAV LINK
-     ═══════════════════════════════════════ */
   .nav-link-active {
     @apply bg-white/90 dark:bg-slate-800/90 shadow-sm border border-gray-200/50 dark:border-slate-700/50 text-sky-600 dark:text-sky-400 font-bold backdrop-blur-md;
   }
 }
 
-/* ═══════════════════════════════════════
-   QR CAMERA SCANNER STYLES
-   ═══════════════════════════════════════ */
 #student-qr-reader,
 #qr-reader {
   width: 100% !important;
@@ -652,7 +538,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   min-height: 100% !important;
   max-height: 100% !important;
   object-fit: cover !important;
-  border-radius: 1.5rem !important;
+  border-radius: 1rem !important;
 }
 
 #student-qr-reader img,
@@ -702,9 +588,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   animation: scan-laser-anim 2.2s ease-in-out infinite;
 }
 
-/* ═══════════════════════════════════════
-    PRINT STYLES
-    ═══════════════════════════════════════ */
 @media print {
   @page {
     margin: 0.5cm;

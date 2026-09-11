@@ -135,7 +135,6 @@ export function Dashboard() {
   const isGuardOrAdmin = user?.role === "admin" || user?.role === "guard";
   const isAuthorityRole = user?.role === "admin" || user?.role === "guard" || user?.role === "warden";
 
-  // Check synchronous UI caches for instant render
   const cachedStats = api.uiCache.get(`vms_dash_stats_${user?.role}`) || [];
   const cachedRecent = api.uiCache.get("vms_dash_recent") || [];
   const cachedActive = api.uiCache.get("vms_dash_active") || [];
@@ -205,13 +204,12 @@ export function Dashboard() {
           limit: 50,
         });
       } catch {
-        // Ignore prefetch errors
+
       }
     },
     [user]
   );
 
-  // Parallel fetch for all dashboard modules simultaneously
   const refreshAll = useCallback(
     async (force = false) => {
       if (!user?.role) return;
@@ -222,37 +220,35 @@ export function Dashboard() {
         const start = new Date(todayStart).getTime();
         const end = new Date(todayEnd).getTime();
 
-        // Launch all independent requests in parallel at the same exact time
         const [statsVisitsRes, hostsRes, recentRes, activeRes, telemetryRes] =
           await Promise.allSettled([
-            // 1. Visits for calculating Stats Overview
+
             api.visits.list({
               ...(role === "host" ? { host_id: user.id } : {}),
               ...(force ? { _t: Date.now() } : {}),
             }),
-            // 2. Hosts (Admin only)
+
             role === "admin" ? api.hosts.list() : Promise.resolve([]),
-            // 3. Recent Visits
+
             api.visits.list({
               ...(role === "host" ? { host_id: user.id } : {}),
               ...(force ? { _t: Date.now() } : {}),
               limit: 5,
             }),
-            // 4. Active Checked-in Visitors
+
             role === "admin" || role === "guard" || role === "host"
               ? api.visits.list({
-                  status: "checked_in",
-                  ...(role === "host" ? { host_id: user.id } : {}),
-                  ...(force ? { _t: Date.now() } : {}),
-                })
+                status: "checked_in",
+                ...(role === "host" ? { host_id: user.id } : {}),
+                ...(force ? { _t: Date.now() } : {}),
+              })
               : Promise.resolve([]),
-            // 5. Real-time Traffic Telemetry (Authority only)
+
             role === "admin" || role === "guard" || role === "warden"
               ? api.visits.getTrafficTelemetry()
               : Promise.resolve(null),
           ]);
 
-        // Process Stats
         if (statsVisitsRes.status === "fulfilled") {
           const allVisits = (statsVisitsRes.value as any[]) || [];
           let ongoingCount = 0;
@@ -347,21 +343,18 @@ export function Dashboard() {
           setStatsError("Failed to fetch statistics.");
         }
 
-        // Process Recent Visits
         if (recentRes.status === "fulfilled") {
           const visits = (recentRes.value as unknown as RecentVisit[]) || [];
           setRecentVisits(visits);
           api.uiCache.set("vms_dash_recent", visits);
         }
 
-        // Process Active Visitors
         if (activeRes.status === "fulfilled") {
           const visitors = (activeRes.value as unknown as ActiveVisitor[]) || [];
           setActiveVisitors(visitors);
           api.uiCache.set("vms_dash_active", visitors);
         }
 
-        // Process Telemetry
         if (telemetryRes.status === "fulfilled" && telemetryRes.value) {
           setTelemetry(telemetryRes.value as TelemetryData);
           api.uiCache.set("vms_dash_telemetry", telemetryRes.value);
@@ -369,14 +362,13 @@ export function Dashboard() {
 
         setLastRefresh(new Date());
       } finally {
-        // Synchronized: all sections reveal simultaneously at the exact same moment
+
         setIsLoading(false);
       }
     },
     [user, stats.length]
   );
 
-  // Real-time listener for instant synchronized card & list updates
   useDataSync(["visits", "visitors", "stats", "all"], () => {
     refreshAll(true);
   });
@@ -393,15 +385,13 @@ export function Dashboard() {
     };
   }, [user?.role, user?.id, refreshAll]);
 
-
-
   return (
-    <div className="pb-8">
+    <div className="space-y-6 pb-8 animate-fadeIn">
       <SEOMeta title="Dashboard" />
-      
+
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 sm:gap-5">
-          <div className="hidden xs:flex w-14 h-14 sm:w-[72px] sm:h-[72px] rounded-[2.2rem] bg-[#3b82f6] shadow-[0_8px_30px_rgb(59,130,246,0.3)] text-white items-center justify-center text-xl sm:text-3xl font-extrabold border-[3px] border-white dark:border-slate-800 shrink-0">
+          <div className="hidden xs:flex w-14 h-14 sm:w-[72px] sm:h-[72px] rounded-2xl bg-[#3b82f6] shadow-[0_8px_30px_rgb(59,130,246,0.3)] text-white items-center justify-center text-xl sm:text-3xl font-extrabold border-[3px] border-white dark:border-slate-800 shrink-0">
             {getInitials(user?.name === "System Administrator" ? "Admin" : (user?.name || "Admin"))}
           </div>
           <div className="flex flex-col justify-center min-w-0">
@@ -429,7 +419,7 @@ export function Dashboard() {
                 <span className="hidden xxs:inline">Sync:</span> {formatISTTime(lastRefresh)}
               </div>
               <span className="hidden xs:block text-slate-300 dark:text-slate-700">|</span>
-              
+
               <div className="flex items-center gap-1.5 text-[11px] sm:text-sm font-medium text-slate-500">
                 <CalendarDays className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 {new Date().toLocaleDateString("en-IN", {
@@ -444,9 +434,8 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Student Pass Claim Banner for Visitor Accounts */}
       {user?.role === "visitor" && (
-        <div className="mb-8 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-sky-500/15 via-indigo-500/10 to-transparent border border-sky-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fadeIn">
+        <div className="mb-8 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-sky-500/15 via-indigo-500/10 to-transparent border border-sky-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fadeIn">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-md shrink-0">
               <GraduationCap className="w-6 h-6" />
@@ -472,7 +461,6 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Claim Student Pass Modal */}
       <ClaimStudentPassModal
         isOpen={showClaimModal}
         onClose={() => setShowClaimModal(false)}
@@ -484,7 +472,6 @@ export function Dashboard() {
           <span className="font-medium">{statsError}</span>
         </div>
       )}
-
 
       <div className="mb-8">
         <h2 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">
@@ -508,18 +495,17 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* Live Campus Population Capacity & Peak Traffic Telemetry (Admin, Guard, Warden only) */}
       {isAuthorityRole && (
         <div className="mb-8">
           {isLoading && !telemetry ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="skeleton h-[280px] rounded-3xl border border-gray-100 dark:border-slate-800" />
-              <div className="lg:col-span-2 skeleton h-[280px] rounded-3xl border border-gray-100 dark:border-slate-800" />
+              <div className="skeleton h-[280px] rounded-2xl border border-gray-100 dark:border-slate-800" />
+              <div className="lg:col-span-2 skeleton h-[280px] rounded-2xl border border-gray-100 dark:border-slate-800" />
             </div>
           ) : telemetry ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Capacity Progress Meter */}
-              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+
+              <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -547,16 +533,14 @@ export function Dashboard() {
                     </span>
                   </div>
 
-                  {/* Progress Bar */}
                   <div className="w-full bg-gray-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden mt-3 shadow-inner">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        telemetry.census.occupancyPercentage > 85
+                      className={`h-full rounded-full transition-all duration-500 ${telemetry.census.occupancyPercentage > 85
                           ? "bg-red-500"
                           : telemetry.census.occupancyPercentage > 60
-                          ? "bg-amber-500"
-                          : "bg-gradient-to-r from-sky-500 to-emerald-500"
-                      }`}
+                            ? "bg-amber-500"
+                            : "bg-gradient-to-r from-sky-500 to-emerald-500"
+                        }`}
                       style={{ width: `${Math.min(100, telemetry.census.occupancyPercentage)}%` }}
                     />
                   </div>
@@ -584,8 +568,7 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* Peak Traffic Inflow/Outflow Histogram */}
-              <div className="lg:col-span-2 p-6 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+              <div className="lg:col-span-2 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-indigo-500" />
@@ -606,7 +589,6 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                {/* Bars */}
                 <div className="h-36 flex items-end justify-between gap-1 sm:gap-2 pt-8 px-1 sm:px-2 relative overflow-x-auto scrollbar-hide">
                   {telemetry.hourlyDistribution.map((item, idx) => {
                     const maxVal = Math.max(
@@ -625,7 +607,7 @@ export function Dashboard() {
                         key={idx}
                         className="flex-1 min-w-[28px] sm:min-w-[36px] flex flex-col items-center gap-1.5 group relative"
                       >
-                        {/* Floating Tooltip on Hover */}
+
                         <div className="absolute -top-16 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center bg-slate-950 dark:bg-slate-900 text-white text-[11px] font-bold py-1.5 px-2.5 rounded-xl shadow-2xl border border-slate-700 whitespace-nowrap z-30 pointer-events-none animate-springIn">
                           <div className="flex items-center gap-1.5 text-[9px] font-mono text-gray-400 font-bold uppercase">
                             {isNight && <span>🌙 Night</span>}
@@ -639,18 +621,17 @@ export function Dashboard() {
                               <span className="w-1.5 h-1.5 rounded-full bg-sky-400" /> {item.exits} Out
                             </span>
                           </div>
-                          {/* Triangle tail */}
+
                           <div className="w-2 h-2 bg-slate-950 dark:bg-slate-900 rotate-45 border-r border-b border-slate-700 absolute -bottom-1 left-1/2 -translate-x-1/2" />
                         </div>
 
                         <div
-                          className={`w-full flex items-end justify-center gap-1 h-24 relative rounded-t-lg px-0.5 ${
-                            isNight
+                          className={`w-full flex items-end justify-center gap-1 h-24 relative rounded-t-lg px-0.5 ${isNight
                               ? "bg-purple-50/80 dark:bg-purple-950/40 border-t border-x border-purple-200/60 dark:border-transparent"
                               : "bg-slate-50/60 dark:bg-slate-800/20"
-                          }`}
+                            }`}
                         >
-                          {/* Entry Bar */}
+
                           <div
                             className="w-1/2 bg-emerald-500 hover:bg-emerald-400 rounded-t-md transition-all relative flex items-start justify-center cursor-pointer group-hover:scale-105 shadow-sm"
                             style={{ height: `${entryHeight}%` }}
@@ -660,7 +641,6 @@ export function Dashboard() {
                             </span>
                           </div>
 
-                          {/* Exit Bar */}
                           <div
                             className="w-1/2 bg-sky-500 hover:bg-sky-400 rounded-t-md transition-all relative flex items-start justify-center cursor-pointer group-hover:scale-105 shadow-sm"
                             style={{ height: `${exitHeight}%` }}
@@ -672,9 +652,8 @@ export function Dashboard() {
                         </div>
 
                         <span
-                          className={`text-[9px] sm:text-[10px] font-mono group-hover:text-gray-900 dark:group-hover:text-white font-bold truncate transition-colors ${
-                            isNight ? "text-purple-600 dark:text-purple-400" : "text-gray-500 dark:text-slate-400"
-                          }`}
+                          className={`text-[9px] sm:text-[10px] font-mono group-hover:text-gray-900 dark:group-hover:text-white font-bold truncate transition-colors ${isNight ? "text-purple-600 dark:text-purple-400" : "text-gray-500 dark:text-slate-400"
+                            }`}
                         >
                           {item.hour}
                         </span>
@@ -692,9 +671,8 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Visitor Overstay Watchlist Banner */}
       {telemetry && telemetry.overstayedVisits.length > 0 && isGuardOrAdmin && (
-        <div className="mb-8 p-5 sm:p-6 rounded-3xl bg-red-50/80 dark:bg-red-950/40 border-2 border-red-500/40 shadow-lg space-y-4 animate-fadeIn">
+        <div className="mb-8 p-5 sm:p-6 rounded-2xl bg-red-50/80 dark:bg-red-950/40 border-2 border-red-500/40 shadow-lg space-y-4 animate-fadeIn">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
               <ShieldAlert className="w-6 h-6 animate-pulse" />
@@ -732,9 +710,8 @@ export function Dashboard() {
                 <button
                   onClick={() => handleDispatchEscort(v.id, v.visitorName)}
                   disabled={v.overstayNotified}
-                  className={`btn btn-sm text-xs font-bold whitespace-nowrap shrink-0 ${
-                    v.overstayNotified ? "btn-secondary opacity-70" : "btn-danger"
-                  }`}
+                  className={`btn btn-sm text-xs font-bold whitespace-nowrap shrink-0 ${v.overstayNotified ? "btn-secondary opacity-70" : "btn-danger"
+                    }`}
                 >
                   {v.overstayNotified ? (
                     <span className="flex items-center gap-1">

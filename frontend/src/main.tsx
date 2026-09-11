@@ -4,7 +4,6 @@ import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 
-// Force light mode on print to save ink and ensure a clean single page look
 let wasDark = false;
 window.addEventListener("beforeprint", () => {
   wasDark = document.documentElement.classList.contains("dark");

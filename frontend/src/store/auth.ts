@@ -51,7 +51,6 @@ function writeProfileCache(user: User) {
   try {
     localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(user));
   } catch {
-    // Ignore cache write error
   }
 }
 
@@ -60,7 +59,6 @@ function clearCaches() {
     localStorage.removeItem(PROFILE_CACHE_KEY);
     localStorage.removeItem(TOKEN_KEY);
   } catch {
-    // Ignore cache clear error
   }
 }
 
@@ -236,7 +234,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
           localStorage.removeItem(k);
         } catch {
-          // Ignore cache clear error
         }
       });
       Object.keys(localStorage)
@@ -245,7 +242,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           try {
             localStorage.removeItem(k);
           } catch {
-            // Ignore cache clear error
           }
         });
 

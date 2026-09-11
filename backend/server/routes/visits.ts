@@ -10,36 +10,40 @@ import {
   VisitEmailData,
 } from '../lib/email.js';
 
-
 const router = Router();
-router.get('/public', async (req, res) => {
+
+router.get('/public', async (_req, res) => {
   try {
     const visits = await prisma.visit.findMany({
       where: {
         status: 'approved',
         valid_until: {
-          gte: new Date()
-        }
+          gte: new Date(),
+        },
       },
       include: {
         visitor: true,
-        host: true
+        host: true,
       },
-      orderBy: { created_at: 'desc' }
+      orderBy: { created_at: 'desc' },
     });
 
     const formatted = visits.map((v: any) => ({
       ...v,
       visitors: v.visitor,
-      hosts: v.host
+      hosts: v.host,
     }));
 
     res.json(formatted);
   } catch (err) {
     console.error('[API GET /visits/public]', err);
-    res.status(500).json({ error: 'Failed to fetch public visits', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to fetch public visits',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
+
 function formatMovementAsVisit(m: any) {
   const isCompleted = !!m.entry_time;
   const isDayOuting = m.movement_type === 'day_outing';
@@ -111,14 +115,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
 
     const andConditions: any[] = [];
 
-    // Role-based visibility scoping:
-    // - admin, warden: Can see ALL visitor logs across the campus
-    // - guard: Can see ALL visitor logs + ALL student gate telemetry movements
-    // - host / faculty: Can see visits hosted by him, preapproved by him, or owned by him (matching his email)
-    // - visitor: Can ONLY see visits created with his email address
-    // - student: Can ONLY see visits created with his email address + his personal gate telemetry movements
     if (authUser.role === 'admin' || authUser.role === 'warden' || authUser.role === 'guard') {
-      // Full campus visibility for visit records
     } else if (authUser.role === 'host') {
       andConditions.push({
         OR: [
@@ -128,14 +125,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
           { visitor: { email: { equals: authUser.email, mode: 'insensitive' } } },
         ],
       });
-    } else if (authUser.role === 'visitor') {
-      andConditions.push({
-        visitor: {
-          email: { equals: authUser.email, mode: 'insensitive' },
-          ...(authUser.name ? { name: { equals: authUser.name, mode: 'insensitive' } } : {}),
-        },
-      });
-    } else if (authUser.role === 'student') {
+    } else if (authUser.role === 'visitor' || authUser.role === 'student') {
       andConditions.push({
         visitor: {
           email: { equals: authUser.email, mode: 'insensitive' },
@@ -150,7 +140,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
       andConditions.push({ status: { in: statusArray } });
     }
     if (qHostId) andConditions.push({ host_id: qHostId });
-    
+
     if (approved_from || approved_to) {
       andConditions.push({
         approved_at: {
@@ -176,8 +166,10 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
       });
     }
     if (date) {
-      const start = new Date(date); start.setHours(0, 0, 0, 0);
-      const end = new Date(date); end.setHours(23, 59, 59, 999);
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
       andConditions.push({ created_at: { gte: start, lte: end } });
     }
     if (search) {
@@ -195,7 +187,6 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
     const take = limit ? Math.min(Number(limit), 200) : 50;
     const skip = offset ? Number(offset) : 0;
 
-    // Fetch visits
     const visits = await prisma.visit.findMany({
       where,
       include: {
@@ -207,7 +198,6 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
       skip: (authUser.role === 'guard' || authUser.role === 'student') ? 0 : skip,
     });
 
-    // Include Gate Telemetry (Student Movements) for Guard and Student roles
     if (authUser.role === 'guard' || authUser.role === 'student') {
       const movConditions: any[] = [];
 
@@ -226,7 +216,6 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
         } else if (status === 'completed') {
           movConditions.push({ entry_time: { not: null } });
         } else {
-          // 'pending', 'approved', 'denied', 'cancelled' don't apply to completed gate telemetry movements
           movConditions.push({ id: '00000000-0000-0000-0000-000000000000' });
         }
       }
@@ -241,8 +230,10 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
       }
 
       if (date) {
-        const start = new Date(date); start.setHours(0, 0, 0, 0);
-        const end = new Date(date); end.setHours(23, 59, 59, 999);
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
         movConditions.push({ exit_time: { gte: start, lte: end } });
       }
 
@@ -279,7 +270,10 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
     res.status(200).json(visits);
   } catch (err: unknown) {
     console.error('[API GET /visits]', err);
-    res.status(500).json({ error: 'Failed to fetch visits', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to fetch visits',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
@@ -304,11 +298,8 @@ router.post('/', optionalAuth, async (req: AuthRequest, res) => {
         additional_guests: body.additional_guests ?? 0,
         pass_type: (body.pass_type as 'single_day' | 'multi_day') ?? 'single_day',
       },
-      include: { visitor: true, host: true }
+      include: { visitor: true, host: true },
     });
-
-
-    console.log('[DEBUG] Visit created successfully:', visit.id);
 
     if (visit.visitor) {
       const emailData: VisitEmailData = {
@@ -325,28 +316,22 @@ router.post('/', optionalAuth, async (req: AuthRequest, res) => {
       };
 
       if (visit.status === 'approved') {
-        // Staff-registered or pre-approved visit -> Send Visit Approved with Active QR code email!
-        console.log('[DEBUG] Triggering sendVisitApprovedEmail for pre-approved visit:', visit.visitor.email);
-        sendVisitApprovedEmail(emailData)
-          .then(() => console.log('[DEBUG] sendVisitApprovedEmail promise resolved'))
-          .catch(err => console.error('[DEBUG] Email error:', err));
+        sendVisitApprovedEmail(emailData).catch((err) => console.error('[Email error]:', err));
       } else {
-        // Pending visitor request -> Send Request Received email
-        console.log('[DEBUG] Triggering sendVisitRequestReceivedEmail for:', visit.visitor.email);
-        sendVisitRequestReceivedEmail(emailData)
-          .then(() => console.log('[DEBUG] sendVisitRequestReceivedEmail promise resolved'))
-          .catch(err => console.error('[DEBUG] Email error:', err));
+        sendVisitRequestReceivedEmail(emailData).catch((err) => console.error('[Email error]:', err));
       }
-    } else {
-      console.log('[DEBUG] Skipping email because visitor is null. Visitor:', !!visit.visitor);
     }
 
     res.status(201).json(visit);
   } catch (err) {
     console.error('[API POST /visits]', err);
-    res.status(500).json({ error: 'Failed to create visit', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to create visit',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
+
 router.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
   try {
     const authUser = req.user!;
@@ -364,10 +349,11 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
     if (!approver) {
       return res.status(404).json({ error: `No faculty/staff/admin found with email: ${approverEmail}` });
     }
+
     let createdCount = 0;
     for (const vData of visitors) {
       const email = vData.email.trim().toLowerCase();
-      
+
       let visitor = await prisma.visitor.findFirst({
         where: { email },
       });
@@ -377,8 +363,8 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
           data: {
             name: vData.name,
             email,
-            phone: vData.phone || "N/A",
-          }
+            phone: vData.phone || 'N/A',
+          },
         });
       }
 
@@ -386,8 +372,8 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
         data: {
           visitor_id: visitor.id,
           host_id: approver.id,
-          purpose: vData.purpose || "N/A",
-          status: "approved",
+          purpose: vData.purpose || 'N/A',
+          status: 'approved',
           approved_at: new Date(),
           approved_by: authUser.id,
           valid_from: vData.valid_from ? new Date(vData.valid_from) : new Date(),
@@ -395,11 +381,10 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
           additional_guests: vData.additional_guests || 0,
           vehicle_number: vData.vehicle_number || null,
           vehicle_type: vData.vehicle_type || null,
-          pass_type: vData.pass_type || "single_day",
-        }
+          pass_type: vData.pass_type || 'single_day',
+        },
       });
 
-      // Send approved QR email for bulk visitors
       sendVisitApprovedEmail({
         visitorName: visitor.name,
         visitorEmail: visitor.email,
@@ -411,7 +396,7 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
         vehicleNumber: newVisit.vehicle_number || 'None',
         hostName: approver.name || 'Campus Administration',
         approvedBy: authUser.name || 'Campus Authority',
-      }).catch(err => console.error('Bulk email error:', err));
+      }).catch((err) => console.error('Bulk email error:', err));
 
       createdCount++;
     }
@@ -419,9 +404,13 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
     res.status(201).json({ success: true, count: createdCount });
   } catch (err) {
     console.error('[API POST /visits/bulk]', err);
-    res.status(500).json({ error: 'Failed to process bulk upload', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to process bulk upload',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
+
 router.get('/:id', requireAuth, async (req: AuthRequest, res) => {
   try {
     const authUser = req.user!;
@@ -473,11 +462,14 @@ router.get('/:id', requireAuth, async (req: AuthRequest, res) => {
     res.status(200).json({ ...visit, visitors: visit.visitor, hosts: visit.host });
   } catch (err: unknown) {
     console.error('[API GET /visits/:id]', err);
-    res.status(500).json({ error: 'Failed to fetch visit', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to fetch visit',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
-router.patch('/:id', requireAuth, async (req: AuthRequest, res) => {
 
+router.patch('/:id', requireAuth, async (req: AuthRequest, res) => {
   try {
     const authUser = req.user!;
     const id = req.params.id as string;
@@ -561,48 +553,47 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res) => {
         hostName: updated.host?.name || 'Campus Administration',
       };
 
-      // 1. Status change emails
       if (body.status && oldVisit && oldVisit.status !== body.status) {
         if (body.status === 'approved') {
           emailData.approvedBy = (authUser as any).name || authUser.email || 'Campus Administration';
-          sendVisitApprovedEmail(emailData).catch(err => console.error('Email error:', err));
+          sendVisitApprovedEmail(emailData).catch((err) => console.error('Email error:', err));
         } else if (body.status === 'denied' || body.status === 'cancelled') {
           emailData.deniedBy = (authUser as any).name || authUser.email || 'Campus Administration';
-          sendVisitDeniedEmail(emailData).catch(err => console.error('Email error:', err));
+          sendVisitDeniedEmail(emailData).catch((err) => console.error('Email error:', err));
         }
       }
 
-      // 2. Gate Check-In Email
       if (body.check_in_time && !oldVisit?.check_in_time) {
         sendVisitCheckInEmail({
           ...emailData,
           checkInTime: new Date(body.check_in_time).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }),
           entryGate: updated.entry_gate || 'Main Gate',
-        }).catch(err => console.error('CheckIn email error:', err));
+        }).catch((err) => console.error('CheckIn email error:', err));
       }
 
-      // 3. Gate Check-Out Email
       if (body.check_out_time && !oldVisit?.check_out_time) {
         sendVisitCheckOutEmail({
           ...emailData,
           checkOutTime: new Date(body.check_out_time).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }),
           exitGate: updated.exit_gate || 'Main Gate',
-        }).catch(err => console.error('CheckOut email error:', err));
+        }).catch((err) => console.error('CheckOut email error:', err));
       }
     }
 
-    res.status(200).json({ ...updated, visitors: (updated as unknown as Record<string, unknown>).visitor, hosts: (updated as unknown as Record<string, unknown>).host });
+    res.status(200).json({
+      ...updated,
+      visitors: (updated as unknown as Record<string, unknown>).visitor,
+      hosts: (updated as unknown as Record<string, unknown>).host,
+    });
   } catch (err: unknown) {
     console.error('[API PATCH /visits/:id]', err);
-    res.status(500).json({ error: 'Failed to update visit', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to update visit',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
-
-/**
- * GET /api/visits/traffic-telemetry
- * Real-time campus census, live capacity meter, and hourly traffic distribution
- */
 router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest, res) => {
   try {
     const authUser = req.user!;
@@ -610,7 +601,6 @@ router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest,
       return res.status(403).json({ error: 'Forbidden: Restricted to Security Authorities (Admin, Guard, Warden)' });
     }
 
-    // 1. Live inside students
     const insideStudents = await prisma.student.count({
       where: { status: 'inside' },
     });
@@ -622,7 +612,6 @@ router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest,
       where: { status: 'on_leave' },
     });
 
-    // 2. Active checked-in visitors
     const activeVisits = await prisma.visit.findMany({
       where: {
         status: 'approved',
@@ -633,7 +622,7 @@ router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest,
     });
 
     const now = new Date();
-    const overstayThresholdMs = 4 * 60 * 60 * 1000; // 4 hours default
+    const overstayThresholdMs = 4 * 60 * 60 * 1000;
 
     const overstayedVisits = activeVisits.filter((v) => {
       if (v.expected_out_time && new Date(v.expected_out_time) < now) return true;
@@ -646,7 +635,6 @@ router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest,
     const currentCampusPopulation = insideStudents + activeVisitorsCount;
     const occupancyPercentage = Math.min(100, Math.round((currentCampusPopulation / campusSafeCapacity) * 100));
 
-    // 3. Hourly traffic distribution for today (24-Hour Cycle)
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -678,7 +666,6 @@ router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest,
       let exits = 0;
       const isNight = h < 6 || h >= 22;
 
-      // Visitor check-ins (In) & check-outs (Out)
       todayVisits.forEach((v) => {
         if (v.check_in_time) {
           const inHour = new Date(v.check_in_time).getHours();
@@ -690,7 +677,6 @@ router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest,
         }
       });
 
-      // Student gate entries (In) & exits (Out)
       todayStudentMovements.forEach((m) => {
         if (m.entry_time) {
           const inHour = new Date(m.entry_time).getHours();
@@ -704,8 +690,6 @@ router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest,
 
       hourlyDistribution.push({ hour: label, entries, exits, isNight });
     }
-
-
 
     res.json({
       census: {
@@ -739,22 +723,16 @@ router.get('/analytics/traffic-telemetry', requireAuth, async (req: AuthRequest,
   }
 });
 
-/**
- * POST /api/visits/self-service-kiosk
- * Fast walk-in reception self check-in with instant auto-approval & badge token
- */
 router.post('/self-service-kiosk', async (req, res) => {
   try {
     const {
       name,
       email,
       phone,
-      company,
       purpose,
-      category = 'guest', // "guest" | "courier" | "interview" | "vip"
+      category = 'guest',
       vehicle_number,
       photo_url,
-      host_name,
     } = req.body;
 
     if (!name || !phone || !purpose) {
@@ -764,7 +742,6 @@ router.post('/self-service-kiosk', async (req, res) => {
     const cleanPhone = phone.trim();
     const cleanEmail = email?.trim() || `${cleanPhone}@kiosk.guest`;
 
-    // 1. Upsert visitor
     let visitor = await prisma.visitor.findFirst({
       where: {
         OR: [{ phone: cleanPhone }, { email: cleanEmail }],
@@ -787,7 +764,6 @@ router.post('/self-service-kiosk', async (req, res) => {
       });
     }
 
-    // 2. Default Host for Walk-In / Courier / Reception
     let host = await prisma.host.findFirst({
       where: { role: 'admin' },
     });
@@ -796,8 +772,7 @@ router.post('/self-service-kiosk', async (req, res) => {
     }
 
     const validFrom = new Date();
-    const validUntil = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8-hour single day pass
-
+    const validUntil = new Date(Date.now() + 8 * 60 * 60 * 1000);
     const isVIP = category === 'vip';
 
     const visit = await prisma.visit.create({
@@ -805,9 +780,9 @@ router.post('/self-service-kiosk', async (req, res) => {
         visitor_id: visitor.id,
         host_id: host ? host.id : undefined,
         purpose: `${category === 'courier' ? '[DELIVERY/COURIER] ' : category === 'interview' ? '[INTERVIEW] ' : category === 'vip' ? '[VIP DIGNITARY] ' : ''}${purpose.trim()}`,
-        status: 'approved', // Auto-approved for reception kiosk
+        status: 'approved',
         approved_at: new Date(),
-        check_in_time: new Date(), // Instant self check-in
+        check_in_time: new Date(),
         valid_from: validFrom,
         valid_until: validUntil,
         vehicle_number: vehicle_number?.trim() || null,
@@ -821,7 +796,6 @@ router.post('/self-service-kiosk', async (req, res) => {
       },
     });
 
-    // Fast-pass QR payload
     const qrPayload = JSON.stringify({
       vId: visit.id,
       vName: visitor.name,
@@ -841,10 +815,6 @@ router.post('/self-service-kiosk', async (req, res) => {
   }
 });
 
-/**
- * PATCH /api/visits/:id/escort
- * Dispatch security escort officer for overstayed visitor
- */
 router.patch('/:id/escort', requireAuth, async (req: AuthRequest, res) => {
   try {
     const id = req.params.id as string;
@@ -871,6 +841,4 @@ router.patch('/:id/escort', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-
 export default router;
-

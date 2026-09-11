@@ -6,7 +6,6 @@ import { toast } from "react-hot-toast";
 import { useDataSync } from "../lib/dataSync";
 import { CustomSelect } from "./ui/CustomSelect";
 
-
 export function EmergencyBanner() {
   const { user } = useAuthStore();
   const [activeAlert, setActiveAlert] = useState<any>(null);
@@ -16,7 +15,6 @@ export function EmergencyBanner() {
   const [checkedIn, setCheckedIn] = useState(false);
   const [myLocation, setMyLocation] = useState("Hostel Block A");
 
-  // Broadcast Form
   const [alertTitle, setAlertTitle] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
   const [alertSeverity, setAlertSeverity] = useState("critical");
@@ -33,7 +31,6 @@ export function EmergencyBanner() {
         setCheckedIn(!!alreadyChecked);
       }
     } catch {
-      // ignore
     }
   }, [user]);
 
@@ -59,7 +56,7 @@ export function EmergencyBanner() {
       });
 
       setCheckedIn(true);
-      toast.success(status === "need_help" ? "🚨 Assistance request sent to Campus Security!" : "✅ Marked safe on campus census!");
+      toast.success(status === "need_help" ? "Assistance request sent to Campus Security!" : "Marked safe on campus census!");
       fetchAlert();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Check-in failed");
@@ -80,7 +77,7 @@ export function EmergencyBanner() {
         message: alertMessage,
         severity: alertSeverity
       });
-      toast.success("🚨 Campus Emergency Broadcasted!");
+      toast.success("Campus Emergency Broadcasted!");
       setShowBroadcastModal(false);
       setAlertTitle("");
       setAlertMessage("");
@@ -116,7 +113,6 @@ export function EmergencyBanner() {
 
   return (
     <>
-      {/* Active Emergency Alert Ribbon */}
       {activeAlert && (
         <div className="w-full bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-xl py-3 px-4 sm:px-6 relative z-40 animate-fadeIn border-b-2 border-red-400/40">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -135,7 +131,6 @@ export function EmergencyBanner() {
               </div>
             </div>
 
-            {/* Student Actions */}
             {user?.role === "student" && !checkedIn && (
               <div className="flex items-center gap-2 self-end md:self-auto">
                 <select
@@ -150,13 +145,13 @@ export function EmergencyBanner() {
                 </select>
                 <button
                   onClick={() => handleCheckin("safe")}
-                  className="btn btn-sm bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black shadow-md border-0"
+                  className="btn btn-sm bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black shadow-md border-0 cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" /> I Am Safe
                 </button>
                 <button
                   onClick={() => handleCheckin("need_help")}
-                  className="btn btn-sm bg-black/60 hover:bg-black text-amber-300 text-xs font-black shadow-md border border-amber-300/40"
+                  className="btn btn-sm bg-black/60 hover:bg-black text-amber-300 text-xs font-black shadow-md border border-amber-300/40 cursor-pointer"
                 >
                   <PhoneCall className="w-4 h-4 text-amber-400" /> Need Help
                 </button>
@@ -169,18 +164,17 @@ export function EmergencyBanner() {
               </span>
             )}
 
-            {/* Authority Actions */}
             {isAuthority && (
               <div className="flex items-center gap-2 self-end md:self-auto">
                 <button
                   onClick={openCensus}
-                  className="btn btn-sm bg-white/20 hover:bg-white/30 text-white text-xs font-bold border-0"
+                  className="btn btn-sm bg-white/20 hover:bg-white/30 text-white text-xs font-bold border-0 cursor-pointer"
                 >
                   Headcount ({activeAlert.checkins?.length || 0})
                 </button>
                 <button
                   onClick={handleResolve}
-                  className="btn btn-sm bg-white text-red-700 hover:bg-red-50 text-xs font-black border-0 shadow-md"
+                  className="btn btn-sm bg-white text-red-700 hover:bg-red-50 text-xs font-black border-0 shadow-xs cursor-pointer"
                 >
                   Resolve Alert
                 </button>
@@ -190,7 +184,6 @@ export function EmergencyBanner() {
         </div>
       )}
 
-      {/* Broadcast SOS Trigger Button for Guards / Admins when no active alert */}
       {!activeAlert && isAuthority && (
         <div
           className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 right-4 lg:right-6 z-[60] animate-fadeIn"
@@ -198,7 +191,7 @@ export function EmergencyBanner() {
         >
           <button
             onClick={() => setShowBroadcastModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full lg:rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs sm:text-sm shadow-2xl shadow-red-600/50 border border-red-400/50 active:scale-95 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full lg:rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/40 border border-red-400/40 active:scale-95 transition-all cursor-pointer"
             title="Broadcast Campus Emergency / Lockdown"
           >
             <ShieldAlert className="w-4 h-4 animate-pulse text-white" />
@@ -207,22 +200,18 @@ export function EmergencyBanner() {
         </div>
       )}
 
-
-
-
-      {/* Broadcast Emergency Modal */}
       {showBroadcastModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-red-500/40 shadow-2xl p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-red-500/40 shadow-xl p-6 relative">
             <button
               onClick={() => setShowBroadcastModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-3 mb-4 text-red-600">
-              <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/50">
+              <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/50">
                 <AlertOctagon className="w-6 h-6" />
               </div>
               <div>
@@ -246,7 +235,6 @@ export function EmergencyBanner() {
                 />
               </div>
 
-
               <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Headline</label>
                 <input
@@ -255,7 +243,7 @@ export function EmergencyBanner() {
                   value={alertTitle}
                   onChange={(e) => setAlertTitle(e.target.value)}
                   placeholder="e.g. CAMPUS EVACUATION ALERT - HOSTEL BLOCK A"
-                  className="w-full py-2.5 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs font-bold outline-none dark:text-white"
+                  className="w-full py-2.5 px-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold outline-none dark:text-white shadow-xs focus:ring-2 focus:ring-sky-500/20"
                 />
               </div>
 
@@ -267,7 +255,7 @@ export function EmergencyBanner() {
                   value={alertMessage}
                   onChange={(e) => setAlertMessage(e.target.value)}
                   placeholder="e.g. Please proceed immediately to Assembly Ground 1. Mark yourself safe on your student pass portal."
-                  className="w-full py-2.5 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs outline-none dark:text-white"
+                  className="w-full py-2.5 px-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs outline-none dark:text-white shadow-xs focus:ring-2 focus:ring-sky-500/20"
                 />
               </div>
 
@@ -275,14 +263,14 @@ export function EmergencyBanner() {
                 <button
                   type="button"
                   onClick={() => setShowBroadcastModal(false)}
-                  className="flex-1 btn btn-secondary text-xs font-bold"
+                  className="flex-1 btn-secondary text-xs font-bold py-2.5 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={broadcasting}
-                  className="flex-1 btn bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-lg shadow-red-600/30"
+                  className="flex-1 btn bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-xs cursor-pointer py-2.5 rounded-xl"
                 >
                   {broadcasting ? "Broadcasting..." : "Issue Broadcast"}
                 </button>
@@ -292,13 +280,12 @@ export function EmergencyBanner() {
         </div>
       )}
 
-      {/* Emergency Headcount Census Modal */}
       {showCensusModal && census && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 relative max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-xl rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xl p-6 relative max-h-[85vh] flex flex-col">
             <button
               onClick={() => setShowCensusModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -308,15 +295,15 @@ export function EmergencyBanner() {
             </h3>
 
             <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/20">
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/20">
                 <span className="text-[10px] font-bold text-gray-400 uppercase">Marked Safe</span>
                 <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{census.safeCount}</p>
               </div>
-              <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-500/20">
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-500/20">
                 <span className="text-[10px] font-bold text-gray-400 uppercase">Need Help</span>
                 <p className="text-xl font-black text-red-600 dark:text-red-400">{census.needHelpCount}</p>
               </div>
-              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-500/20">
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-500/20">
                 <span className="text-[10px] font-bold text-gray-400 uppercase">Unaccounted</span>
                 <p className="text-xl font-black text-amber-600 dark:text-amber-400">{census.pendingCount}</p>
               </div>

@@ -17,7 +17,6 @@ import {
 
 import { api } from "../lib/api";
 import logger from "../lib/logger";
-import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
 import { formatIST } from "../lib/dateIST";
 import { useDebounce } from "../hooks/useDebounce";
@@ -92,15 +91,13 @@ export function VisitLogs() {
 
         const data = await api.visits.list(params);
         const rawList = Array.isArray(data) ? data : [];
-        
-        // Map backend's 'visitor' and 'host' to 'visitors' and 'hosts' for compatibility with UI
+
         let result = (rawList as unknown as VisitLog[]).map(v => ({
           ...v,
           visitors: v.visitor,
           hosts: v.host,
         }));
 
-        // Defensive scoping for student and visitor roles
         if (user.role === "student") {
           result = result.filter(
             (v) =>
@@ -130,7 +127,6 @@ export function VisitLogs() {
         }
       } catch (err) {
         logger.error("[VisitLogs] Fetch error:", err);
-        // Only toast error if user is still authenticated and not navigating away
         if (localStorage.getItem("vms_token")) {
           toast.error("Failed to load visit logs");
         }
@@ -142,7 +138,6 @@ export function VisitLogs() {
     [user, cacheKey, debouncedSearchTerm, statusFilter, dateFilter, page, logs.length]
   );
 
-  // Real-time synchronization subscription
   useDataSync(["visits", "all"], () => {
     fetchVisits(false);
   });
@@ -157,7 +152,7 @@ export function VisitLogs() {
     return () => {
       clearInterval(interval);
     };
-  }, [fetchVisits]); 
+  }, [fetchVisits]);
 
 
   const handleExport = async () => {
@@ -179,7 +174,7 @@ export function VisitLogs() {
       }
 
       const data = await api.visits.list(params);
-      
+
       let exportData = (data as unknown as VisitLog[]).map(v => ({
         ...v,
         visitors: v.visitor,
@@ -231,102 +226,93 @@ export function VisitLogs() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pb-8">
+    <div className="space-y-6 pb-8 animate-fadeIn">
       <SEOMeta title="Visit Logs" />
-      <div className="max-w-7xl mx-auto">
-        <BackButton />
-        <PageHeader
-          icon={ClipboardList}
-          gradient="from-sky-500 to-blue-600"
-          title="Visitor Logs"
-          description="Audit trail of check-ins, departures, and active campus visitor records."
-          right={
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                  <Search className="w-4 h-4 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                </div>
-                <input
-                  type="text"
-                  className="w-full sm:w-64 py-2 pl-9 pr-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all dark:text-white text-xs"
-                  placeholder="Quick search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+      <PageHeader
+        backTo="/app/dashboard"
+        icon={ClipboardList}
+        gradient="from-sky-500 to-blue-600"
+        title="Visitor Logs"
+        description="Audit trail of check-ins, departures, and active campus visitor records."
+        right={
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="w-4 h-4 text-gray-400 group-focus-within:text-sky-500 transition-colors" />
               </div>
-              <button
-                onClick={handleExport}
-                disabled={exporting}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-sky-500 text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer disabled:opacity-50"
-              >
-                {exporting ? (
-                  <Circle className="animate-spin w-4 h-4 text-sky-500" />
-                ) : (
-                  <Upload className="w-4 h-4 text-sky-500" />
-                )}
-                <span>Export Visitor CSV</span>
-              </button>
+              <input
+                type="text"
+                className="w-full sm:w-64 py-2 pl-9 pr-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all dark:text-white text-xs shadow-xs"
+                placeholder="Quick search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-          }
-        />
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-sky-500 text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer disabled:opacity-50"
+            >
+              {exporting ? (
+                <Circle className="animate-spin w-4 h-4 text-sky-500" />
+              ) : (
+                <Upload className="w-4 h-4 text-sky-500" />
+              )}
+              <span>Export CSV</span>
+            </button>
+          </div>
+        }
+      />
 
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-sky-500">
+            <Calendar className="w-3.5 h-3.5" />
+          </div>
+          <input
+            type="date"
+            className="py-2 pl-8 pr-8 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all text-gray-900 dark:text-white text-xs font-semibold shadow-xs cursor-pointer"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          />
+          {dateFilter && (
+            <button
+              type="button"
+              onClick={() => setDateFilter("")}
+              className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-white"
+              title="Clear date filter"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+        <div className="relative w-36 sm:w-40">
+          <CustomSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: "", label: "All Status" },
+              { value: "pending", label: "Pending" },
+              { value: "approved", label: "Approved" },
+              { value: "checked_in", label: "Active" },
+              { value: "completed", label: "Completed" },
+              { value: "denied", label: "Denied" },
+              { value: "cancelled", label: "Cancelled" }
+            ]}
+            icon={<Filter className="w-3.5 h-3.5" />}
+            className="text-xs font-semibold !py-2 !px-3 shadow-xs"
+          />
+        </div>
       </div>
 
-      <div className="mt-6 max-w-7xl mx-auto">
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 group-focus-within:text-sky-500">
-              <Calendar className="w-3.5 h-3.5" />
-            </div>
-            <input
-              type="date"
-              className="py-2 pl-8 pr-8 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all text-gray-900 dark:text-white text-xs font-semibold shadow-xs cursor-pointer"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
-            {dateFilter && (
-              <button
-                type="button"
-                onClick={() => setDateFilter("")}
-                className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-white"
-                title="Clear date filter"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-          <div className="relative w-36 sm:w-40">
-            <CustomSelect
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={[
-                { value: "", label: "All Status" },
-                { value: "pending", label: "Pending" },
-                { value: "approved", label: "Approved" },
-                { value: "checked_in", label: "Active" },
-                { value: "completed", label: "Completed" },
-                { value: "denied", label: "Denied" },
-                { value: "cancelled", label: "Cancelled" }
-              ]}
-              icon={<Filter className="w-3.5 h-3.5" />}
-              className="text-xs font-semibold !py-2 !px-3 shadow-xs"
-            />
-          </div>
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+        <div className="lg:hidden px-6 py-2 bg-sky-50/50 dark:bg-sky-900/10 border-b border-gray-100 dark:border-slate-800/50">
+          <p className="text-[9px] font-black text-sky-600/60 dark:text-sky-400/60 uppercase tracking-widest flex items-center gap-1.5">
+            <span className="animate-pulse">←</span> Swipe horizontally to see more details{" "}
+            <span className="animate-pulse">→</span>
+          </p>
         </div>
-
-
-        <div className="mt-4 flex flex-col min-h-[400px]">
-          <div className="-my-2 sm:-mx-6 lg:-mx-8 flex-1">
-            <div className="inline-block w-full py-2 align-middle md:px-6 lg:px-8 h-full">
-              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl sm:rounded-[1.5rem] overflow-hidden transition-all duration-300 h-full flex flex-col shadow-sm dark:shadow-none">
-                <div className="lg:hidden px-6 py-2 bg-emerald-50/50 dark:bg-emerald-900/10 border-b border-gray-100 dark:border-slate-800/50">
-                  <p className="text-[9px] font-black text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-widest flex items-center gap-1.5">
-                    <span className="animate-pulse">←</span> Swipe horizontally to see more details{" "}
-                    <span className="animate-pulse">→</span>
-                  </p>
-                </div>
-                <div className="flex-1 overflow-x-auto scrollbar-hide">
+        <div className="overflow-x-auto scrollbar-hide">
                   <table className="w-full divide-y divide-gray-200 dark:divide-slate-700/50 flex-1 min-w-[1100px]">
                     <thead>
                       <tr className="bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-slate-800/90 dark:to-slate-800/60">
@@ -519,10 +505,6 @@ export function VisitLogs() {
                   </table>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {selectedVisit && (
         <VisitDetails
@@ -532,11 +514,11 @@ export function VisitLogs() {
         />
       )}
       {hasMore && !loading && (
-        <div className="flex justify-center py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-center py-6">
           <button
             onClick={() => fetchVisits(true)}
             disabled={loadingMore}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-sm font-black uppercase tracking-widest text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all shadow-sm disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all shadow-xs disabled:opacity-50"
           >
             {loadingMore ? (
               <Circle className="animate-spin w-4 h-4" />

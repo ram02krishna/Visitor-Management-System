@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export type SyncTopic = "visits" | "visitors" | "hosts" | "stats" | "students" | "all";
-
+export type SyncTopic = "visits" | "visitors" | "hosts" | "stats" | "students" | "lostAndFound" | "vehicles" | "all";
 
 class DataSyncBus extends EventTarget {
   private channel: BroadcastChannel | null = null;
@@ -23,14 +22,11 @@ class DataSyncBus extends EventTarget {
   }
 
   public notify(topic: SyncTopic = "all") {
-    // 1. Dispatch intra-window event
     this.dispatchEvent(new CustomEvent("sync", { detail: topic }));
 
-    // 2. Broadcast across tabs/windows
     try {
       this.channel?.postMessage({ topic });
     } catch {
-      // Ignore broadcast errors
     }
   }
 
@@ -51,9 +47,6 @@ class DataSyncBus extends EventTarget {
 
 export const dataSync = new DataSyncBus();
 
-/**
- * React hook to subscribe component to real-time data sync events
- */
 export function useDataSync(topics: SyncTopic[], onSync: (topic: SyncTopic) => void) {
   const onSyncRef = useRef(onSync);
   onSyncRef.current = onSync;
@@ -63,7 +56,6 @@ export function useDataSync(topics: SyncTopic[], onSync: (topic: SyncTopic) => v
       onSyncRef.current(topic);
     });
 
-    // Also trigger on window focus and visibility change for seamless tab returns
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         onSyncRef.current("all");

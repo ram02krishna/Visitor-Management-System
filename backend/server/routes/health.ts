@@ -10,9 +10,6 @@ interface ModuleHealth {
   message?: string;
 }
 
-/**
- * 1. FAST LIVENESS PROBE: GET /api/health/ping
- */
 router.get('/ping', (_req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -21,9 +18,6 @@ router.get('/ping', (_req, res) => {
   });
 });
 
-/**
- * 2. READINESS PROBE: GET /api/health/ready
- */
 router.get('/ready', async (_req, res) => {
   try {
     const start = performance.now();
@@ -46,18 +40,13 @@ router.get('/ready', async (_req, res) => {
   }
 });
 
-/**
- * 3. COMPREHENSIVE HEALTH & SUBSYSTEM DIAGNOSTICS: GET /api/health
- */
 router.get('/', async (_req, res) => {
   const startTime = performance.now();
   const timestamp = new Date().toISOString();
 
-  // Subsystem module statuses
   const modules: Record<string, ModuleHealth> = {};
   let isDbHealthy = true;
 
-  // 1. Database & Core Queries Check
   const dbStart = performance.now();
   try {
     const [
@@ -143,7 +132,6 @@ router.get('/', async (_req, res) => {
     };
   }
 
-  // 2. Cloudinary File Upload Integration Check
   const hasCloudinary = Boolean(
     process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_API_KEY &&
@@ -156,7 +144,6 @@ router.get('/', async (_req, res) => {
       : 'Cloudinary environment variables missing or incomplete',
   };
 
-  // 3. Resend Email Delivery Check
   const hasResend = Boolean(process.env.RESEND_API_KEY);
   modules['email_service'] = {
     status: hasResend ? 'UP' : 'DEGRADED',
@@ -165,13 +152,11 @@ router.get('/', async (_req, res) => {
       : 'RESEND_API_KEY not provided (email notifications disabled)',
   };
 
-  // 4. Memory & Runtime Telemetry
   const memoryUsage = process.memoryUsage();
   const formatMB = (bytes: number) => `${Math.round((bytes / 1024 / 1024) * 100) / 100} MB`;
 
   const totalLatencyMs = Math.round(performance.now() - startTime);
   const overallStatus = isDbHealthy ? 'healthy' : 'unhealthy';
-
   const statusCode = isDbHealthy ? 200 : 503;
 
   res.status(statusCode).json({

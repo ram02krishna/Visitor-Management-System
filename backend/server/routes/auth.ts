@@ -34,9 +34,8 @@ router.post('/signup', async (req, res) => {
 
     let assignedRole: 'admin' | 'guard' | 'host' | 'visitor' | 'student' = 'visitor';
     let cleanRoll: string | null = null;
-
-    // --- STUDENT DIRECTORY VERIFICATION ---
     let userName = name;
+
     if (role === 'student') {
       if (!roll_number || typeof roll_number !== 'string' || !roll_number.trim()) {
         return res.status(400).json({ error: 'College Roll Number is required for student registration.' });
@@ -44,7 +43,6 @@ router.post('/signup', async (req, res) => {
 
       cleanRoll = roll_number.trim().toUpperCase();
 
-      // Check if Roll Number exists in the official Student Directory (uploaded by Admin)
       const studentProfile = await prisma.student.findUnique({
         where: { roll_number: cleanRoll },
       });
@@ -55,7 +53,6 @@ router.post('/signup', async (req, res) => {
         });
       }
 
-      // Check if account email matches the student directory email
       const studentEmail = (studentProfile.email || '').toLowerCase().trim();
       if (studentEmail && studentEmail !== cleanEmail) {
         return res.status(400).json({
@@ -63,7 +60,6 @@ router.post('/signup', async (req, res) => {
         });
       }
 
-      // Check if another account already claimed this roll number
       const existingRollUser = await prisma.host.findUnique({
         where: { roll_number: cleanRoll },
       });
@@ -75,17 +71,16 @@ router.post('/signup', async (req, res) => {
       }
 
       assignedRole = 'student';
-      userName = studentProfile.name; // Always enforce the official name from Student Directory
+      userName = studentProfile.name;
     } else if (role === 'host' || role === 'guard' || role === 'admin') {
-      // If signing up as staff / host
       assignedRole = role === 'host' ? 'host' : 'visitor';
     }
 
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
-    
+
     const otp = generateOTP();
-    const otp_expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    const otp_expiry = new Date(Date.now() + 10 * 60 * 1000);
 
     const host = await prisma.host.create({
       data: {
@@ -97,24 +92,30 @@ router.post('/signup', async (req, res) => {
         role: assignedRole,
         is_verified: false,
         otp,
-        otp_expiry
+        otp_expiry,
       },
     });
-
 
     try {
       await sendOTP(host.email, otp);
     } catch (err) {
       console.error('Failed to send OTP on signup:', err);
-      // We still return 201 so they can try to resend later, or we could fail.
     }
 
-    res.status(201).json({ message: 'Account created. Please verify your email.', requiresVerification: true, email: host.email });
+    res.status(201).json({
+      message: 'Account created. Please verify your email.',
+      requiresVerification: true,
+      email: host.email,
+    });
   } catch (err) {
     console.error('[Auth Signup Error]', err);
-    res.status(500).json({ error: 'Failed to create account', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to create account',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -141,7 +142,10 @@ router.post('/login', async (req, res) => {
     }
 
     if (!host.is_verified) {
-      return res.status(403).json({ error: 'Account not verified. Please verify your email.', requiresVerification: true });
+      return res.status(403).json({
+        error: 'Account not verified. Please verify your email.',
+        requiresVerification: true,
+      });
     }
 
     const token = jwt.sign({ userId: host.id, role: host.role }, JWT_SECRET, {
@@ -159,17 +163,20 @@ router.post('/login', async (req, res) => {
         roll_number: host.roll_number,
       },
     });
-
   } catch (err) {
     console.error('[Auth Login Error]', err);
-    res.status(500).json({ error: 'Failed to login', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to login',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
+
 router.get('/me', requireAuth, async (req: AuthRequest, res) => {
   try {
     const host = await prisma.host.findUnique({
       where: { id: req.user!.id },
-      include: { department: { select: { name: true } } }
+      include: { department: { select: { name: true } } },
     });
 
     if (!host) {
@@ -179,9 +186,13 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
     res.status(200).json(host);
   } catch (err) {
     console.error('[API GET /auth/me]', err);
-    res.status(500).json({ error: 'Failed to authenticate token', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to authenticate token',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
+
 router.post('/change-password', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -209,7 +220,10 @@ router.post('/change-password', requireAuth, async (req: AuthRequest, res) => {
     res.status(200).json({ success: true, message: 'Password updated successfully' });
   } catch (err) {
     console.error('[API POST /auth/change-password]', err);
-    res.status(500).json({ error: 'Failed to update password', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to update password',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
@@ -244,12 +258,11 @@ router.post('/forgot-password', async (req, res) => {
 
     const host = await prisma.host.findUnique({ where: { email: email.trim().toLowerCase() } });
     if (!host) {
-      // Don't reveal user existence, just return success
       return res.status(200).json({ success: true, message: 'If the email exists, an OTP was sent.' });
     }
 
     const otp = generateOTP();
-    const otp_expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    const otp_expiry = new Date(Date.now() + 10 * 60 * 1000);
 
     await prisma.host.update({
       where: { id: host.id },
@@ -306,7 +319,6 @@ router.post('/google', async (req, res) => {
     const cleanEmail = email.toLowerCase().trim();
     let host = await prisma.host.findUnique({ where: { email: cleanEmail } });
 
-    // Check if email matches a registered student in the directory
     const matchedStudent = await prisma.student.findUnique({ where: { email: cleanEmail } });
 
     if (host) {
@@ -316,7 +328,7 @@ router.post('/google', async (req, res) => {
           data: {
             google_id,
             is_verified: true,
-            ...(matchedStudent ? { role: 'student', roll_number: matchedStudent.roll_number, name: matchedStudent.name } : {})
+            ...(matchedStudent ? { role: 'student', roll_number: matchedStudent.roll_number, name: matchedStudent.name } : {}),
           },
         });
       }
@@ -353,10 +365,6 @@ router.post('/google', async (req, res) => {
   }
 });
 
-/**
- * CLAIM / ACTIVATE STUDENT GATEPASS FOR VISITOR OR GOOGLE USER
- * POST /api/auth/claim-student
- */
 router.post('/claim-student', requireAuth, async (req: AuthRequest, res) => {
   try {
     const { roll_number } = req.body;
@@ -366,52 +374,47 @@ router.post('/claim-student', requireAuth, async (req: AuthRequest, res) => {
 
     const cleanRoll = roll_number.trim().toUpperCase();
 
-    // 1. Verify roll number exists in Student Directory
     const student = await prisma.student.findUnique({
-      where: { roll_number: cleanRoll }
+      where: { roll_number: cleanRoll },
     });
 
     if (!student) {
       return res.status(404).json({
-        error: `Not found in Student Directory: Roll Number "${cleanRoll}" is not registered in the student directory. Please contact the Hostel Warden / Administration Office.`
+        error: `Not found in Student Directory: Roll Number "${cleanRoll}" is not registered in the student directory. Please contact the Hostel Warden / Administration Office.`,
       });
     }
 
-    // 2. Email verification: Logged-in user's email MUST match the official student directory email
     const userEmail = (req.user?.email || '').toLowerCase().trim();
     const studentEmail = (student.email || '').toLowerCase().trim();
 
     if (!userEmail || !studentEmail || userEmail !== studentEmail) {
       return res.status(403).json({
-        error: `Email Verification Failed: Your account email (${userEmail || 'unknown'}) does not match the official student directory email (${studentEmail}) registered for Roll Number "${cleanRoll}". Student pass can only be claimed if your account email matches the student directory.`
+        error: `Email Verification Failed: Your account email (${userEmail || 'unknown'}) does not match the official student directory email (${studentEmail}) registered for Roll Number "${cleanRoll}". Student pass can only be claimed if your account email matches the student directory.`,
       });
     }
 
-    // 3. Check if already claimed by another user account
     const existingClaim = await prisma.host.findFirst({
       where: {
         roll_number: cleanRoll,
-        id: { not: req.user!.id }
-      }
+        id: { not: req.user!.id },
+      },
     });
 
     if (existingClaim) {
       return res.status(409).json({
-        error: `Roll Number "${cleanRoll}" has already been linked to another account.`
+        error: `Roll Number "${cleanRoll}" has already been linked to another account.`,
       });
     }
 
-    // 4. Upgrade user account to permanent student role and adopt official name from Student Directory
     const updatedUser = await prisma.host.update({
       where: { id: req.user!.id },
       data: {
         role: 'student',
         roll_number: cleanRoll,
-        name: student.name // Guarantee student pass shows the official name in directory, not signup/Google auth name
-      }
+        name: student.name,
+      },
     });
 
-    // 5. Issue new token with student role
     const token = jwt.sign({ userId: updatedUser.id, role: updatedUser.role }, JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
@@ -424,15 +427,17 @@ router.post('/claim-student', requireAuth, async (req: AuthRequest, res) => {
         email: updatedUser.email,
         role: updatedUser.role,
         roll_number: updatedUser.roll_number,
-        department_id: updatedUser.department_id
+        department_id: updatedUser.department_id,
       },
-      student
+      student,
     });
   } catch (err) {
     console.error('[API POST /auth/claim-student]', err);
-    res.status(500).json({ error: 'Failed to claim student pass', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      error: 'Failed to claim student pass',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
 export default router;
-

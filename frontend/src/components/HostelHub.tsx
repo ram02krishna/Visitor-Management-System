@@ -34,6 +34,7 @@ import { PageHeader } from "./PageHeader";
 import { SEOMeta } from "./SEOMeta";
 import { useDataSync, dataSync } from "../lib/dataSync";
 import { CustomSelect } from "./ui/CustomSelect";
+import { useDebounce } from "../hooks/useDebounce";
 import Papa from "papaparse";
 
 function formatBranchName(branch?: string): string {
@@ -52,8 +53,8 @@ function formatBranchName(branch?: string): string {
 export function HostelHub() {
   const [activeTab, setActiveTab] = useState<"radar" | "heatmap" | "extensions" | "vehicles" | "leaves" | "directory" | "movements">("radar");
 
-  // Census State
-  const [census, setCensus] = useState({
+
+  const [census, setCensus] = useState(() => api.uiCache.get("vms_hostel_census") || {
     total: 0,
     inside: 0,
     out_day: 0,
@@ -62,48 +63,50 @@ export function HostelHub() {
     blocks: [] as Array<{ hostel_block: string; status: string; _count: { _all: number } }>
   });
 
-  // Floor Census State
-  const [floorCensus, setFloorCensus] = useState<any>(null);
+
+  const [floorCensus, setFloorCensus] = useState<any>(() => api.uiCache.get("vms_floor_census") || null);
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
 
-  // Overdue Radar State
-  const [overdueList, setOverdueList] = useState<any[]>([]);
 
-  // Curfew Extensions State
+  const [overdueList, setOverdueList] = useState<any[]>(() => api.uiCache.get("vms_hostel_overdue") || []);
+
+
   const [extensions, setExtensions] = useState<any[]>([]);
 
-  // Vehicles State
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [vehicleSearch, setVehicleSearch] = useState("");
 
-  // Leaves State
-  const [leaves, setLeaves] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>(() => api.uiCache.get("vms_hostel_vehicles") || []);
+  const [vehicleSearch, setVehicleSearch] = useState("");
+  const debouncedVehicleSearch = useDebounce(vehicleSearch, 400);
+
+
+  const [leaves, setLeaves] = useState<any[]>(() => api.uiCache.get("vms_hostel_leaves") || []);
   const [leaveStatusFilter, setLeaveStatusFilter] = useState("pending");
 
-  // Student Directory State
-  const [students, setStudents] = useState<any[]>([]);
+
+  const [students, setStudents] = useState<any[]>(() => api.uiCache.get("vms_hostel_students") || []);
   const [studentSearch, setStudentSearch] = useState("");
+  const debouncedStudentSearch = useDebounce(studentSearch, 400);
   const [totalStudents, setTotalStudents] = useState(0);
 
-  // Disciplinary Dossier Modal State
+
   const [dossierStudent, setDossierStudent] = useState<any>(null);
   const [dossierLogs, setDossierLogs] = useState<any[]>([]);
   const [newActionType, setNewActionType] = useState("warning");
   const [newRemarks, setNewRemarks] = useState("");
 
 
-  // Movements State
+
   const [movements, setMovements] = useState<any[]>([]);
   const [movementSearch, setMovementSearch] = useState("");
   const [movementGateFilter, setMovementGateFilter] = useState("");
   const [movementStatusFilter, setMovementStatusFilter] = useState("");
 
-  // Bulk Upload Modal & Export Census State
+
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [exportingCensus, setExportingCensus] = useState(false);
 
-  // Census Export Handler
+
   const handleExportCensus = async () => {
     try {
       setExportingCensus(true);
@@ -116,7 +119,7 @@ export function HostelHub() {
     }
   };
 
-  // Fetch All Data
+
   const fetchAllData = useCallback(async () => {
     try {
       const [censusData, floorData, overdueData, extData, vehiclesData, leavesData, directoryData, movementsData] = await Promise.all([
@@ -124,9 +127,9 @@ export function HostelHub() {
         api.students.getFloorCensus().catch(() => null),
         api.students.getOverdue(),
         api.students.listCurfewExtensions().catch(() => []),
-        api.vehicles.list({ search: vehicleSearch || undefined }).catch(() => []),
+        api.vehicles.list({ search: debouncedVehicleSearch || undefined }).catch(() => []),
         api.students.listLeaves({ status: leaveStatusFilter || undefined }),
-        api.students.list({ search: studentSearch || undefined, limit: 100 }),
+        api.students.list({ search: debouncedStudentSearch || undefined, limit: 100 }),
         api.students.listMovements({ limit: 50 })
       ]);
 
@@ -139,10 +142,17 @@ export function HostelHub() {
       setStudents(directoryData.students);
       setTotalStudents(directoryData.total);
       setMovements(movementsData);
+
+      api.uiCache.set("vms_hostel_census", censusData);
+      if (floorData) api.uiCache.set("vms_floor_census", floorData);
+      api.uiCache.set("vms_hostel_overdue", overdueData);
+      if (!debouncedVehicleSearch) api.uiCache.set("vms_hostel_vehicles", vehiclesData);
+      if (!debouncedStudentSearch) api.uiCache.set("vms_hostel_students", directoryData.students);
+      api.uiCache.set("vms_hostel_leaves", leavesData);
     } catch {
       toast.error("Failed to sync hostel data");
     }
-  }, [leaveStatusFilter, studentSearch, vehicleSearch]);
+  }, [leaveStatusFilter, debouncedStudentSearch, debouncedVehicleSearch]);
 
   useDataSync(["students", "visits", "all"], () => {
     fetchAllData();
@@ -154,7 +164,7 @@ export function HostelHub() {
     return () => clearInterval(timer);
   }, [fetchAllData]);
 
-  // Leave Approval Action
+
   const handleLeaveAction = async (id: string, status: "approved" | "rejected") => {
     try {
       await api.students.updateLeave(id, status);
@@ -165,7 +175,7 @@ export function HostelHub() {
     }
   };
 
-  // Parent Consent Action
+
   const handleParentConsent = async (id: string, consent: "verified" | "pending" | "exempted") => {
     try {
       await api.students.updateParentConsent(id, consent);
@@ -176,7 +186,7 @@ export function HostelHub() {
     }
   };
 
-  // Curfew Extension Approval Action
+
   const handleExtensionAction = async (id: string, status: "approved" | "rejected") => {
     try {
       await api.students.updateCurfewExtension(id, status);
@@ -187,7 +197,7 @@ export function HostelHub() {
     }
   };
 
-  // Vehicle Revoke Action
+
   const handleRevokeVehicle = async (id: string) => {
     try {
       await api.vehicles.revoke(id);
@@ -198,7 +208,7 @@ export function HostelHub() {
     }
   };
 
-  // Warden Reset Strikes Action
+
   const handleResetStrikes = async (studentId: string, studentName: string) => {
     try {
       await api.students.resetStrikes(studentId);
@@ -209,7 +219,7 @@ export function HostelHub() {
     }
   };
 
-  // Check-In / Mark Returned Action
+
   const handleCheckInStudent = async (rollNumber: string, name: string) => {
     try {
       const res = await api.students.scanPass({
@@ -224,7 +234,7 @@ export function HostelHub() {
     }
   };
 
-  // Open Disciplinary Dossier Modal
+
   const openDossier = async (student: any) => {
     setDossierStudent(student);
     try {
@@ -236,7 +246,7 @@ export function HostelHub() {
   };
 
 
-  // Edit Student Modal State
+
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -286,7 +296,7 @@ export function HostelHub() {
     }
   };
 
-  // Submit Disciplinary Entry
+
   const handleAddDossierEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRemarks.trim() || !dossierStudent) return;
@@ -308,7 +318,7 @@ export function HostelHub() {
 
 
 
-  // CSV Bulk Upload Handler
+
   const handleCsvUpload = (file: File) => {
     setUploading(true);
     Papa.parse(file, {
@@ -334,21 +344,22 @@ export function HostelHub() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pb-12 animate-fadeIn max-w-7xl mx-auto">
+    <div className="space-y-6 pb-8 animate-fadeIn">
       <SEOMeta title="Hostel Hub & Campus Outings" />
 
       <PageHeader
+        backTo="/app/dashboard"
         icon={Building}
         gradient="from-indigo-600 to-sky-600"
-        title="Hostel Block A Hub"
-        description="10-floor resident occupancy, night curfew radar, and student outing records."
+        title="Hostel Hub"
+        description="Resident occupancy, night curfew monitoring, and student outing records."
         right={
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={handleExportCensus}
               disabled={exportingCensus}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-sky-500 text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-sky-500 text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer disabled:opacity-50"
             >
               {exportingCensus ? (
                 <Circle className="animate-spin w-4 h-4 text-sky-500" />
@@ -360,19 +371,18 @@ export function HostelHub() {
             <button
               type="button"
               onClick={() => setShowUploadModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-sm shadow-sky-500/20 active:scale-95 transition-all shrink-0 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
             >
               <Download className="w-4 h-4" />
               <span>Bulk CSV Import</span>
             </button>
           </div>
         }
-
       />
 
-      {/* Real-time Hostel Census Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 sm:gap-4 mt-6">
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm">
+
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 sm:gap-4">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between text-gray-400 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider">Total Resident</span>
             <Users className="w-4 h-4 text-sky-500" />
@@ -383,7 +393,7 @@ export function HostelHub() {
           <span className="text-xs font-medium text-gray-400">Enrolled Students</span>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/20 shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/20 shadow-xs">
           <div className="flex items-center justify-between text-emerald-500 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider">Inside Campus</span>
             <Home className="w-4 h-4" />
@@ -396,7 +406,7 @@ export function HostelHub() {
           </span>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-500/30 bg-amber-50/20 dark:bg-amber-950/20 shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-500/30 bg-amber-50/20 dark:bg-amber-950/20 shadow-xs">
           <div className="flex items-center justify-between text-amber-500 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider">Day Outing</span>
             <LogOut className="w-4 h-4" />
@@ -409,7 +419,7 @@ export function HostelHub() {
           </span>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-sm">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-xs">
           <div className="flex items-center justify-between text-indigo-500 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider">On Leave</span>
             <CalendarDays className="w-4 h-4" />
@@ -422,7 +432,7 @@ export function HostelHub() {
           </span>
         </div>
 
-        <div className="col-span-2 sm:col-span-1 p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-red-500/40 bg-red-50/30 dark:bg-red-950/30 shadow-sm">
+        <div className="col-span-2 sm:col-span-1 p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-red-500/40 bg-red-50/30 dark:bg-red-950/30 shadow-xs">
           <div className="flex items-center justify-between text-red-500 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider">Curfew Overdue</span>
             <AlertTriangle className="w-4 h-4" />
@@ -436,7 +446,7 @@ export function HostelHub() {
         </div>
       </div>
 
-      {/* Tabs Switcher */}
+
       <div className="flex border-b border-gray-200 dark:border-slate-800 mt-8 space-x-2 sm:space-x-4 overflow-x-auto scrollbar-hide">
         <button
           onClick={() => setActiveTab("radar")}
@@ -457,7 +467,7 @@ export function HostelHub() {
             }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Hostel Block A Heatmap</span>
+          <span>Hostel Floor Heatmap</span>
         </button>
 
         <button
@@ -518,7 +528,7 @@ export function HostelHub() {
 
 
 
-      {/* Tab 1: Overdue Defaulters Radar with 3-Strike Rule & Pardon Action */}
+
       {activeTab === "radar" && (
         <div className="mt-6 space-y-4">
           {overdueList.length === 0 ? (
@@ -605,7 +615,7 @@ export function HostelHub() {
         </div>
       )}
 
-      {/* Tab 2: 10-Floor Occupancy Heatmap for Hostel Block A */}
+
       {activeTab === "heatmap" && (
         <div className="mt-6 space-y-6">
           <div className="flex items-center justify-between">
@@ -663,7 +673,7 @@ export function HostelHub() {
             })}
           </div>
 
-          {/* Drill Down for Selected Floor */}
+
           {selectedFloor !== null && (
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-sky-500/30 shadow-sm animate-fadeIn">
               <div className="flex items-center justify-between mb-4">
@@ -711,7 +721,7 @@ export function HostelHub() {
         </div>
       )}
 
-      {/* Tab 3: Vacation & Leave Requests with Parent Consent */}
+
       {activeTab === "leaves" && (
         <div className="mt-6 space-y-4">
           <div className="flex items-center gap-2">
@@ -743,7 +753,7 @@ export function HostelHub() {
                         {leave.leave_type.replace("_", " ")}
                       </span>
 
-                      {/* Parent Consent Indicator */}
+
                       {leave.parent_consent === "verified" ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
                           <ShieldCheck className="w-3 h-3" /> Parent Consent Verified
@@ -798,7 +808,7 @@ export function HostelHub() {
       )}
 
 
-      {/* Tab: Curfew Extensions Queue */}
+
       {activeTab === "extensions" && (
 
         <div className="mt-6 space-y-4">
@@ -821,7 +831,7 @@ export function HostelHub() {
               {extensions.map((ext) => (
                 <div
                   key={ext.id}
-                  className="p-5 rounded-3xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3"
+                  className="p-5 rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -874,7 +884,7 @@ export function HostelHub() {
         </div>
       )}
 
-      {/* Tab: Campus Vehicle & Parking Passes */}
+
       {activeTab === "vehicles" && (
         <div className="mt-6 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -938,7 +948,7 @@ export function HostelHub() {
         </div>
       )}
 
-      {/* Tab: Student Directory with Disciplinary Records Trigger */}
+
       {activeTab === "directory" && (
         <div className="mt-6 space-y-4">
           <div className="relative w-full sm:w-80">
@@ -1027,7 +1037,7 @@ export function HostelHub() {
         </div>
       )}
 
-      {/* Tab: Gate Telemetry Log */}
+
       {activeTab === "movements" && (() => {
         const formatGateName = (gate?: string | null) => {
           if (!gate) return "Main Gate";
@@ -1069,7 +1079,7 @@ export function HostelHub() {
 
         return (
           <div className="mt-6 space-y-4">
-            {/* Search & Filter Toolbar */}
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -1091,7 +1101,7 @@ export function HostelHub() {
               </div>
 
               <div className="flex items-center gap-2.5 flex-wrap">
-                {/* Gate Filter */}
+
                 <select
                   value={movementGateFilter}
                   onChange={(e) => setMovementGateFilter(e.target.value)}
@@ -1102,7 +1112,7 @@ export function HostelHub() {
                   <option value="Hostel Gate">Hostel Gate</option>
                 </select>
 
-                {/* Status Filter */}
+
                 <select
                   value={movementStatusFilter}
                   onChange={(e) => setMovementStatusFilter(e.target.value)}
@@ -1120,7 +1130,7 @@ export function HostelHub() {
               </div>
             </div>
 
-            {/* Table */}
+
             <div className="rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto shadow-sm">
               <table className="w-full text-left text-sm divide-y divide-gray-100 dark:divide-slate-800 min-w-[700px]">
                 <thead className="bg-gray-50 dark:bg-slate-800/60 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
@@ -1217,10 +1227,10 @@ export function HostelHub() {
       })()}
 
 
-      {/* Disciplinary Dossier Modal */}
+
       {dossierStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 relative max-h-[90vh] flex flex-col">
+          <div className="w-full max-w-xl rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 relative max-h-[90vh] flex flex-col">
             <button
               onClick={() => setDossierStudent(null)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white"
@@ -1243,7 +1253,7 @@ export function HostelHub() {
             </div>
 
             <div className="space-y-4 overflow-y-auto flex-1 pr-1">
-              {/* Add New Record Form */}
+
               <form onSubmit={handleAddDossierEntry} className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 space-y-3">
                 <div>
                   <label className="text-[10px] font-black uppercase text-gray-400 block mb-1.5">Action Category</label>
@@ -1277,7 +1287,7 @@ export function HostelHub() {
                 </div>
               </form>
 
-              {/* Past History */}
+
               <div className="space-y-2">
                 <h4 className="text-[11px] font-black uppercase text-gray-400">Recorded Incident Logs</h4>
                 {dossierLogs.length === 0 ? (
@@ -1306,11 +1316,11 @@ export function HostelHub() {
         </div>
       )}
 
-      {/* Edit Student Modal */}
+
       {editingStudent && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 relative max-h-[90vh] flex flex-col">
+          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 relative max-h-[90vh] flex flex-col">
             <button
               onClick={() => setEditingStudent(null)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white"
@@ -1492,10 +1502,10 @@ export function HostelHub() {
       )}
 
 
-      {/* CSV Bulk Upload Modal */}
+
       {showUploadModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full border border-gray-200 dark:border-slate-800 shadow-2xl space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-gray-200 dark:border-slate-800 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="w-5 h-5 text-sky-500" />

@@ -137,15 +137,13 @@ const Home = () => {
 
   return (
     <div className="min-h-screen flex flex-col scroll-smooth bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-white selection:bg-sky-500 selection:text-white">
-      <SEOMeta title="IIIT Nagpur - Smart Visitor & Campus Security Ecosystem" />
+      <SEOMeta title="IIIT Nagpur VMS — Smart Visitor & Campus Security System" />
 
-      {/* ── Top Navigation Bar ── */}
       <nav
-        className={`w-full flex items-center justify-between px-4 sm:px-6 lg:px-12 py-3.5 fixed top-0 z-50 transition-all duration-300 ${
-          scrolled
+        className={`w-full flex items-center justify-between px-4 sm:px-6 lg:px-12 py-3.5 fixed top-0 z-50 transition-all duration-300 ${scrolled
             ? "bg-white/90 dark:bg-slate-950/90 shadow-md dark:shadow-slate-900/50 backdrop-blur-md border-b border-gray-200/80 dark:border-slate-800/80"
             : "bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg border-b border-transparent"
-        }`}
+          }`}
       >
         <div
           className="flex items-center gap-3 cursor-pointer group"
@@ -154,7 +152,6 @@ const Home = () => {
           <Logo size="md" />
         </div>
 
-        {/* Live Status Pill */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-400">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>Main Gate & Hostel Block A Online</span>
@@ -211,13 +208,11 @@ const Home = () => {
         </div>
       </nav>
 
-      {/* ── Mobile Slide Drawer ── */}
       <div
-        className={`md:hidden fixed top-[64px] left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-2xl transition-all duration-300 ${
-          mobileMenuOpen
+        className={`md:hidden fixed top-[64px] left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-2xl transition-all duration-300 ${mobileMenuOpen
             ? "opacity-100 translate-y-0"
             : "opacity-0 -translate-y-3 pointer-events-none"
-        }`}
+          }`}
       >
         <div className="px-4 py-4 space-y-2">
           {[
@@ -247,14 +242,12 @@ const Home = () => {
         </div>
       </div>
 
-      {/* ── Hero Section (Bright & Clear Full Background Image) ── */}
       <div
         className="relative pt-36 sm:pt-44 pb-28 sm:pb-36 overflow-hidden bg-cover bg-center bg-no-repeat min-h-[82vh] flex flex-col justify-center items-center"
         style={{ backgroundImage: "url('/c8331ead-7366-4dc7-88a9-36ade9571557.jpg')" }}
       >
-        {/* Very Light & Clear Mask so the Campus Building is Bright and Fully Visible */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/25 to-black/55" />
 
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/25 to-black/55" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-5 my-auto">
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
@@ -267,7 +260,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* ── Quick Access Portals Grid (Moved Below Hero Photo - No Overlap) ── */}
       <section className="py-12 bg-white dark:bg-slate-950 border-b border-gray-100 dark:border-slate-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -339,7 +331,6 @@ const Home = () => {
             })}
           </div>
 
-          {/* ── Key System Metrics Strip ── */}
           <div className="p-4 rounded-2xl bg-gray-50/80 dark:bg-slate-900/60 border border-gray-200/80 dark:border-slate-800 shadow-xs grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
               <p className="text-xl sm:text-2xl font-black text-sky-600 dark:text-sky-400">99.9%</p>
@@ -361,11 +352,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ── 8 Core Modules Showcase ── */}
-
-
-
-      {/* ── 8 Core Modules Showcase ── */}
       <section className="py-16 bg-slate-50/50 dark:bg-slate-900/30 border-y border-gray-200/60 dark:border-slate-800/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-3 mb-14">
@@ -387,7 +373,7 @@ const Home = () => {
                 <div
                   key={idx}
                   onClick={() => navigate(f.path)}
-                  className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
+                  className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
                 >
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
@@ -418,7 +404,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ── Role-Based Campus Experience Tabs ── */}
       <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-3 mb-10">
           <span className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50">
@@ -429,7 +414,6 @@ const Home = () => {
           </h2>
         </div>
 
-        {/* Tab Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
           {[
             { key: "students", label: "🎓 Students & Residents" },
@@ -440,19 +424,17 @@ const Home = () => {
             <button
               key={tab.key}
               onClick={() => setActiveRoleTab(tab.key as any)}
-              className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all ${
-                activeRoleTab === tab.key
+              className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all ${activeRoleTab === tab.key
                   ? "bg-sky-600 text-white shadow-md"
                   : "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 hover:border-sky-500"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Active Tab Panel */}
-        <div className="p-8 sm:p-10 rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-lg">
+        <div className="p-8 sm:p-10 rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-lg">
           {activeRoleTab === "students" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="space-y-4">
@@ -634,7 +616,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ── FAQ Section ── */}
       <section className="py-16 bg-slate-50/50 dark:bg-slate-900/30 border-t border-gray-200/60 dark:border-slate-800/60">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center space-y-3 mb-10">
@@ -658,9 +639,8 @@ const Home = () => {
                 >
                   <span className="text-sm sm:text-base">{faq.q}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-gray-400 shrink-0 transition-transform duration-300 ${
-                      openFaq === idx ? "rotate-180 text-sky-500" : ""
-                    }`}
+                    className={`w-5 h-5 text-gray-400 shrink-0 transition-transform duration-300 ${openFaq === idx ? "rotate-180 text-sky-500" : ""
+                      }`}
                   />
                 </button>
                 {openFaq === idx && (
@@ -674,33 +654,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ── Call To Action Banner ── */}
-      <section className="bg-gradient-to-br from-sky-600 via-indigo-600 to-purple-700 py-14 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto text-center text-white space-y-6">
-          <h3 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-            Elevate Campus Security with IIIT Nagpur VMS
-          </h3>
-          <p className="text-sky-100 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-            Experience next-generation optical verification, automated hostel census, and comprehensive visitor management.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <button
-              onClick={() => navigate("/login")}
-              className="px-8 py-3.5 rounded-2xl bg-white text-gray-900 hover:bg-sky-50 font-black text-sm sm:text-base shadow-xl transition-all"
-            >
-              Sign In to Security Hub →
-            </button>
-            <button
-              onClick={() => navigate("/kiosk")}
-              className="px-7 py-3.5 rounded-2xl border-2 border-white/80 text-white hover:bg-white/10 font-bold text-sm sm:text-base transition-all"
-            >
-              Open Reception Kiosk
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
       <footer className="bg-gray-900 dark:bg-slate-950 text-white py-10 border-t border-gray-800 dark:border-slate-900 text-xs sm:text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-gray-800 dark:border-slate-800">

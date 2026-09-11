@@ -10,6 +10,7 @@ import {
   GraduationCap,
   PackageSearch,
   MonitorSmartphone,
+  Users,
 } from "lucide-react";
 
 export const navLinks = [
@@ -61,6 +62,12 @@ export const navLinks = [
     label: "Lost & Found",
     icon: PackageSearch,
     roles: ["admin", "warden", "host", "guard", "visitor", "student"],
+  },
+  {
+    href: "/app/users",
+    label: "User Directory",
+    icon: Users,
+    roles: ["admin"],
   },
   {
     href: "/app/blacklist",

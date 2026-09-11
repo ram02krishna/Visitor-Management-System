@@ -39,13 +39,11 @@ export const ThemeSwitcher = ({ className = "" }: { className?: string }) => {
       aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
       title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {/* Background track icons for reference */}
       <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none text-slate-400 dark:text-slate-500">
         <Sun className={`h-3.5 w-3.5 transition-opacity duration-200 ${isDarkMode ? "opacity-40" : "opacity-0"}`} />
         <Moon className={`h-3.5 w-3.5 transition-opacity duration-200 ${isDarkMode ? "opacity-0" : "opacity-40"}`} />
       </div>
 
-      {/* Sliding Knob */}
       <span
         className={`pointer-events-none flex h-6 w-6 transform items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out dark:bg-slate-900 ${
           isDarkMode ? "translate-x-6 text-indigo-400" : "translate-x-0 text-amber-500"

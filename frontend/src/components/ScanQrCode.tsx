@@ -21,7 +21,6 @@ import {
   Zap
 } from "lucide-react";
 
-import { BackButton } from "./BackButton";
 import { PageHeader } from "./PageHeader";
 import { api } from "../lib/api";
 import { formatIST } from "../lib/dateIST";
@@ -56,12 +55,12 @@ export function ScanQrCode() {
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, isLoading } = useAuthStore();
   const [checkingAuth, setCheckingAuth] = useState(true);
-  
+
   const [currentGate, setCurrentGate] = useState<string>(CAMPUS_GATES[0]);
   const [isVerifying, setIsVerifying] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Camera State for External Visitors
+
   const [isCameraActive, setIsCameraActive] = useState(true);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
   const [availableCameras, setAvailableCameras] = useState<Array<{ id: string; label: string }>>([]);
@@ -71,7 +70,7 @@ export function ScanQrCode() {
 
   const manualInputRef = useRef<HTMLInputElement>(null);
 
-  // Play audio chimes
+
   const playSound = useCallback((type: "success" | "warning" | "error") => {
     if (!soundEnabled) return;
     try {
@@ -104,7 +103,7 @@ export function ScanQrCode() {
         osc.stop(ctx.currentTime + 0.5);
       }
     } catch {
-      // AudioContext unavailable
+
     }
   }, [soundEnabled]);
 
@@ -119,7 +118,7 @@ export function ScanQrCode() {
     }
   }, [isAuthenticated, isLoading]);
 
-  // Visitor Scanner Lifecycle with robust camera device discovery & fallback
+
   useEffect(() => {
     if (!isAuthenticated || checkingAuth || visit || scannerMode !== "visitors" || !isCameraActive) {
       if (scannerRef.current) {
@@ -129,7 +128,7 @@ export function ScanQrCode() {
           }
           scannerRef.current.clear();
         } catch {
-          // ignore
+
         }
         scannerRef.current = null;
         isScanningRef.current = false;
@@ -148,7 +147,7 @@ export function ScanQrCode() {
           }
           await scannerRef.current.clear();
         } catch {
-          // ignore
+
         }
         scannerRef.current = null;
         isScanningRef.current = false;
@@ -182,7 +181,7 @@ export function ScanQrCode() {
             if (isMounted) setAvailableCameras(devices);
           }
         } catch {
-          // ignore
+
         }
 
         const scanner = new Html5Qrcode(qrCodeDivId, {
@@ -197,8 +196,8 @@ export function ScanQrCode() {
 
         let cameraTarget: any = selectedCameraId;
         if (!cameraTarget) {
-          const backCam = devices.find(d => 
-            d.label.toLowerCase().includes("back") || 
+          const backCam = devices.find(d =>
+            d.label.toLowerCase().includes("back") ||
             d.label.toLowerCase().includes("environment") ||
             d.label.toLowerCase().includes("rear")
           );
@@ -219,7 +218,7 @@ export function ScanQrCode() {
             (decodedText) => {
               handleScanSubmit(decodedText);
             },
-            () => {}
+            () => { }
           );
           started = true;
         } catch (firstErr) {
@@ -232,7 +231,7 @@ export function ScanQrCode() {
                 (decodedText) => {
                   handleScanSubmit(decodedText);
                 },
-                () => {}
+                () => { }
               );
               started = true;
             } catch (fallbackErr) {
@@ -248,7 +247,7 @@ export function ScanQrCode() {
                 (decodedText) => {
                   handleScanSubmit(decodedText);
                 },
-                () => {}
+                () => { }
               );
               started = true;
             } catch (userModeErr) {
@@ -301,7 +300,7 @@ export function ScanQrCode() {
     }
   }, []);
 
-  // Process Scanned or Manually Submitted Visitor Pass
+
   useEffect(() => {
     if (!scanResult || !isAuthenticated) return;
 
@@ -422,30 +421,26 @@ export function ScanQrCode() {
     );
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pb-32 animate-fadeIn max-w-5xl mx-auto">
+    <div className="space-y-6 pb-8 animate-fadeIn">
       <div className="print:hidden">
-        <div className="flex items-center gap-3 mb-2">
-          <BackButton />
-        </div>
-
         <PageHeader
+          backTo="/app/dashboard"
           icon={QrCode}
           gradient="from-indigo-600 to-sky-600"
-          title="Gate Scanner & Checkpoint"
-          description="Instant camera QR verification for student outing gatepasses and visitor check-in/out."
+          title="Gate Scanner"
+          description="Real-time camera QR verification for visitor passes and student gatepasses."
         />
 
-        {/* Mode Switcher */}
+
         <div className="mt-4 sm:mt-6 flex justify-center sm:justify-start">
           <div className="grid grid-cols-2 w-full sm:w-auto p-1.5 bg-gray-100 dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-inner gap-1">
             <button
               type="button"
               onClick={() => setScannerMode("students")}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
-                scannerMode === "students"
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${scannerMode === "students"
                   ? "bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-md border border-gray-200/60 dark:border-slate-700"
                   : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-              }`}
+                }`}
             >
               <GraduationCap className="w-4 h-4 shrink-0" />
               <span className="truncate">Student Outings</span>
@@ -454,11 +449,10 @@ export function ScanQrCode() {
             <button
               type="button"
               onClick={() => setScannerMode("visitors")}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
-                scannerMode === "visitors"
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${scannerMode === "visitors"
                   ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-md border border-gray-200/60 dark:border-slate-700"
                   : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-              }`}
+                }`}
             >
               <Users className="w-4 h-4 shrink-0" />
               <span className="truncate">External Visitors</span>
@@ -475,8 +469,8 @@ export function ScanQrCode() {
         <div className="mt-6 space-y-6 print:m-0 print:space-y-0">
           {!visit && !optimisticVisit && (
             <>
-              {/* Top Command Bar */}
-              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 relative z-30">
+
+              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 relative z-30">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl text-indigo-600 dark:text-indigo-400 shrink-0">
                     <MapPin className="w-5 h-5" />
@@ -506,11 +500,10 @@ export function ScanQrCode() {
                   <button
                     type="button"
                     onClick={() => setSoundEnabled(!soundEnabled)}
-                    className={`btn btn-sm text-xs font-bold py-2.5 px-3.5 shadow-xs flex-1 sm:flex-initial justify-center transition-all ${
-                      soundEnabled
+                    className={`btn btn-sm text-xs font-bold py-2.5 px-3.5 shadow-xs flex-1 sm:flex-initial justify-center transition-all ${soundEnabled
                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                         : "btn-secondary"
-                    }`}
+                      }`}
                     title="Toggle Audio Feedback"
                   >
                     {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-500" /> : <VolumeX className="w-4 h-4 text-gray-400" />}
@@ -520,11 +513,10 @@ export function ScanQrCode() {
                   <button
                     type="button"
                     onClick={() => setIsCameraActive(!isCameraActive)}
-                    className={`btn btn-sm text-xs font-bold py-2.5 px-4 shadow-xs flex-1 sm:flex-initial justify-center transition-all ${
-                      isCameraActive 
-                        ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/30 border-rose-500" 
+                    className={`btn btn-sm text-xs font-bold py-2.5 px-4 shadow-xs flex-1 sm:flex-initial justify-center transition-all ${isCameraActive
+                        ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/30 border-rose-500"
                         : "btn-primary shadow-indigo-500/20"
-                    }`}
+                      }`}
                   >
                     {isCameraActive ? <X className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
                     <span>{isCameraActive ? "Close Camera" : "Camera Scanner"}</span>
@@ -532,10 +524,10 @@ export function ScanQrCode() {
                 </div>
               </div>
 
-              {/* Camera Scanner Viewfinder */}
+
               {isCameraActive && (
-                <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl flex flex-col items-center justify-center animate-fadeIn relative overflow-hidden">
-                  {/* Top Bar inside Camera */}
+                <div className="p-4 sm:p-6 rounded-2xl sm:rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl flex flex-col items-center justify-center animate-fadeIn relative overflow-hidden">
+
                   <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800/80">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />
@@ -565,11 +557,10 @@ export function ScanQrCode() {
                         <button
                           type="button"
                           onClick={toggleTorch}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
-                            isTorchOn
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${isTorchOn
                               ? "bg-amber-400 text-slate-950 border-amber-300 shadow-md shadow-amber-400/30"
                               : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"
-                          }`}
+                            }`}
                           title="Toggle Flashlight"
                         >
                           <Zap className="w-3.5 h-3.5" />
@@ -588,7 +579,7 @@ export function ScanQrCode() {
                     </div>
                   </div>
 
-                  {/* Camera Viewport Box */}
+
                   <div className="w-full max-w-[340px] sm:max-w-[380px] aspect-square relative rounded-2xl overflow-hidden border-2 border-indigo-500/50 ring-4 ring-indigo-500/10 shadow-2xl bg-black flex items-center justify-center">
                     <div id="qr-reader" className="w-full h-full"></div>
 
@@ -628,9 +619,9 @@ export function ScanQrCode() {
 
                     {!isCameraLoading && !error && (
                       <div className="absolute inset-0 pointer-events-none">
-                        {/* Laser scan line */}
+
                         <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent shadow-[0_0_12px_#818cf8] animate-scan-laser" />
-                        {/* Target Corners */}
+
                         <div className="absolute top-3 left-3 w-7 h-7 border-t-4 border-l-4 border-indigo-400 rounded-tl-lg" />
                         <div className="absolute top-3 right-3 w-7 h-7 border-t-4 border-r-4 border-indigo-400 rounded-tr-lg" />
                         <div className="absolute bottom-3 left-3 w-7 h-7 border-b-4 border-l-4 border-indigo-400 rounded-bl-lg" />
@@ -645,8 +636,8 @@ export function ScanQrCode() {
                 </div>
               )}
 
-              {/* Fast-Track Manual Pass Entry / Laser Scanner Input Bar */}
-              <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-3.5">
+
+              <div className="p-5 sm:p-6 rounded-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm space-y-3.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                     <QrCode className="w-4 h-4 text-indigo-500 animate-pulse" />
@@ -700,7 +691,7 @@ export function ScanQrCode() {
                 </form>
 
                 <p className="text-xs text-gray-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
                   Ready for continuous USB/Bluetooth laser barcode scanner or keyboard entry.
                 </p>
               </div>
@@ -708,7 +699,7 @@ export function ScanQrCode() {
           )}
 
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/10 border-2 border-red-100 dark:border-red-900/30 p-6 rounded-2xl sm:rounded-3xl flex items-start gap-4 animate-fadeIn">
+            <div className="bg-red-50 dark:bg-red-900/10 border-2 border-red-100 dark:border-red-900/30 p-6 rounded-2xl sm:rounded-2xl flex items-start gap-4 animate-fadeIn">
               <AlertTriangle className="w-8 h-8 text-red-600 shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-black text-red-900 dark:text-red-400 uppercase tracking-tight">
@@ -731,15 +722,14 @@ export function ScanQrCode() {
 
           {(visit || optimisticVisit) && !error && (
             <div id="generated-pass" className="print:m-0 w-full flex justify-center animate-in zoom-in-95 duration-300">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 w-full shadow-2xl">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 w-full shadow-2xl">
                 <div
-                  className={`p-6 sm:p-8 transition-colors duration-500 flex items-center justify-between ${
-                    isVerifying
+                  className={`p-6 sm:p-8 transition-colors duration-500 flex items-center justify-between ${isVerifying
                       ? "bg-gradient-to-r from-slate-600 to-slate-700 animate-pulse"
                       : visit?.status === "checked_in"
                         ? "bg-gradient-to-r from-emerald-500 to-teal-600"
                         : "bg-gradient-to-r from-indigo-500 to-blue-600"
-                  } text-white`}
+                    } text-white`}
                 >
                   <div className="flex items-center gap-3 sm:gap-4">
                     {isVerifying ? (

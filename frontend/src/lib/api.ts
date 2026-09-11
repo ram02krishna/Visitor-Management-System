@@ -4,16 +4,13 @@ import { dataSync, SyncTopic } from "./dataSync";
 type Tables = Database["public"]["Tables"];
 type Row<T extends keyof Tables> = Tables[T]["Row"];
 
-// In production this is set to the deployed backend URL (e.g. https://vms-backend.vercel.app).
-// In local dev it is left empty so the Vite dev-proxy forwards /api/* to localhost:5000.
 export const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) ?? '';
 
 const cache = new Map<string, { data: unknown; timestamp: number }>();
 const inFlightRequests = new Map<string, Promise<unknown>>();
-const CACHE_TTL_MS = 15000; // 15 seconds max stale window with active real-time invalidation
+const CACHE_TTL_MS = 15000;
 
 function invalidateMatchingCaches(path: string) {
-  // Clear in-memory API caches
   const cleanPath = path.split("?")[0];
   for (const key of cache.keys()) {
     if (key.includes(cleanPath) || cleanPath.includes("/visits") || cleanPath.includes("/visitors")) {
@@ -21,7 +18,6 @@ function invalidateMatchingCaches(path: string) {
     }
   }
 
-  // Clear component UI caches & broadcast sync
   let topic: SyncTopic = "all";
   if (cleanPath.startsWith("/visitors")) {
     topic = "visitors";
@@ -36,10 +32,22 @@ function invalidateMatchingCaches(path: string) {
         api.uiCache.delete(key);
       }
     }
-    // Also invalidate stats on visit changes
     dataSync.notify("stats");
   } else if (cleanPath.startsWith("/hosts")) {
     topic = "hosts";
+    api.uiCache.delete("vms_users");
+  } else if (cleanPath.startsWith("/students")) {
+    topic = "students";
+    api.uiCache.delete("vms_hostel_census");
+    api.uiCache.delete("vms_hostel_overdue");
+    api.uiCache.delete("vms_hostel_directory");
+    api.uiCache.delete("vms_floor_census");
+  } else if (cleanPath.startsWith("/lost-and-found")) {
+    topic = "lostAndFound";
+    api.uiCache.delete("vms_lost_found");
+  } else if (cleanPath.startsWith("/vehicles")) {
+    topic = "vehicles";
+    api.uiCache.delete("vms_vehicles");
   }
 
   dataSync.notify(topic);
@@ -49,14 +57,12 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   const method = options.method || "GET";
   const cacheKey = `${method}:${path}`;
 
-  // 1. Return from cache if valid and it's a GET request
   if (method === "GET") {
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return cached.data as T;
     }
 
-    // 2. Return in-flight promise if identical request is pending
     if (inFlightRequests.has(cacheKey)) {
       return inFlightRequests.get(cacheKey) as Promise<T>;
     }
@@ -100,7 +106,6 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       if (method === "GET") {
         cache.set(cacheKey, { data, timestamp: Date.now() });
       } else {
-        // Automatic real-time invalidation and notification on all mutations
         invalidateMatchingCaches(path);
       }
       
@@ -120,7 +125,6 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 }
 
 export const api = {
-  // Synchronous cache reader
   getCachedData: <T>(path: string): T | null => {
     const cacheKey = `GET:${path}`;
     const cached = cache.get(cacheKey);
@@ -130,15 +134,11 @@ export const api = {
     return null;
   },
 
-  // Manual complete cache invalidator
   invalidateAllCaches: () => {
     cache.clear();
     api.uiCache.clear();
     dataSync.notify("all");
   },
-
-  // Synchronous UI cache for components
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   uiCache: new Map<string, any>(),
 
 

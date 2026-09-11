@@ -22,13 +22,12 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState("");
-  
+
   const [view, setView] = useState<"login" | "forgot">("login");
   const [forgotEmail, setForgotEmail] = useState("");
   const [isForgotLoading, setIsForgotLoading] = useState(false);
 
   const error = storeError || localError;
-
 
   useEffect(() => {
     if (isAuthenticated) navigate("/app/dashboard");
@@ -59,7 +58,7 @@ export function Login() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Google login failed");
-      
+
       localStorage.setItem("vms_token", data.token);
       localStorage.setItem("vms_user_profile", JSON.stringify(data.user));
       useAuthStore.setState({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
@@ -109,11 +108,10 @@ export function Login() {
         ></div>
 
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 py-12 w-full h-full text-white">
-          <div className="glass-dark border border-white/10 rounded-[2rem] p-8 max-w-lg shadow-2xl animate-slideInLeft">
+          <div className="glass-dark border border-white/10 rounded-2xl p-8 max-w-lg shadow-2xl animate-slideInLeft">
             <div className="inline-flex gap-2 items-center mb-8 px-4 py-2 rounded-full border border-sky-400/30 bg-sky-900/40 text-sky-200 text-sm font-medium">
               <ShieldCheck size={16} /> Indian Institute Of Information Technology Nagpur
             </div>
-
 
             <h1 className="text-4xl xl:text-5xl font-black tracking-tighter mb-6">
               Secure.
@@ -159,8 +157,8 @@ export function Login() {
               {view === "login" ? "Welcome back" : "Forgot Password"}
             </h2>
             <p className="mt-2 text-base text-gray-600 dark:text-slate-400">
-              {view === "login" 
-                ? "Please enter your details to sign in" 
+              {view === "login"
+                ? "Please enter your details to sign in"
                 : "Enter your email to receive a password reset code"}
             </p>
           </div>
@@ -169,126 +167,124 @@ export function Login() {
             {view === "login" ? (
               <>
                 <form className="space-y-5" onSubmit={handleSubmit}>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1"
-                >
-                  Email address
-                </label>
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1"
+                    >
+                      Email address
+                    </label>
 
-
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600"
-                  placeholder="name@campus.edu"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-1.5 px-1">
-                  <label
-                    htmlFor="password"
-                    className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
-                  >
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => { setView("forgot"); setLocalError(""); }}
-                    className="text-[11px] font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 pr-12"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
-                <div className="animate-fadeIn p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 rounded-2xl text-sm flex items-start gap-2.5">
-                  <div className="mt-0.5 shrink-0">
-                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600"
+                      placeholder="name@campus.edu"
+                    />
                   </div>
-                  <p>{error}</p>
-                </div>
-              )}
 
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5 px-1">
+                      <label
+                        htmlFor="password"
+                        className="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+                      >
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => { setView("forgot"); setLocalError(""); }}
+                        className="text-[11px] font-medium text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all duration-300 hover:border-gray-300 dark:hover:border-slate-600 pr-12"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="btn-primary w-full flex justify-center items-center py-3"
-                >
-                  {isLoading ? <span className="loading-spinner w-5 h-5 mr-2"></span> : "Sign in"}
-                  {!isLoading && (
-                    <ArrowRight className="ml-2 w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                  {error && (
+                    <div className="animate-fadeIn p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 rounded-2xl text-sm flex items-start gap-2.5">
+                      <div className="mt-0.5 shrink-0">
+                        <AlertCircle className="w-4 h-4 text-red-500" />
+                      </div>
+                      <p>{error}</p>
+                    </div>
                   )}
-                </button>
-              </div>
-            </form>
 
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200 dark:border-slate-700" />
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="btn-primary w-full flex justify-center items-center py-3"
+                    >
+                      {isLoading ? <span className="loading-spinner w-5 h-5 mr-2"></span> : "Sign in"}
+                      {!isLoading && (
+                        <ArrowRight className="ml-2 w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                      )}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="mt-8">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200 dark:border-slate-700" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-3 bg-white/80 dark:bg-slate-900/80 text-gray-500 dark:text-slate-400 font-medium">
+                        or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex justify-center">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      theme="outline"
+                      size="large"
+                      text="continue_with"
+                      width="100%"
+                    />
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-white/80 dark:bg-slate-900/80 text-gray-500 dark:text-slate-400 font-medium">
-                    or continue with
-                  </span>
+
+                <div className="mt-8 text-center animate-fadeInUp" style={{ animationDelay: "0.6s" }}>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Don't have an account?{" "}
+                    <Link
+                      to="/signup"
+                      className="font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors duration-300 underline underline-offset-4 decoration-sky-600/30 hover:decoration-sky-600"
+                    >
+                      Create one now
+                    </Link>
+                  </p>
                 </div>
-              </div>
-
-              <div className="mt-6 flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  theme="outline"
-                  size="large"
-                  text="continue_with"
-                  width="100%"
-                />
-              </div>
-            </div>
-
-            <div className="mt-8 text-center animate-fadeInUp" style={{ animationDelay: "0.6s" }}>
-              <p className="text-sm text-gray-600 dark:text-slate-400">
-                Don't have an account?{" "}
-                <Link
-                  to="/signup"
-                  className="font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors duration-300 underline underline-offset-4 decoration-sky-600/30 hover:decoration-sky-600"
-                >
-                  Create one now
-                </Link>
-              </p>
-            </div>
-            </>
+              </>
             ) : (
               <form className="space-y-5" onSubmit={handleForgotSubmit}>
                 <div>
