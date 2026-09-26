@@ -17,67 +17,65 @@ const CARD_THEMES: Record<
   string,
   {
     gradient: string;
-    glow: string;
-    blob: string;
-    accent: string;
-    badge: string;
+    iconBadge: string;
+    viewPill: string;
     hoverGlow: string;
   }
 > = {
   "text-blue-500": {
     gradient: "from-blue-500 to-indigo-600",
-    glow: "shadow-[0_12px_28px_-6px_rgba(59,130,246,0.6)]",
-    blob: "bg-blue-400/10",
-    accent: "from-blue-500 to-indigo-600",
-    badge: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300",
+    iconBadge:
+      "bg-blue-50 text-blue-600 border-blue-200/70 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30 dark:shadow-[0_0_15px_-2px_rgba(59,130,246,0.3)]",
+    viewPill:
+      "bg-blue-50 text-blue-700 border border-blue-200/60 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30 hover:dark:bg-blue-500/25",
     hoverGlow: "hover:shadow-[0_16px_40px_-12px_rgba(59,130,246,0.2)]",
   },
   "text-green-500": {
     gradient: "from-emerald-500 to-green-600",
-    glow: "shadow-[0_12px_28px_-6px_rgba(16,185,129,0.6)]",
-    blob: "bg-emerald-400/10",
-    accent: "from-emerald-500 to-green-600",
-    badge: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300",
+    iconBadge:
+      "bg-emerald-50 text-emerald-600 border-emerald-200/70 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30 dark:shadow-[0_0_15px_-2px_rgba(16,185,129,0.3)]",
+    viewPill:
+      "bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 hover:dark:bg-emerald-500/25",
     hoverGlow: "hover:shadow-[0_16px_40px_-12px_rgba(16,185,129,0.2)]",
   },
   "text-yellow-500": {
     gradient: "from-amber-500 to-orange-500",
-    glow: "shadow-[0_12px_28px_-6px_rgba(249,115,22,0.6)]",
-    blob: "bg-amber-400/10",
-    accent: "from-amber-500 to-orange-500",
-    badge: "bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300",
+    iconBadge:
+      "bg-amber-50 text-amber-600 border-amber-200/70 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30 dark:shadow-[0_0_15px_-2px_rgba(245,158,11,0.3)]",
+    viewPill:
+      "bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 hover:dark:bg-amber-500/25",
     hoverGlow: "hover:shadow-[0_16px_40px_-12px_rgba(249,115,22,0.2)]",
   },
   "text-indigo-500": {
     gradient: "from-violet-500 to-purple-600",
-    glow: "shadow-[0_12px_28px_-6px_rgba(168,85,247,0.6)]",
-    blob: "bg-violet-400/10",
-    accent: "from-violet-500 to-purple-600",
-    badge: "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300",
+    iconBadge:
+      "bg-indigo-50 text-indigo-600 border-indigo-200/70 dark:bg-indigo-500/15 dark:text-indigo-400 dark:border-indigo-500/30 dark:shadow-[0_0_15px_-2px_rgba(99,102,241,0.3)]",
+    viewPill:
+      "bg-indigo-50 text-indigo-700 border border-indigo-200/60 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30 hover:dark:bg-indigo-500/25",
     hoverGlow: "hover:shadow-[0_16px_40px_-12px_rgba(168,85,247,0.2)]",
   },
   "text-rose-500": {
     gradient: "from-rose-500 to-red-600",
-    glow: "shadow-[0_12px_28px_-6px_rgba(239,68,68,0.6)]",
-    blob: "bg-rose-400/10",
-    accent: "from-rose-500 to-red-600",
-    badge: "bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300",
+    iconBadge:
+      "bg-rose-50 text-rose-600 border-rose-200/70 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30 dark:shadow-[0_0_15px_-2px_rgba(244,63,94,0.3)]",
+    viewPill:
+      "bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30 hover:dark:bg-rose-500/25",
     hoverGlow: "hover:shadow-[0_16px_40px_-12px_rgba(239,68,68,0.2)]",
   },
   "text-teal-500": {
     gradient: "from-teal-500 to-emerald-600",
-    glow: "shadow-[0_12px_28px_-6px_rgba(20,184,166,0.6)]",
-    blob: "bg-teal-400/10",
-    accent: "from-teal-500 to-emerald-600",
-    badge: "bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-300",
+    iconBadge:
+      "bg-teal-50 text-teal-600 border-teal-200/70 dark:bg-teal-500/15 dark:text-teal-400 dark:border-teal-500/30 dark:shadow-[0_0_15px_-2px_rgba(20,184,166,0.3)]",
+    viewPill:
+      "bg-teal-50 text-teal-700 border border-teal-200/60 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30 hover:dark:bg-teal-500/25",
     hoverGlow: "hover:shadow-[0_16px_40px_-12px_rgba(20,184,166,0.2)]",
   },
   default: {
     gradient: "from-sky-500 to-blue-600",
-    glow: "shadow-[0_12px_28px_-6px_rgba(14,165,233,0.6)]",
-    blob: "bg-sky-400/10",
-    accent: "from-sky-500 to-blue-600",
-    badge: "bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-300",
+    iconBadge:
+      "bg-sky-50 text-sky-600 border-sky-200/70 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30 dark:shadow-[0_0_15px_-2px_rgba(14,165,233,0.3)]",
+    viewPill:
+      "bg-sky-50 text-sky-700 border border-sky-200/60 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30 hover:dark:bg-sky-500/25",
     hoverGlow: "hover:shadow-[0_16px_40px_-12px_rgba(14,165,233,0.2)]",
   },
 };
@@ -110,18 +108,18 @@ export const StatItem = React.memo(
         <div className="p-4 sm:p-5 relative z-10 flex-1 flex flex-col bg-white dark:bg-slate-900 transition-colors duration-300">
           <div className="flex items-start justify-between">
             <div
-              className={`p-3 sm:p-3.5 rounded-xl bg-gradient-to-br ${theme.gradient} ${theme.glow} transition-all duration-300`}
+              className={`p-2.5 sm:p-3 rounded-xl border ${theme.iconBadge} transition-all duration-300 group-hover:scale-105 shadow-xs`}
             >
               <Icon
-                className="h-5 w-5 sm:h-6 sm:w-6 text-white"
-                strokeWidth={2.5}
+                className="h-5 w-5 sm:h-6 sm:w-6"
+                strokeWidth={2.2}
                 aria-hidden="true"
               />
             </div>
             {status && (
               <div className="transition-all duration-300">
                 <div
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${theme.badge}`}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${theme.viewPill} transition-all duration-200`}
                 >
                   View <ArrowUpRight className="w-3 h-3" strokeWidth={2.5} />
                 </div>
@@ -139,7 +137,7 @@ export const StatItem = React.memo(
         </div>
 
         <div className="px-4 sm:px-5 py-3 sm:py-3.5 bg-slate-50/50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 relative z-10 flex items-center gap-2">
-          <TrendingUp className={`h-3.5 w-3.5 ${color}`} strokeWidth={2.5} />
+          <TrendingUp className={`h-3.5 w-3.5 ${color} dark:brightness-125`} strokeWidth={2.5} />
           <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Live Metric
           </span>

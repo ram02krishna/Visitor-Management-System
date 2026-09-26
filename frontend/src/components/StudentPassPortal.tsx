@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { 
   QrCode, 
@@ -687,116 +688,119 @@ export function StudentPassPortal() {
       )}
 
 
-      {showExtensionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 relative">
-            <button
-              onClick={() => setShowExtensionModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {showExtensionModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+            <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-7 flex flex-col animate-scaleIn my-auto">
+              <button
+                onClick={() => setShowExtensionModal(false)}
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-950/50 text-amber-600">
-                <Clock className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-gray-900 dark:text-white">Emergency Curfew Extension</h3>
-                <p className="text-[11px] text-gray-400">Request Warden approval for late campus entry without strike</p>
-              </div>
-            </div>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!extReason.trim()) return toast.error("Please provide a reason");
-                setExtSubmitting(true);
-                try {
-                  const res = await api.students.requestCurfewExtension({
-                    roll_number: studentInfo.roll_number,
-                    additional_minutes: extMinutes,
-                    reason: extReason
-                  });
-                  toast.success(res.message || "Curfew extension request submitted!");
-                  setShowExtensionModal(false);
-                  setExtReason("");
-                } catch (err: unknown) {
-                  toast.error(err instanceof Error ? err.message : "Failed to submit request");
-                } finally {
-                  setExtSubmitting(false);
-                }
-              }}
-              className="space-y-3.5 text-xs"
-            >
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Additional Time Needed</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[30, 60, 90].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setExtMinutes(m)}
-                      className={`py-2 rounded-xl border text-xs font-bold transition-all ${
-                        extMinutes === m
-                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
-                          : "border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300"
-                      }`}
-                    >
-                      +{m} Mins
-                    </button>
-                  ))}
+              <div className="flex items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4 pr-10">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/60 dark:bg-amber-500/15 dark:border-amber-500/30 dark:shadow-[0_0_16px_-2px_rgba(245,158,11,0.35)] text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">Emergency Curfew Extension</h3>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">Request Warden approval for late campus entry without strike</p>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Reason for Extension <span className="text-red-500">*</span></label>
-                <textarea
-                  required
-                  rows={3}
-                  value={extReason}
-                  onChange={(e) => setExtReason(e.target.value)}
-                  placeholder="e.g. College Hackathon project lab session / delayed by traffic / hospital visit"
-                  className="w-full py-2.5 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs outline-none dark:text-white"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowExtensionModal(false)}
-                  className="flex-1 btn btn-secondary text-xs font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={extSubmitting}
-                  className="flex-1 btn btn-primary text-xs font-bold shadow-md"
-                >
-                  {extSubmitting ? "Submitting..." : "Submit to Warden"}
-                </button>
-              </div>
-            </form>
-
-            {myExtensions.length > 0 && (
-              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 space-y-1.5">
-                <h5 className="text-[10px] font-black uppercase text-gray-400">Recent Extension Requests</h5>
-                {myExtensions.slice(0, 3).map((ext) => (
-                  <div key={ext.id} className="flex items-center justify-between text-xs py-1">
-                    <span className="text-gray-700 dark:text-slate-300">+{ext.additional_minutes}m ({ext.reason})</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                      ext.status === "approved" ? "bg-emerald-100 text-emerald-700" : ext.status === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                    }`}>
-                      {ext.status}
-                    </span>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!extReason.trim()) return toast.error("Please provide a reason");
+                  setExtSubmitting(true);
+                  try {
+                    const res = await api.students.requestCurfewExtension({
+                      roll_number: studentInfo.roll_number,
+                      additional_minutes: extMinutes,
+                      reason: extReason
+                    });
+                    toast.success(res.message || "Curfew extension request submitted!");
+                    setShowExtensionModal(false);
+                    setExtReason("");
+                  } catch (err: unknown) {
+                    toast.error(err instanceof Error ? err.message : "Failed to submit request");
+                  } finally {
+                    setExtSubmitting(false);
+                  }
+                }}
+                className="space-y-4 text-xs"
+              >
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Additional Time Needed</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[30, 60, 90].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setExtMinutes(m)}
+                        className={`py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          extMinutes === m
+                            ? "border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 ring-2 ring-amber-500/20"
+                            : "border-gray-200 dark:border-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60"
+                        }`}
+                      >
+                        +{m} Mins
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Reason for Extension <span className="text-red-500">*</span></label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={extReason}
+                    onChange={(e) => setExtReason(e.target.value)}
+                    placeholder="e.g. College Hackathon project lab session / delayed by traffic / hospital visit"
+                    className="w-full py-2.5 px-3.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 text-xs outline-none dark:text-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                  />
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowExtensionModal(false)}
+                    className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={extSubmitting}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-black shadow-lg shadow-amber-500/30 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {extSubmitting ? "Submitting..." : "Submit to Warden"}
+                  </button>
+                </div>
+              </form>
+
+              {myExtensions.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 space-y-1.5">
+                  <h5 className="text-[10px] font-black uppercase text-gray-400">Recent Extension Requests</h5>
+                  {myExtensions.slice(0, 3).map((ext) => (
+                    <div key={ext.id} className="flex items-center justify-between text-xs py-1">
+                      <span className="text-gray-700 dark:text-slate-300">+{ext.additional_minutes}m ({ext.reason})</span>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                        ext.status === "approved" ? "bg-emerald-100 text-emerald-700" : ext.status === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {ext.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
 
     </div>
   );

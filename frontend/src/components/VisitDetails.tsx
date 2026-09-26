@@ -161,18 +161,22 @@ export function VisitDetails({ visit, onClose, onUpdate }: VisitDetailsProps) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
       <div
-        className="absolute inset-0 bg-slate-900/60"
+        className="fixed inset-0"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-200 dark:border-slate-700 flex flex-col max-h-full">
+      <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200/80 dark:border-slate-800 flex flex-col max-h-[90vh] animate-scaleIn my-auto">
         <div className="px-5 py-3.5 border-b border-gray-200/50 dark:border-slate-700/50 flex items-center justify-between bg-gradient-to-b from-gray-50/50 to-transparent dark:from-slate-800/50 dark:to-transparent shrink-0">
           <div className="flex items-center gap-2.5">
             <div
-              className={`w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold shadow-lg bg-gradient-to-br ${isBlacklisted ? "from-rose-500 to-red-600 shadow-red-500/30" : "from-blue-500 to-indigo-600 shadow-blue-500/30"}`}
+              className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold border shrink-0 ${
+                isBlacklisted
+                  ? "bg-rose-50 text-rose-600 border-rose-200/60 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30 dark:shadow-[0_0_12px_-2px_rgba(244,63,94,0.3)]"
+                  : "bg-sky-50 text-sky-600 border-sky-200/60 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30 dark:shadow-[0_0_12px_-2px_rgba(14,165,233,0.3)]"
+              }`}
             >
               {isBlacklisted ? (
                 <ShieldAlert className="w-4 h-4" />

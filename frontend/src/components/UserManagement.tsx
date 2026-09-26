@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
-  Edit3,
+  Pencil,
   Trash2,
   Search,
   Mail,
@@ -8,6 +9,7 @@ import {
   Users as UsersIcon,
   Inbox,
   Check,
+  X,
 } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { api } from "../lib/api";
@@ -61,7 +63,7 @@ export function UserManagement() {
       initialLoadDone.current = true;
       setLoading(false);
     }
-  }, [debouncedSearchTerm, users.length]);
+  }, [debouncedSearchTerm]);
 
   useDataSync(["hosts", "all"], () => {
     fetchUsers(true);
@@ -215,15 +217,15 @@ export function UserManagement() {
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
                             profile.role === "admin"
-                              ? "bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/50"
+                              ? "bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300 border border-purple-200/50 dark:border-purple-500/30"
                               : profile.role === "warden"
-                              ? "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/50"
+                              ? "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 border border-amber-200/50 dark:border-amber-500/30"
                               : profile.role === "guard"
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50"
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-500/30"
                               : profile.role === "host"
-                              ? "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50"
+                              ? "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 border border-blue-200/50 dark:border-blue-500/30"
                               : profile.role === "student"
-                              ? "bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300 border border-sky-200/50 dark:border-sky-800/50"
+                              ? "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300 border border-sky-200/50 dark:border-sky-500/30"
                               : "bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 border border-gray-200/50 dark:border-slate-700/50"
                           }`}
                         >
@@ -235,20 +237,22 @@ export function UserManagement() {
                         {(profile as any).department?.name || "-"}
                       </td>
                       <td className="py-3.5 pl-3 pr-6 whitespace-nowrap text-right text-xs">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setEditingUser(profile)}
-                            className="p-1.5 text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 rounded-lg transition-all"
-                            title="Edit Role"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:border-sky-300 dark:hover:border-sky-700/60 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+                            title="Edit Role & Permissions"
                           >
-                            <Edit3 className="w-4 h-4" />
+                            <Pencil className="w-3.5 h-3.5" strokeWidth={2.2} />
+                            <span>Edit</span>
                           </button>
                           <button
                             onClick={() => handleDeleteUser(profile.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-700/60 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
                             title="Delete User"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" strokeWidth={2.2} />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </td>
@@ -261,48 +265,66 @@ export function UserManagement() {
         </div>
       )}
 
-      {editingUser && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-springIn p-5 space-y-4">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                Edit Role & Permissions
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                Assign campus access role for <strong>{editingUser.name}</strong>
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              {(["admin", "warden", "host", "guard", "student", "visitor"] as const).map((r) => (
-                <button
-                  key={r}
-                  disabled={isUpdating}
-                  onClick={() => handleUpdateRole(r)}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all ${
-                    editingUser.role === r
-                      ? "border-sky-500 bg-sky-50/80 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300"
-                      : "border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-300"
-                  }`}
-                >
-                  <span>{getRoleLabel(r)}</span>
-                  {editingUser.role === r && <Check className="w-4 h-4 text-sky-600" />}
-                </button>
-              ))}
-            </div>
-
-            <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex justify-end">
+      {editingUser &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+            <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-7 flex flex-col animate-scaleIn my-auto">
               <button
-                type="button"
                 onClick={() => setEditingUser(null)}
-                className="btn-secondary text-xs py-2 px-4"
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close"
               >
-                Cancel
+                <X className="w-5 h-5" />
               </button>
+
+              <div className="flex items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4 pr-10">
+                <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200/60 dark:bg-sky-500/15 dark:border-sky-500/30 dark:shadow-[0_0_16px_-2px_rgba(14,165,233,0.35)] text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                    Edit Role & Permissions
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 truncate">
+                    Assign campus access role for <strong className="text-gray-800 dark:text-slate-200">{editingUser.name}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                {(["admin", "warden", "host", "guard", "student", "visitor"] as const).map((r) => {
+                  const isSelected = editingUser.role === r;
+                  return (
+                    <button
+                      key={r}
+                      disabled={isUpdating}
+                      onClick={() => handleUpdateRole(r)}
+                      className={`w-full flex items-center justify-between p-3.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? "border-sky-500 bg-sky-50/80 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 ring-2 ring-sky-500/20"
+                          : "border-gray-200/90 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/60 text-gray-700 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-700"
+                      }`}
+                    >
+                      <span>{getRoleLabel(r)}</span>
+                      {isSelected && <Check className="w-4 h-4 text-sky-600 dark:text-sky-400 stroke-[2.5]" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="py-2.5 px-5 rounded-xl border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

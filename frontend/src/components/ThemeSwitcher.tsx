@@ -4,9 +4,9 @@ import { Sun, Moon } from "lucide-react";
 export const ThemeSwitcher = ({ className = "" }: { className?: string }) => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("theme");
-      if (saved) return saved === "dark";
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const saved = localStorage.getItem("vms_theme");
+      // Default to light theme
+      return saved === "dark";
     }
     return false;
   });
@@ -14,9 +14,11 @@ export const ThemeSwitcher = ({ className = "" }: { className?: string }) => {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("vms_theme", "dark");
       localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
+      localStorage.setItem("vms_theme", "light");
       localStorage.setItem("theme", "light");
     }
   }, [isDarkMode]);

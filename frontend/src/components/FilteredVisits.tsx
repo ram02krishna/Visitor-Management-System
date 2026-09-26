@@ -230,8 +230,10 @@ export function FilteredVisits() {
     fetchVisits();
 
     const interval = setInterval(() => {
-      fetchVisits();
-    }, 5000);
+      if (document.visibilityState === "visible") {
+        fetchVisits();
+      }
+    }, 12000);
 
     return () => {
       clearInterval(interval);

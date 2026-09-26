@@ -29,17 +29,15 @@ const MODULE_FEATURES = [
     badge: "Gate Optical Scanner",
     title: "High-Speed QR Checkpoints",
     description: "Sub-50ms optical camera verification for students and visitors with automated curfew alerts and overstay radar.",
-    gradient: "from-sky-500 to-blue-600",
-    shadow: "shadow-sky-500/20",
+    color: "text-sky-600 bg-sky-50 dark:text-sky-400 dark:bg-sky-500/15 border border-sky-200/60 dark:border-sky-500/30 dark:shadow-[0_0_15px_-2px_rgba(14,165,233,0.3)]",
     path: "/login"
   },
   {
     icon: Building2,
     badge: "Hostel Hub",
     title: "Hostel Block A 10-Floor Census",
-    description: "Real-time occupancy tracking for 400+ residents across 10 floors, automated 09:30 PM curfew audits, and disciplinary dossiers.",
-    gradient: "from-indigo-500 to-purple-600",
-    shadow: "shadow-indigo-500/20",
+    description: "Real-time occupancy tracking for 400+ residents across 10 floors, automated 09:30 PM curfew audits, and disciplinary records.",
+    color: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-500/15 border border-purple-200/60 dark:border-purple-500/30 dark:shadow-[0_0_15px_-2px_rgba(168,85,247,0.3)]",
     path: "/login"
   },
   {
@@ -47,8 +45,7 @@ const MODULE_FEATURES = [
     badge: "Touch Reception",
     title: "Instant Self-Service Kiosk",
     description: "4 dedicated entry pathways (Walk-In, Courier Drop-Off, Interview Candidate, and VIP Dignitary) with instant badge tokens.",
-    gradient: "from-emerald-500 to-teal-600",
-    shadow: "shadow-emerald-500/20",
+    color: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-500/15 border border-emerald-200/60 dark:border-emerald-500/30 dark:shadow-[0_0_15px_-2px_rgba(16,185,129,0.3)]",
     path: "/kiosk"
   },
   {
@@ -56,8 +53,7 @@ const MODULE_FEATURES = [
     badge: "Campus Safety",
     title: "Broadcast SOS & Evacuation",
     description: "Instant emergency beacon broadcast with geolocation tagging, evacuation protocol push, and live safety headcount.",
-    gradient: "from-rose-500 to-red-600",
-    shadow: "shadow-rose-500/20",
+    color: "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-500/15 border border-rose-200/60 dark:border-rose-500/30 dark:shadow-[0_0_15px_-2px_rgba(244,63,94,0.3)]",
     path: "/login"
   },
   {
@@ -65,8 +61,7 @@ const MODULE_FEATURES = [
     badge: "Student Portal",
     title: "Digital Pass & Outings",
     description: "Digital Gatepass ID with dynamic QR code, curfew extension requests, and verified parent consent workflows.",
-    gradient: "from-amber-500 to-orange-600",
-    shadow: "shadow-amber-500/20",
+    color: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-500/15 border border-amber-200/60 dark:border-amber-500/30 dark:shadow-[0_0_15px_-2px_rgba(245,158,11,0.3)]",
     path: "/student-pass"
   },
   {
@@ -74,8 +69,7 @@ const MODULE_FEATURES = [
     badge: "Campus Registry",
     title: "Lost & Found Custody Tracker",
     description: "Digital registry for misplaced campus valuables with verified handover PINs and officer custody audit trails.",
-    gradient: "from-cyan-500 to-blue-600",
-    shadow: "shadow-cyan-500/20",
+    color: "text-cyan-600 bg-cyan-50 dark:text-cyan-400 dark:bg-cyan-500/15 border border-cyan-200/60 dark:border-cyan-500/30 dark:shadow-[0_0_15px_-2px_rgba(6,182,212,0.3)]",
     path: "/login"
   },
   {
@@ -83,8 +77,7 @@ const MODULE_FEATURES = [
     badge: "Gate Telemetry",
     title: "24-Hour Checkpoint Inflow",
     description: "Real-time gate telemetry with night curfew analytics, live campus capacity gauge, and predictive peak-hour radar.",
-    gradient: "from-violet-500 to-indigo-600",
-    shadow: "shadow-violet-500/20",
+    color: "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-500/15 border border-indigo-200/60 dark:border-indigo-500/30 dark:shadow-[0_0_15px_-2px_rgba(99,102,241,0.3)]",
     path: "/login"
   },
   {
@@ -92,8 +85,7 @@ const MODULE_FEATURES = [
     badge: "Smart Logistics",
     title: "Vehicle Parking Pass System",
     description: "Automated license plate registry for 2-wheelers and 4-wheelers with designated parking bay validation.",
-    gradient: "from-teal-500 to-emerald-600",
-    shadow: "shadow-teal-500/20",
+    color: "text-teal-600 bg-teal-50 dark:text-teal-400 dark:bg-teal-500/15 border border-teal-200/60 dark:border-teal-500/30 dark:shadow-[0_0_15px_-2px_rgba(20,184,166,0.3)]",
     path: "/login"
   },
 ];
@@ -154,7 +146,7 @@ const Home = () => {
 
         <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-400">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Main Gate & Hostel Block A Online</span>
+          <span>All Systems Operational</span>
         </div>
 
         <div className="hidden md:flex gap-2 items-center">
@@ -243,20 +235,16 @@ const Home = () => {
       </div>
 
       <div
-        className="relative pt-36 sm:pt-44 pb-28 sm:pb-36 overflow-hidden bg-cover bg-center bg-no-repeat min-h-[82vh] flex flex-col justify-center items-center"
+        className="relative pt-24 sm:pt-28 pb-20 sm:pb-28 overflow-hidden bg-cover bg-center bg-no-repeat min-h-[70vh] sm:min-h-[82vh] flex flex-col justify-start items-center"
         style={{ backgroundImage: "url('/c8331ead-7366-4dc7-88a9-36ade9571557.jpg')" }}
       >
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/25 to-black/55" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/20 to-black/55" />
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-5 my-auto">
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-            IIIT Nagpur Security Ecosystem
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center mt-6 sm:mt-10">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
+            Welcome to IIIT Nagpur VMS
           </h1>
-
-          <p className="text-sm sm:text-base text-white/90 font-medium max-w-xl mx-auto drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
-            Digital gatepass, Hostel Block A census, reception kiosks, and 24-hour campus security.
-          </p>
         </div>
       </div>
 
@@ -270,7 +258,7 @@ const Home = () => {
                 desc: "Walk-in visitors, courier drop-off & VIP guests.",
                 badge: "Instant Token",
                 path: "/kiosk",
-                color: "text-sky-600 bg-sky-50 dark:text-sky-400 dark:bg-sky-950/60",
+                color: "text-sky-600 bg-sky-50 dark:text-sky-400 dark:bg-sky-500/15 border border-sky-200/60 dark:border-sky-500/30 dark:shadow-[0_0_15px_-2px_rgba(14,165,233,0.3)]",
               },
               {
                 icon: GraduationCap,
@@ -278,7 +266,7 @@ const Home = () => {
                 desc: "Digital gatepass, leaves, and curfew extensions.",
                 badge: "Dynamic QR",
                 path: "/app/student-pass",
-                color: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950/60",
+                color: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-500/15 border border-purple-200/60 dark:border-purple-500/30 dark:shadow-[0_0_15px_-2px_rgba(168,85,247,0.3)]",
               },
               {
                 icon: ScanLine,
@@ -286,7 +274,7 @@ const Home = () => {
                 desc: "Camera QR scanner with instant strike validation.",
                 badge: "<50ms Scan",
                 path: "/login",
-                color: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/60",
+                color: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-500/15 border border-emerald-200/60 dark:border-emerald-500/30 dark:shadow-[0_0_15px_-2px_rgba(16,185,129,0.3)]",
               },
               {
                 icon: Building2,
@@ -294,7 +282,7 @@ const Home = () => {
                 desc: "10-floor occupancy heatmap and night roll-call.",
                 badge: "10 Floors",
                 path: "/login",
-                color: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/60",
+                color: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-500/15 border border-amber-200/60 dark:border-amber-500/30 dark:shadow-[0_0_15px_-2px_rgba(245,158,11,0.3)]",
               },
             ].map((card, idx) => {
               const Icon = card.icon;
@@ -377,10 +365,10 @@ const Home = () => {
                 >
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
-                      <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${f.gradient} text-white shadow-md`}>
-                        <Icon className="w-6 h-6" />
+                      <div className={`p-2.5 rounded-xl ${f.color} transition-transform group-hover:scale-105`}>
+                        <Icon className="w-5 h-5" />
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-200/70 dark:bg-slate-800 text-gray-700 dark:text-slate-300">
                         {f.badge}
                       </span>
                     </div>
@@ -684,7 +672,7 @@ const Home = () => {
             <p>© {new Date().getFullYear()} IIIT Nagpur VMS. All rights reserved.</p>
             <div className="flex items-center gap-2 text-emerald-400 font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Main Gate & Hostel Block A Online</span>
+              <span>All Systems Operational</span>
             </div>
           </div>
         </div>

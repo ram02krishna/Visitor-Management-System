@@ -377,8 +377,10 @@ export function Dashboard() {
     if (!user?.role) return;
     refreshAll(false);
     const refreshInterval = setInterval(() => {
-      refreshAll(false);
-    }, 5000);
+      if (document.visibilityState === "visible") {
+        refreshAll(false);
+      }
+    }, 15000);
 
     return () => {
       clearInterval(refreshInterval);
@@ -437,7 +439,7 @@ export function Dashboard() {
       {user?.role === "visitor" && (
         <div className="mb-8 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-sky-500/15 via-indigo-500/10 to-transparent border border-sky-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fadeIn">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-md shrink-0">
+            <div className="p-2.5 sm:p-3 rounded-xl bg-sky-50 border border-sky-200/60 dark:bg-sky-500/15 dark:border-sky-500/30 dark:shadow-[0_0_15px_-2px_rgba(14,165,233,0.35)] text-sky-600 dark:text-sky-400 shrink-0 shadow-xs">
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>

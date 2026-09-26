@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { GraduationCap, ShieldCheck, ArrowRight, X, AlertCircle } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuthStore } from "../store/auth";
@@ -46,11 +47,9 @@ export function ClaimStudentPassModal({ isOpen, onClose }: ClaimStudentPassModal
     } finally {
       setLoading(false);
     }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl p-6 sm:p-7 relative overflow-hidden">
+  };  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+      <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-7 flex flex-col animate-scaleIn my-auto overflow-hidden">
 
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-sky-500/20 rounded-full blur-2xl pointer-events-none" />
 
@@ -64,7 +63,7 @@ export function ClaimStudentPassModal({ isOpen, onClose }: ClaimStudentPassModal
 
 
         <div className="flex items-center gap-3.5 mb-5">
-          <div className="p-3 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-md">
+          <div className="p-2.5 sm:p-3 rounded-xl bg-sky-50 border border-sky-200/60 dark:bg-sky-500/15 dark:border-sky-500/30 dark:shadow-[0_0_15px_-2px_rgba(14,165,233,0.35)] text-sky-600 dark:text-sky-400 shrink-0 shadow-xs">
             <GraduationCap className="w-6 h-6" />
           </div>
           <div>
@@ -131,6 +130,7 @@ export function ClaimStudentPassModal({ isOpen, onClose }: ClaimStudentPassModal
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

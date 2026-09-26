@@ -4,8 +4,19 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
+let activeAlertCache: { data: any; expiry: number } | null = null;
+
+export function invalidateAlertCache() {
+  activeAlertCache = null;
+}
+
 router.get('/active', requireAuth, async (_req: AuthRequest, res) => {
   try {
+    const nowTime = Date.now();
+    if (activeAlertCache && activeAlertCache.expiry > nowTime) {
+      return res.json(activeAlertCache.data);
+    }
+
     const alert = await prisma.emergencyAlert.findFirst({
       where: { active: true },
       orderBy: { created_at: 'desc' },
@@ -16,7 +27,9 @@ router.get('/active', requireAuth, async (_req: AuthRequest, res) => {
       },
     });
 
-    res.json(alert || null);
+    const result = alert || null;
+    activeAlertCache = { data: result, expiry: Date.now() + 3000 };
+    res.json(result);
   } catch (err) {
     console.error('[API GET /emergency/active]', err);
     res.status(500).json({ error: 'Failed to fetch active emergency status' });
@@ -49,6 +62,8 @@ router.post('/alert', requireAuth, async (req: AuthRequest, res) => {
       },
     });
 
+    invalidateAlertCache();
+
     res.status(201).json({
       success: true,
       message: `🚨 Emergency Alert "${title}" broadcasted campus-wide!`,
@@ -70,6 +85,8 @@ router.post('/resolve', requireAuth, async (req: AuthRequest, res) => {
       where: { active: true },
       data: { active: false, resolved_at: new Date() },
     });
+
+    invalidateAlertCache();
 
     res.json({ success: true, message: 'Campus Emergency Alert resolved. Normal operations resumed.' });
   } catch (err) {
@@ -99,6 +116,8 @@ router.post('/checkin', requireAuth, async (req: AuthRequest, res) => {
         notes: notes || null,
       },
     });
+
+    invalidateAlertCache();
 
     res.status(201).json({
       success: true,

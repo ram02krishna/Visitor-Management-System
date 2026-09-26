@@ -42,8 +42,9 @@ export function Layout() {
 
   return (
     <div className="h-[100dvh] w-full flex overflow-hidden bg-gray-50 dark:bg-slate-950">
+      {/* Mobile Top Header (hidden completely on desktop) */}
       <div
-        className="lg:hidden fixed top-0 left-0 right-0 z-50 glass-nav"
+        className="hidden max-lg:block fixed top-0 left-0 right-0 z-40 glass-nav"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="flex justify-between h-14 items-center px-4">
@@ -222,7 +223,7 @@ export function Layout() {
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <EmergencyBanner />
-        <div className="flex-1 scroll-ios pt-14 pb-[72px] lg:pt-0 lg:pb-0">
+        <div className="flex-1 scroll-ios max-lg:pt-14 max-lg:pb-[72px]">
           <div className="w-full px-3 sm:px-6 lg:px-8 py-4 lg:py-8">
             <Outlet />
           </div>
@@ -230,7 +231,7 @@ export function Layout() {
       </main>
 
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-nav border-t border-gray-200/80 dark:border-slate-800/80 shadow-xl backdrop-blur-xl"
+        className="hidden max-lg:block fixed bottom-0 left-0 right-0 z-40 glass-nav border-t border-gray-200/80 dark:border-slate-800/80 shadow-xl backdrop-blur-xl"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center justify-around h-16 px-1 max-w-lg mx-auto">

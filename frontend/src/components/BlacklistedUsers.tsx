@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   Search,
   Mail,
@@ -65,7 +66,7 @@ export function BlacklistedUsers() {
     } finally {
       if (!isBackground) setLoading(false);
     }
-  }, [searchTerm, visitors.length]);
+  }, [searchTerm]);
 
 
   useDataSync(["visitors", "all"], () => {
@@ -79,8 +80,10 @@ export function BlacklistedUsers() {
     }, delay);
 
     const interval = setInterval(() => {
-      fetchBlacklisted(true);
-    }, 5000);
+      if (document.visibilityState === "visible") {
+        fetchBlacklisted(true);
+      }
+    }, 12000);
 
     return () => {
       clearTimeout(delayDebounceFn);
@@ -351,16 +354,24 @@ export function BlacklistedUsers() {
       </div>
 
 
-      {showBlockModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 max-w-lg w-full border border-gray-200 dark:border-slate-800 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 border border-red-500/20">
-                  <ShieldAlert className="w-5 h-5" />
+      {showBlockModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+            <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-red-500/30 dark:border-red-500/30 shadow-2xl p-6 sm:p-7 flex flex-col animate-scaleIn my-auto">
+              <button
+                onClick={() => setShowBlockModal(false)}
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4 pr-10">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200/60 dark:bg-red-500/15 dark:border-red-500/30 dark:shadow-[0_0_16px_-2px_rgba(239,68,68,0.35)] text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="text-base font-black text-gray-900 dark:text-white">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
                     Add Security Watchlist Block
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
@@ -368,101 +379,95 @@ export function BlacklistedUsers() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowBlockModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 rounded-xl"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <form onSubmit={handleAddBlock} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={blockName}
+                    onChange={(e) => setBlockName(e.target.value)}
+                    className="block w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 text-xs sm:text-sm dark:text-white outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                    placeholder="e.g. John Doe"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={blockEmail}
+                    onChange={(e) => setBlockEmail(e.target.value)}
+                    className="block w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 text-xs sm:text-sm dark:text-white outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                    placeholder="e.g. john@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Phone Number (Optional)
+                  </label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={blockPhone}
+                    onChange={(e) => setBlockPhone(e.target.value)}
+                    className="block w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 text-xs sm:text-sm dark:text-white outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                    placeholder="10-digit mobile"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Security Infraction Reason *
+                  </label>
+                  <select
+                    value={blockReason}
+                    onChange={(e) => setBlockReason(e.target.value)}
+                    className="block w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 text-xs sm:text-sm dark:text-white outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all cursor-pointer"
+                  >
+                    {COMMON_REASONS.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowBlockModal(false)}
+                    className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingBlock}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-black shadow-lg shadow-red-600/30 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {submittingBlock ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    ) : (
+                      <>
+                        <ShieldAlert className="w-4 h-4" />
+                        <span>Enforce Block</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={handleAddBlock} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 uppercase mb-1.5">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={blockName}
-                  onChange={(e) => setBlockName(e.target.value)}
-                  className="block w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 text-xs sm:text-sm dark:text-white outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
-                  placeholder="e.g. John Doe"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 uppercase mb-1.5">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={blockEmail}
-                  onChange={(e) => setBlockEmail(e.target.value)}
-                  className="block w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 text-xs sm:text-sm dark:text-white outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
-                  placeholder="e.g. john@example.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 uppercase mb-1.5">
-                  Phone Number (Optional)
-                </label>
-                <input
-                  type="tel"
-                  maxLength={10}
-                  value={blockPhone}
-                  onChange={(e) => setBlockPhone(e.target.value)}
-                  className="block w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 text-xs sm:text-sm dark:text-white outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
-                  placeholder="10-digit mobile"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 uppercase mb-1.5">
-                  Security Infraction Reason *
-                </label>
-                <select
-                  value={blockReason}
-                  onChange={(e) => setBlockReason(e.target.value)}
-                  className="block w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 text-xs sm:text-sm dark:text-white outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all cursor-pointer"
-                >
-                  {COMMON_REASONS.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowBlockModal(false)}
-                  className="btn btn-secondary flex-1 !py-2.5 !rounded-xl text-xs font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingBlock}
-                  className="flex-1 !py-2.5 !rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md shadow-red-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  {submittingBlock ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                  ) : (
-                    <>
-                      <ShieldAlert className="w-4 h-4" />
-                      <span>Enforce Block</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

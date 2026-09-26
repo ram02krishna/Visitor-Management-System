@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   PackageSearch,
   Plus,
@@ -365,10 +366,11 @@ export function LostAndFound() {
                 {user?.role === "admin" && (
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all ml-auto cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-700/60 text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer ml-auto"
                     title="Delete item"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" strokeWidth={2.2} />
+                    <span>Delete</span>
                   </button>
                 )}
               </div>
@@ -377,235 +379,249 @@ export function LostAndFound() {
         </div>
       )}
 
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-springIn">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-amber-50 dark:bg-amber-950/60 text-amber-600 rounded-xl">
-                  <PackageSearch className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                  Log Recovered Campus Item
-                </h3>
-              </div>
+      {showAddModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+            <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-7 flex flex-col animate-scaleIn my-auto max-h-[90vh]">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-xl"
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close"
               >
                 <X className="w-5 h-5" />
               </button>
+
+              <div className="flex items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4 pr-10">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/60 dark:bg-amber-500/15 dark:border-amber-500/30 dark:shadow-[0_0_16px_-2px_rgba(245,158,11,0.35)] text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <PackageSearch className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                    Log Recovered Campus Item
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                    Register found property for student & visitor custody verification
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleCreateItem} className="space-y-4 text-xs overflow-y-auto pr-1">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Item Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dell 65W Laptop Charger, Black Wallet, Casio Watch"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                      Category *
+                    </label>
+                    <CustomSelect
+                      value={newCategory}
+                      onChange={setNewCategory}
+                      options={CATEGORIES.filter((c) => c.value !== "all")}
+                      className="!py-2 !px-3 text-xs font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                      Location Found *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Room 204, Library 1st Fl"
+                      value={newLocation}
+                      onChange={(e) => setNewLocation(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Description & Unique Identifiers
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Brand, color, stickers, distinctive scratches, contents..."
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                      Found By (Name) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newFinderName}
+                      onChange={(e) => setNewFinderName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                      Finder Contact Number
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="e.g. 9876543210"
+                      value={newFinderContact}
+                      onChange={(e) => setNewFinderContact(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="py-2.5 px-4 rounded-xl border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-black shadow-lg shadow-amber-500/30 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Logging Item..." : "Register Found Item"}
+                  </button>
+                </div>
+              </form>
             </div>
+          </div>,
+          document.body
+        )}
 
-            <form onSubmit={handleCreateItem} className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                  Item Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Dell 65W Laptop Charger, Black Wallet, Casio Watch"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
-                />
+      {claimingItem &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+            <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-7 flex flex-col animate-scaleIn my-auto">
+              <button
+                onClick={() => setClaimingItem(null)}
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4 pr-10">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200/60 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:shadow-[0_0_16px_-2px_rgba(16,185,129,0.35)] text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                    Handover Verification
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                    Verify claimant credentials before custody release
+                  </p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                    Category *
-                  </label>
-                  <CustomSelect
-                    value={newCategory}
-                    onChange={setNewCategory}
-                    options={CATEGORIES.filter((c) => c.value !== "all")}
-                    className="!py-2 !px-3 text-xs font-bold"
-                  />
+              <form onSubmit={handleClaimHandover} className="space-y-4 text-xs">
+                <div className="p-3.5 rounded-2xl bg-gray-50/80 dark:bg-slate-800/60 border border-gray-200/60 dark:border-slate-700/60 text-xs">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Item to Claim:</span>
+                  <p className="text-sm font-black text-gray-900 dark:text-white mt-0.5">
+                    {claimingItem.title}
+                  </p>
+                  <p className="text-gray-500 dark:text-slate-400 text-[11px] mt-0.5">
+                    Recovered from {claimingItem.location_found}
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                    Location Found *
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Claimant Name *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Room 204, Library 1st Fl"
-                    value={newLocation}
-                    onChange={(e) => setNewLocation(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                  Description & Unique Identifiers
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Brand, color, stickers, distinctive scratches, contents..."
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                    Found By (Name) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newFinderName}
-                    onChange={(e) => setNewFinderName(e.target.value)}
+                    placeholder="Full name of student or visitor"
+                    value={claimantName}
+                    onChange={(e) => setClaimantName(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                    Finder Contact Number
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Roll Number or Official ID *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. BT23CSE026 / Staff ID / Govt ID"
+                    value={claimantId}
+                    onChange={(e) => setClaimantId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Phone Number
                   </label>
                   <input
                     type="tel"
-                    placeholder="e.g. 9876543210"
-                    value={newFinderContact}
-                    onChange={(e) => setNewFinderContact(e.target.value)}
+                    placeholder="10-digit mobile number"
+                    value={claimantPhone}
+                    onChange={(e) => setClaimantPhone(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
                   />
                 </div>
-              </div>
 
-              <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="btn-secondary text-xs py-2 px-4"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="btn-primary text-xs py-2 px-4 disabled:opacity-50"
-                >
-                  {isSubmitting ? "Logging Item..." : "Register Found Item"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {claimingItem && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-springIn">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 rounded-xl">
-                  <ShieldCheck className="w-5 h-5" />
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Handover Duty Officer
+                  </label>
+                  <input
+                    type="text"
+                    value={handoverOfficer}
+                    onChange={(e) => setHandoverOfficer(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
+                  />
                 </div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                  Handover Verification
-                </h3>
-              </div>
-              <button
-                onClick={() => setClaimingItem(null)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-xl"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+                <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setClaimingItem(null)}
+                    className="py-2.5 px-4 rounded-xl border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isClaiming}
+                    className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-xs font-black shadow-lg shadow-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isClaiming ? "Recording Handover..." : "Confirm & Handover"}
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={handleClaimHandover} className="p-5 space-y-4">
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200/60 dark:border-slate-700/60 text-xs">
-                <span className="font-bold text-gray-500 uppercase">Item to Claim:</span>
-                <p className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">
-                  {claimingItem.title}
-                </p>
-                <p className="text-gray-500 dark:text-slate-400">
-                  Recovered from {claimingItem.location_found}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                  Claimant Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Full name of student or visitor"
-                  value={claimantName}
-                  onChange={(e) => setClaimantName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                  Roll Number or Official ID *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. BT23CSE026 / Staff ID / Govt ID"
-                  value={claimantId}
-                  onChange={(e) => setClaimantId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  placeholder="10-digit mobile number"
-                  value={claimantPhone}
-                  onChange={(e) => setClaimantPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">
-                  Handover Duty Officer
-                </label>
-                <input
-                  type="text"
-                  value={handoverOfficer}
-                  onChange={(e) => setHandoverOfficer(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:text-white"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setClaimingItem(null)}
-                  className="btn-secondary text-xs py-2 px-4"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isClaiming}
-                  className="btn-primary text-xs py-2 px-4 disabled:opacity-50"
-                >
-                  {isClaiming ? "Recording Handover..." : "Confirm & Handover"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

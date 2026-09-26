@@ -4,6 +4,18 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
+let censusCache: { data: any; expiry: number } | null = null;
+let floorCensusCache: { data: any; expiry: number } | null = null;
+let overdueCache: { data: any; expiry: number } | null = null;
+
+const STUDENT_CACHE_TTL_MS = 5000;
+
+export function invalidateStudentCaches() {
+  censusCache = null;
+  floorCensusCache = null;
+  overdueCache = null;
+}
+
 function getCurfewISTForDate(baseDate: Date = new Date()): Date {
   const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
   const istTime = new Date(baseDate.getTime() + IST_OFFSET_MS);
@@ -106,6 +118,8 @@ router.post('/scan-pass', requireAuth, async (req: AuthRequest, res) => {
         }),
       ]);
 
+      invalidateStudentCaches();
+
       return res.json({
         success: true,
         action: 'exit',
@@ -202,6 +216,8 @@ router.post('/scan-pass', requireAuth, async (req: AuthRequest, res) => {
       message = `Entry Verified under Approved Curfew Extension (+${activeExtension.additional_minutes} mins granted).`;
     }
 
+    invalidateStudentCaches();
+
     return res.json({
       success: true,
       action: 'entry',
@@ -227,6 +243,11 @@ router.post('/scan-pass', requireAuth, async (req: AuthRequest, res) => {
 
 router.get('/census', requireAuth, async (_req: AuthRequest, res) => {
   try {
+    const nowTime = Date.now();
+    if (censusCache && censusCache.expiry > nowTime) {
+      return res.json(censusCache.data);
+    }
+
     const now = new Date();
     const [total, inside, outDay, onLeave, activeMovements, extensions, blocks] = await Promise.all([
       prisma.student.count(),
@@ -264,14 +285,17 @@ router.get('/census', requireAuth, async (_req: AuthRequest, res) => {
       return false;
     }).length;
 
-    res.json({
+    const result = {
       total,
       inside,
       out_day: outDay,
       on_leave: onLeave,
       overdue: overdueCount,
       blocks,
-    });
+    };
+
+    censusCache = { data: result, expiry: Date.now() + STUDENT_CACHE_TTL_MS };
+    res.json(result);
   } catch (err) {
     console.error('[API GET /students/census]', err);
     res.status(500).json({ error: 'Failed to fetch census data' });
@@ -280,6 +304,11 @@ router.get('/census', requireAuth, async (_req: AuthRequest, res) => {
 
 router.get('/overdue', requireAuth, async (_req: AuthRequest, res) => {
   try {
+    const nowTime = Date.now();
+    if (overdueCache && overdueCache.expiry > nowTime) {
+      return res.json(overdueCache.data);
+    }
+
     const now = new Date();
     const [activeMovements, extensions] = await Promise.all([
       prisma.studentMovement.findMany({
@@ -328,6 +357,7 @@ router.get('/overdue', requireAuth, async (_req: AuthRequest, res) => {
         };
       });
 
+    overdueCache = { data: overdueList, expiry: Date.now() + STUDENT_CACHE_TTL_MS };
     res.json(overdueList);
   } catch (err) {
     console.error('[API GET /students/overdue]', err);
@@ -421,6 +451,8 @@ router.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
       }
     }
 
+    invalidateStudentCaches();
+
     res.json({
       success: true,
       message: `Bulk onboarding complete: ${inserted} added, ${updated} updated.`,
@@ -500,6 +532,8 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res) => {
       });
     }
 
+    invalidateStudentCaches();
+
     res.json({
       success: true,
       message: `Student details for ${updated.name} (${updated.roll_number}) updated successfully.`,
@@ -548,6 +582,8 @@ router.post('/leave', requireAuth, async (req: AuthRequest, res) => {
         status: 'pending',
       },
     });
+
+    invalidateStudentCaches();
 
     res.status(201).json(leave);
   } catch (err) {
@@ -599,6 +635,8 @@ router.patch('/leave/:id', requireAuth, async (req: AuthRequest, res) => {
         student: true,
       },
     });
+
+    invalidateStudentCaches();
 
     res.json(leave);
   } catch (err) {
@@ -674,8 +712,22 @@ router.get('/movements', requireAuth, async (req: AuthRequest, res) => {
 
 router.get('/floor-census', requireAuth, async (_req: AuthRequest, res) => {
   try {
+    const nowTime = Date.now();
+    if (floorCensusCache && floorCensusCache.expiry > nowTime) {
+      return res.json(floorCensusCache.data);
+    }
+
     const allStudents = await prisma.student.findMany({
       where: { hostel_block: 'Hostel Block A' },
+      select: {
+        id: true,
+        roll_number: true,
+        name: true,
+        room_number: true,
+        status: true,
+        is_flagged: true,
+        late_strike_count: true,
+      },
       orderBy: [{ room_number: 'asc' }, { roll_number: 'asc' }],
     });
 
@@ -717,14 +769,17 @@ router.get('/floor-census', requireAuth, async (_req: AuthRequest, res) => {
       };
     });
 
-    res.json({
+    const result = {
       hostel: 'Hostel Block A',
       totalResidents: allStudents.length,
       totalInside: allStudents.filter((s) => s.status === 'inside').length,
       totalOut: allStudents.filter((s) => s.status === 'out_day').length,
       totalLeave: allStudents.filter((s) => s.status === 'on_leave').length,
       floors,
-    });
+    };
+
+    floorCensusCache = { data: result, expiry: Date.now() + STUDENT_CACHE_TTL_MS };
+    res.json(result);
   } catch (err) {
     console.error('[API GET /students/floor-census]', err);
     res.status(500).json({ error: 'Failed to generate floor census' });
@@ -741,6 +796,8 @@ router.post('/:id/reset-strikes', requireAuth, async (req: AuthRequest, res) => 
         is_flagged: false,
       },
     });
+
+    invalidateStudentCaches();
 
     res.json({ success: true, message: `Curfew strikes reset for ${student.name} (${student.roll_number}).`, student });
   } catch (err) {
@@ -768,6 +825,8 @@ router.patch('/leave/:id/parent-consent', requireAuth, async (req: AuthRequest, 
         student: true,
       },
     });
+
+    invalidateStudentCaches();
 
     res.json({ success: true, message: `Parent consent marked as "${parent_consent}".`, leave });
   } catch (err) {
@@ -827,6 +886,8 @@ router.post('/curfew-extension', requireAuth, async (req: AuthRequest, res) => {
       },
     });
 
+    invalidateStudentCaches();
+
     res.status(201).json({
       success: true,
       message: `Curfew Extension request for +${additional_minutes} mins submitted to Warden Office.`,
@@ -876,6 +937,8 @@ router.patch('/curfew-extensions/:id', requireAuth, async (req: AuthRequest, res
       },
     });
 
+    invalidateStudentCaches();
+
     res.json({ success: true, message: `Curfew Extension request ${status}.`, extension });
   } catch (err) {
     console.error('[API PATCH /curfew-extensions/:id]', err);
@@ -905,7 +968,9 @@ router.post('/:id/disciplinary-log', requireAuth, async (req: AuthRequest, res) 
       },
     });
 
-    res.status(201).json({ success: true, message: 'Disciplinary action recorded in student dossier.', log });
+    invalidateStudentCaches();
+
+    res.status(201).json({ success: true, message: 'Disciplinary action recorded in student record.', log });
   } catch (err) {
     console.error('[API POST /students/:id/disciplinary-log]', err);
     res.status(500).json({ error: 'Failed to create disciplinary log' });

@@ -135,7 +135,7 @@ export function VisitLogs() {
         setLoadingMore(false);
       }
     },
-    [user, cacheKey, debouncedSearchTerm, statusFilter, dateFilter, page, logs.length]
+    [user, cacheKey, debouncedSearchTerm, statusFilter, dateFilter, page]
   );
 
   useDataSync(["visits", "all"], () => {
@@ -146,8 +146,10 @@ export function VisitLogs() {
     fetchVisits();
 
     const interval = setInterval(() => {
-      fetchVisits(false);
-    }, 5000);
+      if (document.visibilityState === "visible") {
+        fetchVisits(false);
+      }
+    }, 12000);
 
     return () => {
       clearInterval(interval);

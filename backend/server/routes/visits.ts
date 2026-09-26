@@ -9,6 +9,7 @@ import {
   sendVisitCheckOutEmail,
   VisitEmailData,
 } from '../lib/email.js';
+import { invalidateStudentCaches } from './students.js';
 
 const router = Router();
 
@@ -507,6 +508,8 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res) => {
           data: { status: 'inside' },
         }),
       ]);
+
+      invalidateStudentCaches();
 
       const formatted = formatMovementAsVisit(updatedMov);
       return res.status(200).json({ ...formatted, visitors: formatted.visitor, hosts: formatted.host });

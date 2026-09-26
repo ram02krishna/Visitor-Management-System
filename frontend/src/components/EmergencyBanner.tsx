@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { AlertOctagon, CheckCircle2, PhoneCall, ShieldAlert, X, MapPin } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuthStore } from "../store/auth";
@@ -40,7 +41,11 @@ export function EmergencyBanner() {
 
   useEffect(() => {
     fetchAlert();
-    const interval = setInterval(fetchAlert, 6000);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchAlert();
+      }
+    }, 8000);
     return () => clearInterval(interval);
   }, [fetchAlert]);
 
@@ -184,147 +189,159 @@ export function EmergencyBanner() {
         </div>
       )}
 
-      {!activeAlert && isAuthority && (
-        <div
-          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 right-4 lg:right-6 z-[60] animate-fadeIn"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-        >
-          <button
-            onClick={() => setShowBroadcastModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full lg:rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs sm:text-sm shadow-xl shadow-red-600/40 border border-red-400/40 active:scale-95 transition-all cursor-pointer"
-            title="Broadcast Campus Emergency / Lockdown"
+      {isAuthority &&
+        createPortal(
+          <div
+            className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 right-4 lg:right-6 z-[99999] animate-fadeIn pointer-events-auto"
+            style={{ WebkitTapHighlightColor: "transparent" }}
           >
-            <ShieldAlert className="w-4 h-4 animate-pulse text-white" />
-            <span>Broadcast SOS</span>
-          </button>
-        </div>
-      )}
-
-      {showBroadcastModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-red-500/40 shadow-xl p-6 relative">
             <button
-              onClick={() => setShowBroadcastModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer"
+              onClick={() => setShowBroadcastModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full lg:rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs sm:text-sm shadow-2xl shadow-red-600/50 border border-red-400/40 active:scale-95 transition-all cursor-pointer hover:shadow-red-500/60"
+              title="Broadcast Campus Emergency / Lockdown"
             >
-              <X className="w-5 h-5" />
+              <ShieldAlert className="w-4 h-4 animate-pulse text-white" />
+              <span>Broadcast SOS</span>
             </button>
+          </div>,
+          document.body
+        )}
 
-            <div className="flex items-center gap-3 mb-4 text-red-600">
-              <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/50">
-                <AlertOctagon className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-gray-900 dark:text-white">Campus Emergency Broadcast</h3>
-                <p className="text-[11px] text-gray-400">Pushes immediate siren alert to all student passes & kiosks</p>
-              </div>
-            </div>
+      {showBroadcastModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+            <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 border border-red-500/30 dark:border-red-500/30 shadow-2xl p-6 sm:p-7 flex flex-col animate-scaleIn my-auto">
+              <button
+                onClick={() => setShowBroadcastModal(false)}
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            <form onSubmit={handleBroadcast} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Alert Category</label>
-                <CustomSelect
-                  value={alertSeverity}
-                  onChange={setAlertSeverity}
-                  options={[
-                    { value: "critical", label: "🚨 Critical Emergency (Fire / Intrusion / Natural)" },
-                    { value: "warning", label: "⚠️ Campus Lockdown / Security Precaution" },
-                    { value: "drill", label: "📢 Scheduled Evacuation Safety Drill" }
-                  ]}
-                  className="!py-2.5 !px-3 text-xs font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Headline</label>
-                <input
-                  type="text"
-                  required
-                  value={alertTitle}
-                  onChange={(e) => setAlertTitle(e.target.value)}
-                  placeholder="e.g. CAMPUS EVACUATION ALERT - HOSTEL BLOCK A"
-                  className="w-full py-2.5 px-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold outline-none dark:text-white shadow-xs focus:ring-2 focus:ring-sky-500/20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Instructions for Students & Staff</label>
-                <textarea
-                  required
-                  rows={3}
-                  value={alertMessage}
-                  onChange={(e) => setAlertMessage(e.target.value)}
-                  placeholder="e.g. Please proceed immediately to Assembly Ground 1. Mark yourself safe on your student pass portal."
-                  className="w-full py-2.5 px-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs outline-none dark:text-white shadow-xs focus:ring-2 focus:ring-sky-500/20"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowBroadcastModal(false)}
-                  className="flex-1 btn-secondary text-xs font-bold py-2.5 rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={broadcasting}
-                  className="flex-1 btn bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-xs cursor-pointer py-2.5 rounded-xl"
-                >
-                  {broadcasting ? "Broadcasting..." : "Issue Broadcast"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showCensusModal && census && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-xl rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-xl p-6 relative max-h-[85vh] flex flex-col">
-            <button
-              onClick={() => setShowCensusModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-base font-black text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-red-500" /> Emergency Census & Rescue Telemetry
-            </h3>
-
-            <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/20">
-                <span className="text-[10px] font-bold text-gray-400 uppercase">Marked Safe</span>
-                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{census.safeCount}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-500/20">
-                <span className="text-[10px] font-bold text-gray-400 uppercase">Need Help</span>
-                <p className="text-xl font-black text-red-600 dark:text-red-400">{census.needHelpCount}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-500/20">
-                <span className="text-[10px] font-bold text-gray-400 uppercase">Unaccounted</span>
-                <p className="text-xl font-black text-amber-600 dark:text-amber-400">{census.pendingCount}</p>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800 space-y-2 pr-1">
-              {census.checkins?.map((c: any) => (
-                <div key={c.id} className="pt-2 flex items-center justify-between text-xs">
-                  <div>
-                    <p className="font-black text-gray-900 dark:text-white">{c.name} <span className="font-mono text-gray-400">({c.roll_number})</span></p>
-                    <p className="text-[10px] text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3 text-sky-500" /> {c.location}</p>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${c.status === "safe" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700 animate-pulse"}`}>
-                    {c.status.replace("_", " ")}
-                  </span>
+              <div className="flex items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4 pr-10">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200/60 dark:bg-red-500/15 dark:border-red-500/30 dark:shadow-[0_0_16px_-2px_rgba(239,68,68,0.35)] text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                  <AlertOctagon className="w-6 h-6" />
                 </div>
-              ))}
+                <div>
+                  <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">Campus Emergency Broadcast</h3>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">Pushes immediate siren alert to all student passes & kiosks</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleBroadcast} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Alert Category</label>
+                  <CustomSelect
+                    value={alertSeverity}
+                    onChange={setAlertSeverity}
+                    options={[
+                      { value: "critical", label: "🚨 Critical Emergency (Fire / Intrusion / Natural)" },
+                      { value: "warning", label: "⚠️ Campus Lockdown / Security Precaution" },
+                      { value: "drill", label: "📢 Scheduled Evacuation Safety Drill" }
+                    ]}
+                    className="!py-2.5 !px-3 text-xs font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Headline</label>
+                  <input
+                    type="text"
+                    required
+                    value={alertTitle}
+                    onChange={(e) => setAlertTitle(e.target.value)}
+                    placeholder="e.g. CAMPUS EVACUATION ALERT - HOSTEL BLOCK A"
+                    className="w-full py-2.5 px-3.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold outline-none dark:text-white shadow-xs focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Instructions for Students & Staff</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={alertMessage}
+                    onChange={(e) => setAlertMessage(e.target.value)}
+                    placeholder="e.g. Please proceed immediately to Assembly Ground 1. Mark yourself safe on your student pass portal."
+                    className="w-full py-2.5 px-3.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs outline-none dark:text-white shadow-xs focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                  />
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBroadcastModal(false)}
+                    className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-slate-800 text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={broadcasting}
+                    className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-black shadow-lg shadow-red-600/30 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {broadcasting ? "Broadcasting..." : "Issue Broadcast"}
+                  </button>
+                </div>
+              </form>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
+
+      {showCensusModal && census &&
+        createPortal(
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+            <div className="relative w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 shadow-2xl p-6 sm:p-7 flex flex-col animate-scaleIn my-auto max-h-[88vh]">
+              <button
+                onClick={() => setShowCensusModal(false)}
+                className="absolute top-5 right-5 p-2 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4 pr-10">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200/60 dark:bg-red-500/15 dark:border-red-500/30 dark:shadow-[0_0_16px_-2px_rgba(239,68,68,0.35)] text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">Emergency Census & Rescue Telemetry</h3>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">Real-time campus roll-call accountability</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+                <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/20">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Marked Safe</span>
+                  <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{census.safeCount}</p>
+                </div>
+                <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-500/20">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Need Help</span>
+                  <p className="text-xl font-black text-red-600 dark:text-red-400">{census.needHelpCount}</p>
+                </div>
+                <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-500/20">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Unaccounted</span>
+                  <p className="text-xl font-black text-amber-600 dark:text-amber-400">{census.pendingCount}</p>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800 space-y-2 pr-1">
+                {census.checkins?.map((c: any) => (
+                  <div key={c.id} className="pt-2 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-black text-gray-900 dark:text-white">{c.name} <span className="font-mono text-gray-400">({c.roll_number})</span></p>
+                      <p className="text-[10px] text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3 text-sky-500" /> {c.location}</p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${c.status === "safe" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700 animate-pulse"}`}>
+                      {c.status.replace("_", " ")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }
